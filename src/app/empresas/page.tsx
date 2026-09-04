@@ -25,7 +25,7 @@ export default function EmpresasPage() {
     async function carregarDados() {
       const { data, error } = await supabase
         .from("companies")
-        .select("*, setor, province")
+        .select("*, sector, province")
         .eq("is_approved", true)
 
       if (error) {
