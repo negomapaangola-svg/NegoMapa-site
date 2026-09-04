@@ -1,11 +1,12 @@
 "use client"
 
 import * as React from "react"
+import { useParams } from "next/navigation"
 import Link from "next/link"
 import { supabase } from "@/lib/supabase"
 
 export default function EmpresaPage() {
-  const { slug } = React.useParams<{ slug: string }>()
+  const { slug } = useParams<{ slug: string }>()
   const [empresa, setEmpresa] = React.useState<any>(null)
   const [carregando, setCarregando] = React.useState(true)
 
@@ -49,6 +50,8 @@ export default function EmpresaPage() {
       </div>
     )
   }
+
+  const whatsappNumber = empresa.contact.replace(/\D/g, "")
 
   return (
     <div className="max-w-3xl mx-auto p-6 md:p-8 bg-neutral-50 dark:bg-neutral-900">

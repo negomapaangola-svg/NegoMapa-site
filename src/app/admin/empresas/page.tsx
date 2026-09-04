@@ -59,7 +59,7 @@ function useEmpresas() {
     }
   }
 
-  return { empresas, carregar, aprovar, rejeitar }
+  return { empresas, aprovar, rejeitar }
 }
 
 export default function AdminEmpresasPage() {

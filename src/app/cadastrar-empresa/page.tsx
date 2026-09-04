@@ -97,7 +97,7 @@ export default function CadastrarEmpresaPage() {
     setRedirect(true)
     setTimeout(() => {
       setRedirect(false)
-      ;(window as any).router?.push?.("/") || window.navigate?.("/")
+      ;(window as any).location.href = '/'
     }, 3000)
   }
 
