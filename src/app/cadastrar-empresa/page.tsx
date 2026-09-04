@@ -7,10 +7,10 @@ type FormData = {
   name: string
   sector: string
   province: string
-  contact: string
+  phone: string
   email: string
   description?: string
-  address?: string
+  city?: string
 }
 
 export default function CadastrarEmpresaPage() {
@@ -18,7 +18,7 @@ export default function CadastrarEmpresaPage() {
     name: "",
     sector: "",
     province: "",
-    contact: "",
+    phone: "",
     email: "",
   })
 
@@ -44,7 +44,7 @@ export default function CadastrarEmpresaPage() {
     if (!formData.name) errors.name = "Nome é obrigatório"
     if (!formData.sector) errors.sector = "Setor é obrigatório"
     if (!formData.province) errors.province = "Província é obrigatória"
-    if (!formData.contact) errors.contact = "Contacto é obrigatório"
+    if (!formData.phone) errors.phone = "Phone é obrigatório"
     if (!formData.email) errors.email = "Email é obrigatório"
 
     setErrors(errors)
@@ -70,10 +70,10 @@ export default function CadastrarEmpresaPage() {
         slug,
         sector: formData.sector,
         province: formData.province,
-        contact: formData.contact,
+        phone: formData.phone,
         email: formData.email,
         description: formData.description,
-        address: formData.address,
+        city: formData.city ?? "",
         is_approved: false,
       })
       .select()
@@ -90,7 +90,7 @@ export default function CadastrarEmpresaPage() {
       name: "",
       sector: "",
       province: "",
-      contact: "",
+      phone: "",
       email: "",
     })
 
@@ -183,15 +183,15 @@ export default function CadastrarEmpresaPage() {
             </label>
             <input
               type="text"
-              name="contact"
-              value={formData.contact}
+              name="phone"
+              value={formData.phone}
               onChange={e => handleChange(e)}
               className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-neutral-700 dark:text-neutral-100"
               required
             />
-            {errors.contact && (
+            {errors.phone && (
               <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                {errors.contact}
+                {errors.phone}
               </p>
             )}
           </div>
@@ -215,6 +215,19 @@ export default function CadastrarEmpresaPage() {
             )}
           </div>
 
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+              Cidade
+            </label>
+            <input
+              type="text"
+              name="city"
+              value={formData.city ?? ""}
+              onChange={e => handleChange(e)}
+              className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-neutral-700 dark:text-neutral-100"
+            />
+          </div>
+
           {formData.description && (
             <div>
               <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
@@ -223,21 +236,6 @@ export default function CadastrarEmpresaPage() {
               <textarea
                 name="description"
                 value={formData.description ?? ""}
-                onChange={e => handleChange(e)}
-                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm resize-y focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-neutral-700 dark:text-neutral-100"
-                rows={3}
-              ></textarea>
-            </div>
-          )}
-
-          {formData.address && (
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                Endereço
-              </label>
-              <textarea
-                name="address"
-                value={formData.address ?? ""}
                 onChange={e => handleChange(e)}
                 className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm resize-y focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-neutral-700 dark:text-neutral-100"
                 rows={3}
