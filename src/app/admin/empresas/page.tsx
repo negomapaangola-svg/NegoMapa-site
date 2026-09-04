@@ -81,7 +81,7 @@ export default function AdminEmpresasPage() {
   }
 
   // Lista de admins permitidos (adicione seu email real aqui)
-  const adminsPermitidos = ["admin@negomapa.com"]
+  const adminsPermitidos = ["negomapaangola@gmail.com"]
 
   if (!adminsPermitidos.includes(userEmail)) {
     return (
