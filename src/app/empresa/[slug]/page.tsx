@@ -51,7 +51,7 @@ export default function EmpresaPage() {
     )
   }
 
-  const whatsappNumber = empresa.contact.replace(/\D/g, "")
+  const whatsappNumber = (empresa.phone || "").replace(/\D/g, "")
 
   return (
     <div className="max-w-3xl mx-auto p-6 md:p-8 bg-neutral-50 dark:bg-neutral-900">
@@ -72,7 +72,7 @@ export default function EmpresaPage() {
           </div>
           <div>
             <p className="text-sm text-neutral-500 dark:text-neutral-400">Contacto</p>
-            <p className="font-medium text-neutral-900 dark:text-neutral-100">{empresa.contact || "Não informado"}</p>
+            <p className="font-medium text-neutral-900 dark:text-neutral-100">{empresa.phone || "Não informado"}</p>
           </div>
         </div>
 
@@ -102,10 +102,9 @@ export default function EmpresaPage() {
 
         <div className="mt-8 pt-8 border-t border-gray-200 dark:border-neutral-700">
           <div className="flex gap-4">
-            const whatsappNumber = empresa.contact.replace(/\D/g, "")
 
             <Link
-              href={`https://wa.me/${whatsappNumber}`}
+              href={`https://wa.me/244${whatsappNumber}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
@@ -128,7 +127,7 @@ export default function EmpresaPage() {
             </Link>
 
             <a
-              href={`tel:${empresa.contact}`}
+              href={`tel:${empresa.phone}`}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
             >
               <svg
