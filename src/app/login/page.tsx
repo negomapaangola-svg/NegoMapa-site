@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useState } from "react"
-import { signInWithPassword } from "@/lib/supabase"
+import { supabase } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
 
 export default function LoginPage() {
@@ -15,7 +15,7 @@ export default function LoginPage() {
     e.preventDefault()
 
     try {
-      await signInWithPassword({ email, password })
+      await supabase.auth.signInWithPassword({ email, password })
       router.push("/admin/empresas")
     } catch (err: any) {
       setError(err.message || "Erro ao fazer login")
