@@ -19,6 +19,7 @@ export default function EmpresasPage() {
   const [provincias, setProvincias] = React.useState<Set<string>>(new Set())
   const [setorFiltrado, setSetorFiltrado] = React.useState<string | null>(null)
   const [provinciaFiltrada, setProvinciaFiltrada] = React.useState<string | null>(null)
+  const [nomeBusca, setNomeBusca] = React.useState("")
   const [carregando, setCarregando] = React.useState(true)
 
   React.useEffect(() => {
@@ -47,7 +48,8 @@ export default function EmpresasPage() {
     (empresa) => {
       const setorMatch = !setorFiltrado || empresa.sector === setorFiltrado
       const provinciaMatch = !provinciaFiltrada || empresa.province === provinciaFiltrada
-      return setorMatch && provinciaMatch
+      const nomeMatch = !nomeBusca || empresa.name.toLowerCase().includes(nomeBusca.toLowerCase())
+      return setorMatch && provinciaMatch && nomeMatch
     },
   )
 
@@ -108,6 +110,27 @@ export default function EmpresasPage() {
                   </option>
                 ))}
               </select>
+            </div>
+          </div>
+          <div className="mt-4">
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={nomeBusca}
+                onChange={(e) => setNomeBusca(e.target.value)}
+                placeholder="Buscar por nome..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-neutral-700 dark:text-neutral-100"
+              />
+              <button
+                onClick={() => {
+                  setNomeBusca("")
+                  setSetorFiltrado(null)
+                  setProvinciaFiltrada(null)
+                }}
+                className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-600"
+              >
+                Limpar filtros
+              </button>
             </div>
           </div>
         </div>
