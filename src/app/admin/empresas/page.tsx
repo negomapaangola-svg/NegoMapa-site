@@ -83,7 +83,7 @@ export default function AdminEmpresasPage() {
   // Lista de admins permitidos (adicione seu email real aqui)
   const adminsPermitidos = ["negomapaangola@gmail.com"]
 
-  if (!adminsPermitidos.includes(userEmail)) {
+  if (!adminsPermitidos.includes(userEmail || "")) {
     return (
       <div className="min-h-screen p-8 text-center">
         <h2 className="text-2xl font-bold text-red-600 mb-4">Acesso negado</h2>
@@ -128,7 +128,7 @@ export default function AdminEmpresasPage() {
                   <td className="p-4">{empresa.sector || "-"}</td>
                   <td className="p-4">{empresa.province || "-"}</td>
                   <td className="p-4">{empresa.email || "-"}</td>
-                  <td className="p-4">{empresa.phone || "-"}</td>
+                  <td className="p-4">{empresa.contact || "-"}</td>
                   <td className="p-4">
                     {!empresa.is_approved ? (
                       <>
