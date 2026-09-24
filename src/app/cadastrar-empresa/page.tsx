@@ -27,6 +27,36 @@ export default function CadastrarEmpresaPage() {
     "idle" | "submitting" | "success"
   >("idle")
   const [redirect, setRedirect] = React.useState(false)
+  const [user, setUser] = React.useState<any>(null)
+  const [loading, setLoading] = React.useState(true)
+
+  React.useEffect(() => {
+    async function fetchUser() {
+      const { data } = await supabase.auth.getUser()
+      setUser(data.user ?? null)
+      setLoading(false)
+    }
+    fetchUser()
+  }, [])
+
+  if (!user) {
+    return (
+      <div className="min-h-screen p-4 md:p-8 bg-neutral-50 dark:bg-neutral-900">
+        <div className="max-w-md mx-auto space-y-6">
+          <h1 className="text-2xl md:text-3xl font-bold text-neutral-900 dark:text-neutral-100 text-center">
+            Cadastro de Empresa
+          </h1>
+          <p className="text-neutral-600 dark:text-neutral-400">Por favor, faça login para cadastrar uma empresa.</p>
+          <a
+            href="/login"
+            className="inline-flex items-center px-4 py-2 border border-primary-600 rounded-md bg-primary-600 text-white font-medium hover:bg-primary-700 transition-colors"
+          >
+            Login
+          </a>
+        </div>
+      </div>
+    )
+  }
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -66,6 +96,7 @@ export default function CadastrarEmpresaPage() {
     const { data, error } = await supabase
       .from("companies")
       .insert({
+        user_id: user.id,
         name: formData.name,
         slug,
         sector: formData.sector,
