@@ -13,11 +13,16 @@ type Empresa = {
   is_approved: boolean
 }
 
-function useEmpresas() {
+function useEmpresas(enabled: boolean) {
   const [empresas, setEmpresas] = React.useState<Empresa[]>([])
   const [carregando, setCarregando] = React.useState(true)
 
   React.useEffect(() => {
+    if (!enabled) {
+      setCarregando(false)
+      return
+    }
+
     async function carregar() {
       const { data, error } = await supabase
         .from("companies")
@@ -33,7 +38,7 @@ function useEmpresas() {
     }
 
     carregar()
-  }, [])
+  }, [enabled])
 
   const aprovar = async (id: string) => {
     const { error } = await supabase
@@ -59,45 +64,94 @@ function useEmpresas() {
     }
   }
 
-  return { empresas, aprovar, rejeitar }
+  return { empresas, aprovar, rejeitar, carregando }
 }
 
 export default function AdminEmpresasPage() {
-  const { empresas, aprovar, rejeitar } = useEmpresas()
   const [userEmail, setUserEmail] = React.useState<string | null>(null)
+  const [checkingAuth, setCheckingAuth] = React.useState(true)
+  const [authError, setAuthError] = React.useState<string | null>(null)
 
   React.useEffect(() => {
     async function checkEmail() {
-      const { data } = await supabase.auth.getUser()
-      if (data.user?.email) {
-        setUserEmail(data.user.email)
+      setCheckingAuth(true)
+      setAuthError(null)
+      try {
+        const { data, error } = await supabase.auth.getUser()
+        if (error) {
+          setAuthError(error.message)
+          setUserEmail(null)
+        } else if (data.user?.email) {
+          setUserEmail(data.user.email.trim().toLowerCase())
+        } else {
+          setUserEmail(null)
+        }
+      } catch (err) {
+        setAuthError(err instanceof Error ? err.message : "Erro desconhecido")
+        setUserEmail(null)
+      } finally {
+        setCheckingAuth(false)
       }
     }
     checkEmail()
   }, [])
 
-  if (!userEmail) {
-    // TODO: definir lista de emails admin permitidos
+  const isAuthorized = userEmail === "negomapaangola@gmail.com"
+  const { empresas, aprovar, rejeitar, carregando } = useEmpresas(isAuthorized)
+
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen p-8 text-center bg-neutral-50 dark:bg-neutral-900">
+        <p className="text-neutral-600 dark:text-neutral-400">A verificar autorização...</p>
+      </div>
+    )
   }
 
-  // Lista de admins permitidos (adicione seu email real aqui)
-  const adminsPermitidos = ["negomapaangola@gmail.com"]
-
-  if (!adminsPermitidos.includes(userEmail || "")) {
+  if (authError) {
     return (
-      <div className="min-h-screen p-8 text-center">
+      <div className="min-h-screen p-8 text-center bg-neutral-50 dark:bg-neutral-900">
+        <h2 className="text-2xl font-bold text-red-600 mb-4">Erro de autenticação</h2>
+        <p className="text-neutral-600 dark:text-neutral-400">{authError}</p>
+        <br />
+        <a href="/login" className="text-blue-600 hover:underline">Fazer login</a>
+      </div>
+    )
+  }
+
+  if (!userEmail) {
+    return (
+      <div className="min-h-screen p-8 text-center bg-neutral-50 dark:bg-neutral-900">
+        <h2 className="text-2xl font-bold text-red-600 mb-4">Sessão inválida</h2>
+        <p className="text-neutral-600 dark:text-neutral-400">Não foi possível identificar o utilizador.</p>
+        <br />
+        <a href="/login" className="text-blue-600 hover:underline">Fazer login</a>
+      </div>
+    )
+  }
+
+  if (!isAuthorized) {
+    return (
+      <div className="min-h-screen p-8 text-center bg-neutral-50 dark:bg-neutral-900">
         <h2 className="text-2xl font-bold text-red-600 mb-4">Acesso negado</h2>
-        <p className="text-neutral-600">Você precisa estar logado como admin para acessar esta página.</p>
+        <p className="text-neutral-600 dark:text-neutral-400">Você precisa estar logado como admin para acessar esta página.</p>
         <br />
         <a href="/" className="text-blue-600 hover:underline">Voltar ao inicio</a>
       </div>
     )
   }
 
+  if (carregando) {
+    return (
+      <div className="min-h-screen p-8 text-center bg-neutral-50 dark:bg-neutral-900">
+        <p className="text-neutral-600 dark:text-neutral-400">A carregar empresas pendentes...</p>
+      </div>
+    )
+  }
+
   if (empresas.length === 0) {
     return (
-      <div className="min-h-screen p-8 text-center">
-        <p className="text-neutral-500">Nenhuma empresa pendente de aprovação.</p>
+      <div className="min-h-screen p-8 text-center bg-neutral-50 dark:bg-neutral-900">
+        <p className="text-neutral-500 dark:text-neutral-400">Nenhuma empresa pendente de aprovação.</p>
       </div>
     )
   }

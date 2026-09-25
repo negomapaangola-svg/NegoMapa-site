@@ -13,13 +13,26 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError(null)
 
-    try {
-      await supabase.auth.signInWithPassword({ email, password })
-      router.push("/admin/empresas")
-    } catch (err: any) {
-      setError(err.message || "Erro ao fazer login")
+    const cleanEmail = email.trim().toLowerCase()
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: cleanEmail,
+      password,
+    })
+
+    if (error) {
+      setError(error.message)
+      return
     }
+
+    if (!data.session) {
+      setError("Sessão não criada. Tente novamente.")
+      return
+    }
+
+    router.push("/admin/empresas")
   }
 
   return (
