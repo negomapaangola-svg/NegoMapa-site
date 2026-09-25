@@ -21,6 +21,7 @@ export default function EmpresaPage() {
         .from("companies")
         .select("*")
         .eq("slug", slug)
+        .eq("is_approved", true)
         .single()
 
       if (error) {
