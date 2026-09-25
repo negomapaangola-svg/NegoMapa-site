@@ -159,7 +159,7 @@ export default function Home() {
             <CardContent>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Button size="lg" asChild>
-                  <Link href="/cadastrar">Criar conta gratuita</Link>
+                  <Link href="/cadastrar-empresa">Criar conta gratuita</Link>
                 </Button>
                 <Button variant="ghost" size="lg" asChild>
                   <Link href="/sobre">Saiba mais</Link>
