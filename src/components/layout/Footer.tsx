@@ -48,7 +48,7 @@ export const Footer = forwardRef<HTMLElement, FooterProps>(
       <footer
         ref={ref}
         className={cn(
-          'bg-neutral-50 dark:bg-neutral-950 border-t border-neutral-200 dark:border-neutral-800',
+          'bg-navy-dark border-t border-card-border',
           className
         )}
         role="contentinfo"
@@ -56,15 +56,17 @@ export const Footer = forwardRef<HTMLElement, FooterProps>(
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
           <div className="grid grid-cols-2 gap-8 md:grid-cols-4 lg:grid-cols-5">
             <div className="col-span-2 lg:col-span-1">
-              <Link href="/" className="flex items-center gap-2 text-xl font-bold text-primary-600 dark:text-primary-400" aria-label="NegóMapa - Página inicial">
-                <svg className="h-8 w-8" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                  <rect width="32" height="32" rx="8" className="fill-primary-600" />
-                  <path d="M16 8L22 16L16 24L10 16L16 8Z" className="fill-white" />
-                  <circle cx="16" cy="16" r="4" className="fill-primary-600" />
-                </svg>
+              <Link href="/" className="flex items-center gap-2 text-xl font-bold text-cream" aria-label="NegóMapa - Página inicial">
+                <img
+                  src="/identidade/logo-negomapa-fundo-escuro.svg"
+                  alt="NegóMapa"
+                  className="h-8 w-auto max-w-[140px] object-contain"
+                  width="560"
+                  height="120"
+                />
                 <span>NegóMapa</span>
               </Link>
-              <p className="mt-4 text-sm text-neutral-500 dark:text-neutral-400 max-w-xs">
+              <p className="mt-4 text-sm text-cream-text max-w-xs">
                 A plataforma líder em Angola para encontrar serviços profissionais e oportunidades de emprego. Conectamos pessoas e empresas.
               </p>
               <div className="mt-6 flex gap-4" role="list" aria-label="Redes sociais">
@@ -74,7 +76,7 @@ export const Footer = forwardRef<HTMLElement, FooterProps>(
                     href={social.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-neutral-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                    className="text-cream-text hover:text-orange-500 transition-colors"
                     aria-label={social.label}
                   >
                     <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -97,11 +99,11 @@ export const Footer = forwardRef<HTMLElement, FooterProps>(
             </div>
 
             <nav aria-label="Serviços">
-              <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50 uppercase tracking-wider">Serviços</h3>
+              <h3 className="text-sm font-semibold text-cream uppercase tracking-wider">Serviços</h3>
               <ul className="mt-4 space-y-3" role="list">
                 {footerLinks.servicos.map((link) => (
                   <li key={link.href}>
-                    <Link href={link.href} className="text-sm text-neutral-500 dark:text-neutral-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+                    <Link href={link.href} className="text-sm text-cream-text hover:text-orange-500 transition-colors">
                       {link.label}
                     </Link>
                   </li>
@@ -110,11 +112,11 @@ export const Footer = forwardRef<HTMLElement, FooterProps>(
             </nav>
 
             <nav aria-label="Empregos">
-              <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50 uppercase tracking-wider">Empregos</h3>
+              <h3 className="text-sm font-semibold text-cream uppercase tracking-wider">Empregos</h3>
               <ul className="mt-4 space-y-3" role="list">
                 {footerLinks.empregos.map((link) => (
                   <li key={link.href}>
-                    <Link href={link.href} className="text-sm text-neutral-500 dark:text-neutral-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+                    <Link href={link.href} className="text-sm text-cream-text hover:text-orange-500 transition-colors">
                       {link.label}
                     </Link>
                   </li>
@@ -123,11 +125,11 @@ export const Footer = forwardRef<HTMLElement, FooterProps>(
             </nav>
 
             <nav aria-label="Empresa">
-              <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50 uppercase tracking-wider">Empresa</h3>
+              <h3 className="text-sm font-semibold text-cream uppercase tracking-wider">Empresa</h3>
               <ul className="mt-4 space-y-3" role="list">
                 {footerLinks.empresa.map((link) => (
                   <li key={link.href}>
-                    <Link href={link.href} className="text-sm text-neutral-500 dark:text-neutral-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+                    <Link href={link.href} className="text-sm text-cream-text hover:text-orange-500 transition-colors">
                       {link.label}
                     </Link>
                   </li>
@@ -136,11 +138,11 @@ export const Footer = forwardRef<HTMLElement, FooterProps>(
             </nav>
 
             <nav aria-label="Suporte">
-              <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50 uppercase tracking-wider">Suporte</h3>
+              <h3 className="text-sm font-semibold text-cream uppercase tracking-wider">Suporte</h3>
               <ul className="mt-4 space-y-3" role="list">
                 {footerLinks.suporte.map((link) => (
                   <li key={link.href}>
-                    <Link href={link.href} className="text-sm text-neutral-500 dark:text-neutral-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+                    <Link href={link.href} className="text-sm text-cream-text hover:text-orange-500 transition-colors">
                       {link.label}
                     </Link>
                   </li>
@@ -149,12 +151,12 @@ export const Footer = forwardRef<HTMLElement, FooterProps>(
             </nav>
           </div>
 
-          <div className="mt-12 border-t border-neutral-200 dark:border-neutral-800 pt-8">
+          <div className="mt-12 border-t border-card-border pt-8">
             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">
+              <p className="text-sm text-cream-text">
                 © {new Date().getFullYear()} NegóMapa. Todos os direitos reservados.
               </p>
-              <div className="flex items-center gap-6 text-sm text-neutral-500 dark:text-neutral-400">
+              <div className="flex items-center gap-6 text-sm text-cream-text">
                 <span>Feito em Angola 🇦🇴</span>
                 <span>Versão 1.0.0</span>
               </div>

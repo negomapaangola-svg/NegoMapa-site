@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { supabase } from "@/lib/supabase"
+import { Button } from "@/components/ui/Button"
 
 type FormData = {
   name: string
@@ -41,18 +42,17 @@ export default function CadastrarEmpresaPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen p-4 md:p-8 bg-neutral-50 dark:bg-neutral-900">
+      <div className="min-h-screen p-4 md:p-8 bg-cream dark:bg-navy-dark">
         <div className="max-w-md mx-auto space-y-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-neutral-900 dark:text-neutral-100 text-center">
+          <h1 className="text-2xl md:text-3xl font-bold text-ink dark:text-cream text-center">
             Cadastro de Empresa
           </h1>
-          <p className="text-neutral-600 dark:text-neutral-400">Por favor, faça login para cadastrar uma empresa.</p>
-          <a
-            href="/login"
-            className="inline-flex items-center px-4 py-2 border border-primary-600 rounded-md bg-primary-600 text-white font-medium hover:bg-primary-700 transition-colors"
-          >
-            Login
-          </a>
+          <p className="text-neutral-600 dark:text-cream-text">Por favor, faça login para cadastrar uma empresa.</p>
+          <Button asChild>
+            <a href="/login" className="inline-flex items-center px-4 py-2 rounded-[4px] font-medium">
+              Login
+            </a>
+          </Button>
         </div>
       </div>
     )
@@ -133,9 +133,9 @@ export default function CadastrarEmpresaPage() {
   }
 
   return (
-    <div className="min-h-screen p-4 md:p-8 bg-neutral-50 dark:bg-neutral-900">
+    <div className="min-h-screen p-4 md:p-8 bg-cream dark:bg-navy-dark">
       <div className="max-w-md mx-auto space-y-6">
-        <h1 className="text-2xl md:text-3xl font-bold text-neutral-900 dark:text-neutral-100 text-center">
+        <h1 className="text-2xl md:text-3xl font-bold text-ink dark:text-cream text-center">
           Cadastro de Empresa
         </h1>
 
@@ -149,10 +149,10 @@ export default function CadastrarEmpresaPage() {
 
         <form
           onSubmit={handleSubmit}
-          className="space-y-4 bg-white rounded-lg p-6 shadow dark:bg-neutral-800"
+          className="space-y-4 bg-white rounded-[4px] p-6 shadow dark:bg-neutral-800"
         >
           <div>
-            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+            <label className="block text-sm font-medium text-ink dark:text-cream mb-2">
               Nome da Empresa
             </label>
             <input
@@ -160,7 +160,7 @@ export default function CadastrarEmpresaPage() {
               name="name"
               value={formData.name}
               onChange={e => handleChange(e)}
-              className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-neutral-700 dark:text-neutral-100"
+              className="w-full mt-1 px-3 py-2 border border-card-border rounded-[4px] shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-neutral-700 dark:text-cream"
               required
             />
             {errors.name && (
@@ -171,7 +171,7 @@ export default function CadastrarEmpresaPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+            <label className="block text-sm font-medium text-ink dark:text-cream mb-2">
               Setor
             </label>
             <input
@@ -179,7 +179,7 @@ export default function CadastrarEmpresaPage() {
               name="sector"
               value={formData.sector}
               onChange={e => handleChange(e)}
-              className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-neutral-700 dark:text-neutral-100"
+              className="w-full mt-1 px-3 py-2 border border-card-border rounded-[4px] shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-neutral-700 dark:text-cream"
               required
             />
             {errors.sector && (
@@ -190,7 +190,7 @@ export default function CadastrarEmpresaPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+            <label className="block text-sm font-medium text-ink dark:text-cream mb-2">
               Província
             </label>
             <input
@@ -198,7 +198,7 @@ export default function CadastrarEmpresaPage() {
               name="province"
               value={formData.province}
               onChange={e => handleChange(e)}
-              className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-neutral-700 dark:text-neutral-100"
+              className="w-full mt-1 px-3 py-2 border border-card-border rounded-[4px] shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-neutral-700 dark:text-cream"
               required
             />
             {errors.province && (
@@ -209,7 +209,7 @@ export default function CadastrarEmpresaPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+            <label className="block text-sm font-medium text-ink dark:text-cream mb-2">
               Contacto
             </label>
             <input
@@ -217,7 +217,7 @@ export default function CadastrarEmpresaPage() {
               name="phone"
               value={formData.phone}
               onChange={e => handleChange(e)}
-              className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-neutral-700 dark:text-neutral-100"
+              className="w-full mt-1 px-3 py-2 border border-card-border rounded-[4px] shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-neutral-700 dark:text-cream"
               required
             />
             {errors.phone && (
@@ -228,7 +228,7 @@ export default function CadastrarEmpresaPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+            <label className="block text-sm font-medium text-ink dark:text-cream mb-2">
               Email
             </label>
             <input
@@ -236,7 +236,7 @@ export default function CadastrarEmpresaPage() {
               name="email"
               value={formData.email}
               onChange={e => handleChange(e)}
-              className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-neutral-700 dark:text-neutral-100"
+              className="w-full mt-1 px-3 py-2 border border-card-border rounded-[4px] shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-neutral-700 dark:text-cream"
               required
             />
             {errors.email && (
@@ -247,7 +247,7 @@ export default function CadastrarEmpresaPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+            <label className="block text-sm font-medium text-ink dark:text-cream mb-2">
               Cidade
             </label>
             <input
@@ -255,32 +255,32 @@ export default function CadastrarEmpresaPage() {
               name="city"
               value={formData.city ?? ""}
               onChange={e => handleChange(e)}
-              className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-neutral-700 dark:text-neutral-100"
+              className="w-full mt-1 px-3 py-2 border border-card-border rounded-[4px] shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-neutral-700 dark:text-cream"
             />
           </div>
 
           {formData.description && (
             <div>
-              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+              <label className="block text-sm font-medium text-ink dark:text-cream mb-2">
                 Descrição
               </label>
               <textarea
                 name="description"
                 value={formData.description ?? ""}
                 onChange={e => handleChange(e)}
-                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm resize-y focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-neutral-700 dark:text-neutral-100"
+                className="w-full mt-1 px-3 py-2 border border-card-border rounded-[4px] shadow-sm resize-y focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-neutral-700 dark:text-cream"
                 rows={3}
               ></textarea>
             </div>
           )}
 
-          <button
+          <Button
             type="submit"
             disabled={status === "submitting"}
-            className="w-full py-2 px-4 bg-primary-600 text-white rounded-md font-medium hover:bg-primary-700 disabled:opacity-50 transition-colors"
+            className="w-full"
           >
             {status === "submitting" ? "Aguardando..." : "Enviar Cadastro"}
-          </button>
+          </Button>
         </form>
       </div>
     </div>

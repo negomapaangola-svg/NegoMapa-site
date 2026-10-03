@@ -4,6 +4,8 @@ import * as React from "react"
 import { useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui/Button"
+import Link from "next/link"
 
 export default function LoginPage() {
   const [email, setEmail] = React.useState("")
@@ -36,14 +38,14 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen p-8 bg-neutral-50 dark:bg-neutral-900 flex items-center justify-center">
-      <div className="max-w-md w-full bg-white rounded-lg p-8 shadow dark:bg-neutral-800">
-        <h2 className="text-2xl font-bold text-center mb-6 text-neutral-900 dark:text-neutral-100">
+    <div className="min-h-screen p-8 bg-cream dark:bg-navy-dark flex items-center justify-center">
+      <div className="max-w-md w-full bg-white rounded-[4px] p-8 shadow dark:bg-neutral-800 border border-card-border">
+        <h2 className="text-2xl font-bold text-center mb-6 text-ink dark:text-cream">
           Login de Admin
         </h2>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded-md text-sm mb-6">
+          <div className="mb-4 p-3 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded-[4px] text-sm">
             {error}
           </div>
         )}
@@ -53,46 +55,43 @@ export default function LoginPage() {
           className="space-y-4"
         >
           <div>
-            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+            <label className="block text-sm font-medium text-ink dark:text-cream mb-2">
               Email
             </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-neutral-700 dark:text-neutral-100"
+              className="w-full px-3 py-2 border border-card-border rounded-[4px] shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-neutral-700 dark:text-cream"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+            <label className="block text-sm font-medium text-ink dark:text-cream mb-2">
               Senha
             </label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-neutral-700 dark:text-neutral-100"
+              className="w-full px-3 py-2 border border-card-border rounded-[4px] shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-neutral-700 dark:text-cream"
               required
             />
           </div>
 
-          <button
-            type="submit"
-            className="w-full py-2 px-4 bg-primary-600 text-white rounded-md font-medium hover:bg-primary-700 transition-colors disabled:opacity-50"
-          >
-            {error ? "Tentar novamente" : "Entrar"}
-          </button>
+          <Button type="submit" className="w-full">
+            Entrar
+          </Button>
         </form>
 
         <div className="mt-6 text-center">
-          <a
+          <Link
             href="/"
-            className="text-neutral-600 dark:text-neutral-400 hover:underline"
+            className="text-neutral-600 dark:text-cream-text hover:text-orange-500 hover:underline"
           >
             Voltar ao início
-          </a>
+          </Link>
         </div>
       </div>
     </div>

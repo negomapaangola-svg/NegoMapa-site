@@ -1,6 +1,6 @@
 'use client';
 
-import { forwardRef } from 'react';
+import { forwardRef, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
@@ -19,6 +19,18 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(
       { href: '/sobre', label: 'Sobre' },
     ];
 
+    const [isDark, setIsDark] = useState(false);
+
+    useEffect(() => {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      setIsDark(mediaQuery.matches);
+
+      const handler = (e: MediaQueryListEvent) => setIsDark(e.matches);
+      mediaQuery.addEventListener('change', handler);
+
+      return () => mediaQuery.removeEventListener('change', handler);
+    }, []);
+
     return (
       <header
         ref={ref}
@@ -34,24 +46,16 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(
             <div className="flex items-center gap-8">
               <Link
                 href="/"
-                className="flex items-center gap-2 text-xl font-bold text-primary-600 dark:text-primary-400"
+                className="flex items-center gap-2 text-xl font-bold text-navy dark:text-cream"
                 aria-label="NegóMapa - Página inicial"
               >
-                <svg
-                  className="h-8 w-8"
-                  viewBox="0 0 32 32"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  aria-hidden="true"
-                >
-                  <rect width="32" height="32" rx="8" className="fill-primary-600" />
-                  <path
-                    d="M16 8L22 16L16 24L10 16L16 8Z"
-                    className="fill-white"
-                  />
-                  <circle cx="16" cy="16" r="4" className="fill-primary-600" />
-                </svg>
-                <span className="hidden sm:block">NegóMapa</span>
+                <img
+                  src={isDark ? '/identidade/logo-negomapa-fundo-escuro.svg' : '/identidade/logo-negomapa-fundo-claro.svg'}
+                  alt="NegóMapa"
+                  className="h-10 w-auto max-w-[180px] object-contain"
+                  width="560"
+                  height="120"
+                />
               </Link>
 
               <nav className="hidden md:flex items-center gap-6" role="navigation" aria-label="Navegação principal">
@@ -59,7 +63,7 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(
                   <Link
                     key={link.href}
                     href={link.href}
-                    className="text-sm font-medium text-neutral-600 dark:text-neutral-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                    className="text-sm font-medium text-neutral-600 dark:text-cream-text hover:text-orange-500 dark:hover:text-orange-400 transition-colors"
                   >
                     {link.label}
                   </Link>
@@ -68,11 +72,14 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(
             </div>
 
             <div className="flex items-center gap-3">
-              <Link href="/login" className="hidden sm:block text-sm font-medium text-neutral-600 dark:text-neutral-300 hover:text-primary-600 dark:hover:text-primary-400">
+              <Link
+                href="/login"
+                className="text-sm font-medium text-navy dark:text-cream hover:text-orange-500 dark:hover:text-orange-400 px-3 py-2 rounded-[4px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2"
+              >
                 Entrar
               </Link>
               <Button size="sm" asChild>
-                <Link href="/cadastrar">Cadastrar</Link>
+                <Link href="/cadastrar-empresa">Cadastrar</Link>
               </Button>
             </div>
           </div>

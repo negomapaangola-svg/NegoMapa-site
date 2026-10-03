@@ -11,12 +11,12 @@ export default function Home() {
           <div className="text-center max-w-3xl mx-auto">
             <h1
               id="hero-title"
-              className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-neutral-900 dark:text-neutral-50"
+              className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-ink dark:text-cream"
             >
-              Encontre os melhores <span className="text-primary-600 dark:text-primary-400">serviços</span> e{' '}
-              <span className="text-primary-600 dark:text-primary-400">empregos</span> em Angola
+              Encontre os melhores <span className="text-orange-500 dark:text-orange-400">serviços</span> e{' '}
+              <span className="text-orange-500 dark:text-orange-400">empregos</span> em Angola
             </h1>
-            <p className="mt-6 text-lg sm:text-xl text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto">
+            <p className="mt-6 text-lg sm:text-xl text-neutral-600 dark:text-cream-text max-w-2xl mx-auto">
               A plataforma que conecta profissionais qualificados a quem precisa.
               Rápido, seguro e feito para Angola.
             </p>
@@ -38,20 +38,20 @@ export default function Home() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <ul className="space-y-2" role="list">
-                  <li className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
-                    <svg className="h-5 w-5 text-primary-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <li className="flex items-center gap-2 text-sm text-neutral-600 dark:text-cream-text">
+                    <svg className="h-5 w-5 text-orange-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                     Busca por localização e categoria
                   </li>
-                  <li className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
-                    <svg className="h-5 w-5 text-primary-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <li className="flex items-center gap-2 text-sm text-neutral-600 dark:text-cream-text">
+                    <svg className="h-5 w-5 text-orange-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                     Avaliações e portfólios verificados
                   </li>
-                  <li className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
-                    <svg className="h-5 w-5 text-primary-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <li className="flex items-center gap-2 text-sm text-neutral-600 dark:text-cream-text">
+                    <svg className="h-5 w-5 text-orange-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                     Contacto direto via WhatsApp
@@ -67,20 +67,20 @@ export default function Home() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <ul className="space-y-2" role="list">
-                  <li className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
-                    <svg className="h-5 w-5 text-primary-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <li className="flex items-center gap-2 text-sm text-neutral-600 dark:text-cream-text">
+                    <svg className="h-5 w-5 text-orange-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                     Perfil profissional completo
                   </li>
-                  <li className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
-                    <svg className="h-5 w-5 text-primary-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <li className="flex items-center gap-2 text-sm text-neutral-600 dark:text-cream-text">
+                    <svg className="h-5 w-5 text-orange-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                     Receba pedidos na sua área
                   </li>
-                  <li className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
-                    <svg className="h-5 w-5 text-primary-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <li className="flex items-center gap-2 text-sm text-neutral-600 dark:text-cream-text">
+                    <svg className="h-5 w-5 text-orange-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                     Construa sua reputação
@@ -96,20 +96,20 @@ export default function Home() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <ul className="space-y-2" role="list">
-                  <li className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
-                    <svg className="h-5 w-5 text-primary-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <li className="flex items-center gap-2 text-sm text-neutral-600 dark:text-cream-text">
+                    <svg className="h-5 w-5 text-orange-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                     Painel de gestão de vagas
                   </li>
-                  <li className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
-                    <svg className="h-5 w-5 text-primary-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <li className="flex items-center gap-2 text-sm text-neutral-600 dark:text-cream-text">
+                    <svg className="h-5 w-5 text-orange-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                     Acesso a base de talentos
                   </li>
-                  <li className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
-                    <svg className="h-5 w-5 text-primary-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <li className="flex items-center gap-2 text-sm text-neutral-600 dark:text-cream-text">
+                    <svg className="h-5 w-5 text-orange-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                     Relatórios e métricas
@@ -121,24 +121,24 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="py-16 lg:py-24 bg-neutral-100 dark:bg-neutral-900" aria-labelledby="stats-title">
+      <section className="py-16 lg:py-24 bg-cream dark:bg-navy-dark" aria-labelledby="stats-title">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 text-center" role="list" aria-label="Estatísticas da plataforma">
             <div role="listitem">
-              <div className="text-3xl sm:text-4xl lg:text-5xl font-bold text-primary-600 dark:text-primary-400" aria-label="Mais de 10 mil profissionais">10K+</div>
-              <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">Profissionais ativos</p>
+              <div className="text-3xl sm:text-4xl lg:text-5xl font-bold text-orange-500 dark:text-orange-400" aria-label="Mais de 10 mil profissionais">10K+</div>
+              <p className="mt-2 text-sm text-neutral-600 dark:text-cream-text">Profissionais ativos</p>
             </div>
             <div role="listitem">
-              <div className="text-3xl sm:text-4xl lg:text-5xl font-bold text-primary-600 dark:text-primary-400" aria-label="Mais de 5 mil vagas">5K+</div>
-              <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">Vagas publicadas</p>
+              <div className="text-3xl sm:text-4xl lg:text-5xl font-bold text-orange-500 dark:text-orange-400" aria-label="Mais de 5 mil vagas">5K+</div>
+              <p className="mt-2 text-sm text-neutral-600 dark:text-cream-text">Vagas publicadas</p>
             </div>
             <div role="listitem">
-              <div className="text-3xl sm:text-4xl lg:text-5xl font-bold text-primary-600 dark:text-primary-400" aria-label="Mais de 50 categorias">50+</div>
-              <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">Categorias de serviços</p>
+              <div className="text-3xl sm:text-4xl lg:text-5xl font-bold text-orange-500 dark:text-orange-400" aria-label="Mais de 50 categorias">50+</div>
+              <p className="mt-2 text-sm text-neutral-600 dark:text-cream-text">Categorias de serviços</p>
             </div>
             <div role="listitem">
-              <div className="text-3xl sm:text-4xl lg:text-5xl font-bold text-primary-600 dark:text-primary-400" aria-label="18 províncias cobertas">18</div>
-              <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">Províncias cobertas</p>
+              <div className="text-3xl sm:text-4xl lg:text-5xl font-bold text-orange-500 dark:text-orange-400" aria-label="18 províncias cobertas">18</div>
+              <p className="mt-2 text-sm text-neutral-600 dark:text-cream-text">Províncias cobertas</p>
             </div>
           </div>
         </div>

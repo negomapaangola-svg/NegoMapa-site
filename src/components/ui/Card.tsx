@@ -9,12 +9,12 @@ export interface CardProps extends HTMLAttributes<HTMLDivElement> {
   hover?: boolean;
 }
 
-const baseStyles = 'rounded-2xl transition-all duration-200 ease-out';
+const baseStyles = 'rounded-[4px] transition-all duration-200 ease-out';
 
 const variants = {
   default: `
     bg-white dark:bg-neutral-900
-    border border-neutral-200 dark:border-neutral-800
+    border border-card-border dark:border-neutral-800
     shadow-sm
   `,
   liquid: `
@@ -27,14 +27,14 @@ const variants = {
   `,
   outlined: `
     bg-transparent
-    border-2 border-neutral-200 dark:border-neutral-700
+    border-2 border-card-border dark:border-neutral-700
   `,
 };
 
 const paddings = {
   none: '',
   sm: 'p-4',
-  md: 'p-6',
+  md: 'p-7',
   lg: 'p-8',
 };
 
@@ -57,8 +57,8 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
           baseStyles,
           variants[variant],
           paddings[padding],
-          hover && variant !== 'outlined' && 'hover:shadow-xl hover:-translate-y-1 cursor-pointer',
-          hover && variant === 'outlined' && 'hover:border-primary-500 dark:hover:border-primary-400',
+          hover && variant !== 'outlined' && 'hover:shadow-md hover:-translate-y-1 cursor-pointer',
+          hover && variant === 'outlined' && 'hover:border-orange-500 dark:hover:border-orange-400',
           className
         )}
         {...props}
@@ -143,7 +143,7 @@ export const CardFooter = forwardRef<HTMLDivElement, CardFooterProps>(
   ({ className, children, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn('mt-4 pt-4 border-t border-neutral-200 dark:border-neutral-800 flex items-center gap-3', className)}
+      className={cn('mt-4 pt-4 border-t border-card-border dark:border-neutral-800 flex items-center gap-3', className)}
       {...props}
     >
       {children}

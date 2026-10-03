@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 120" width="560" height="120">
+  <g transform="translate(8,6) scale(0.95)">
+    <path d="M50 4 C26.8 4 8 22.8 8 46 C8 74 50 116 50 116 C50 116 92 74 92 46 C92 22.8 73.2 4 50 4 Z" fill="#FF5A36"/>
+    <circle cx="50" cy="44" r="15" fill="#FAF7F2"/>
+  </g>
+  <text x="128" y="79" font-family="'Space Grotesk','DejaVu Sans',sans-serif" font-weight="700" font-size="56" letter-spacing="-0.5">
+    <tspan fill="#FAF7F2">Negó</tspan><tspan fill="#FF5A36">Mapa</tspan>
+  </text>
+</svg>
