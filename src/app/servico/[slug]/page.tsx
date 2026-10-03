@@ -6,6 +6,38 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { formatCurrency } from '@/lib/utils';
+import { ServiceWhatsApp } from './__components/ServiceWhatsApp';
+
+interface ServiceDetailRaw {
+  id: string;
+  slug: string;
+  titulo: string;
+  descricao: string | null;
+  preco: number | null;
+  preco_tipo: string | null;
+  whatsapp: string | null;
+  provincia: string | null;
+  municipio: string | null;
+  created_at: string;
+  estado: string;
+  categoria: {
+    id: string;
+    nome: string;
+    slug: string;
+    ativo: boolean;
+  } | { id: string; nome: string; slug: string; ativo: boolean }[] | null;
+  profissional: {
+    id: string;
+    nome: string;
+    slug: string;
+    whatsapp: string | null;
+    bio: string | null;
+    telefone: string | null;
+    provincia: string | null;
+    municipio: string | null;
+    estado: string;
+  } | { id: string; nome: string; slug: string; whatsapp: string | null; bio: string | null; telefone: string | null; provincia: string | null; municipio: string | null; estado: string }[] | null;
+}
 
 interface ServiceDetail {
   id: string;
@@ -18,12 +50,13 @@ interface ServiceDetail {
   provincia: string | null;
   municipio: string | null;
   created_at: string;
+  estado: string;
   categoria: {
     id: string;
     nome: string;
     slug: string;
     ativo: boolean;
-  } | null | undefined;
+  } | null;
   profissional: {
     id: string;
     nome: string;
@@ -34,7 +67,7 @@ interface ServiceDetail {
     provincia: string | null;
     municipio: string | null;
     estado: string;
-  } | null | undefined;
+  } | null;
 }
 
 async function getService(slug: string): Promise<ServiceDetail | null> {
@@ -54,13 +87,13 @@ async function getService(slug: string): Promise<ServiceDetail | null> {
       municipio,
       created_at,
       estado,
-      categoria:categorias!inner (id, nome, slug, ativo),
-      profissional:profissionais!inner (id, nome, slug, whatsapp, bio, telefone, provincia, municipio, estado)
+      categoria:categoria_id (id, nome, slug, ativo),
+      profissional:profissional_id (id, nome, slug, whatsapp, bio, telefone, provincia, municipio, estado)
     `)
     .eq('slug', slug)
     .eq('estado', 'aprovado')
-    .eq('profissional.estado', 'aprovado')
-    .eq('categoria.ativo', true)
+    .eq('profissional_id.estado', 'aprovado')
+    .eq('categoria_id.ativo', true)
     .single();
 
   if (error) {
@@ -68,36 +101,16 @@ async function getService(slug: string): Promise<ServiceDetail | null> {
     return null;
   }
 
-  const service = {
-    ...data,
-    categoria: Array.isArray(data.categoria) ? data.categoria[0] : data.categoria,
-    profissional: Array.isArray(data.profissional) ? data.profissional[0] : data.profissional,
-  } as ServiceDetail;
+  const raw = data as ServiceDetailRaw;
+
+  // Normalize relationships (Supabase returns arrays for joined tables)
+  const service: ServiceDetail = {
+    ...raw,
+    categoria: Array.isArray(raw.categoria) ? raw.categoria[0] : raw.categoria,
+    profissional: Array.isArray(raw.profissional) ? raw.profissional[0] : raw.profissional,
+  };
 
   return service;
-}
-
-function WhatsAppButton({ telefone, label = 'WhatsApp' }: { telefone: string | null | undefined; label?: string }) {
-  if (!telefone) return null;
-
-  const cleanNumber = telefone.replace(/\D/g, '');
-  const url = `https://wa.me/244${cleanNumber}`;
-
-  return (
-    <Button variant="primary" size="md" asChild>
-      <a
-        href={url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex items-center gap-2 w-full justify-center"
-      >
-        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 16v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h10a2 2 0 012 2v1m-3.678-1.636A16.039 16.039 0 016 12.353 16.083 16.083 0 0112.05 3s10.03 8.347 10.323 9.378a7.97 7.97 0 00-1.677 2.043 7.926 7.926 0 01-3.062.094A11.956 11.956 0 0018 16z" />
-        </svg>
-        <span>{label}</span>
-      </a>
-    </Button>
-  );
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
@@ -130,7 +143,6 @@ export default async function ServicoPage({ params }: { params: Promise<{ slug: 
   }
 
   const serviceWhatsApp = service.whatsapp || service.profissional?.whatsapp;
-  const profissionalWhatsApp = service.profissional?.whatsapp;
 
   return (
     <MainLayout>
@@ -204,17 +216,7 @@ export default async function ServicoPage({ params }: { params: Promise<{ slug: 
               </div>
 
               <div className="space-y-4 md:justify-self-end">
-                <WhatsAppButton telefone={serviceWhatsApp} label="Contactar via WhatsApp" />
-                {service.profissional && (
-                  <Link
-                    href={`/profissional/${service.profissional.slug}`}
-                    className="block"
-                  >
-                    <Button variant="outline" size="md" fullWidth className="w-full">
-                      Ver perfil do profissional
-                    </Button>
-                  </Link>
-                )}
+                <ServiceWhatsApp telefone={serviceWhatsApp} label="Contactar via WhatsApp" />
               </div>
             </div>
 
@@ -264,7 +266,7 @@ export default async function ServicoPage({ params }: { params: Promise<{ slug: 
                     )}
                   </div>
                   <div className="flex flex-col gap-2 w-full md:w-auto">
-                    <WhatsAppButton telefone={profissionalWhatsApp} label="WhatsApp" />
+                    <ServiceWhatsApp telefone={service.profissional.whatsapp} label="WhatsApp" />
                     {service.profissional.telefone && (
                       <a
                         href={`tel:${service.profissional.telefone}`}
