@@ -6,8 +6,14 @@ export async function getSession() {
   return session ?? null
 }
 
+export async function getUser() {
+  const supabase = await createSupabaseServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  return user ?? null
+}
+
 export async function isAdmin(): Promise<boolean> {
-  const session = await getSession()
-  if (!session?.user?.email) return false
-  return session.user.email.includes('@admin')
+  const user = await getUser()
+  if (!user?.email) return false
+  return user.email.includes('@admin')
 }

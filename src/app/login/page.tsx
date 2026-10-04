@@ -7,13 +7,18 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/Button"
 import Link from "next/link"
 
+function isValidRedirect(path: string): boolean {
+  return path.startsWith("/") && !path.startsWith("//") && !path.startsWith("/api/")
+}
+
 function LoginForm() {
   const [email, setEmail] = React.useState("")
   const [password, setPassword] = React.useState("")
   const [error, setError] = React.useState<string | null>(null)
   const router = useRouter()
   const searchParams = useSearchParams()
-  const redirectTo = searchParams.get("redirectTo") || "/"
+  const rawRedirectTo = searchParams.get("redirectTo")
+  const redirectTo = rawRedirectTo && isValidRedirect(rawRedirectTo) ? rawRedirectTo : "/admin/servicos"
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -28,15 +33,18 @@ function LoginForm() {
     })
 
     if (error) {
+      console.log("[login] signInWithPassword error:", error.message)
       setError(error.message)
       return
     }
 
     if (!data.session) {
+      console.log("[login] no session returned")
       setError("Sessão não criada. Tente novamente.")
       return
     }
 
+    console.log("[login] login successful, redirecting to:", redirectTo)
     router.push(redirectTo)
   }
 

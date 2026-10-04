@@ -1,7 +1,8 @@
 import { Metadata } from 'next';
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
-import { isAdmin } from '@/lib/auth';
+import { isAdmin, getUser } from '@/lib/auth';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { ServiceFilters } from './_components/ServiceFilters';
 import { ServiceListClient } from './_components/ServiceListClient';
@@ -133,7 +134,30 @@ export default async function AdminServicosPage({
   const adminCheck = await isAdmin();
 
   if (!adminCheck) {
-    redirect('/login?redirectTo=/admin/servicos');
+    const user = await getUser()
+    if (!user) {
+      redirect('/login?redirectTo=/admin/servicos')
+    }
+    return (
+      <MainLayout>
+        <div className="min-h-screen p-8 bg-cream dark:bg-navy-dark flex items-center justify-center">
+          <div className="max-w-md w-full bg-white rounded-[4px] p-8 shadow dark:bg-neutral-800 border border-card-border text-center">
+            <h2 className="text-2xl font-bold text-center mb-4 text-ink dark:text-cream">
+              Acesso Negado
+            </h2>
+            <p className="text-neutral-600 dark:text-cream-text mb-6">
+              Você não tem privilégios de administrador para aceder a esta página.
+            </p>
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 px-4 py-2 border border-card-border rounded-[4px] bg-white text-ink dark:text-cream hover:bg-cream dark:hover:bg-navy-dark transition-colors"
+            >
+              Voltar ao início
+            </Link>
+          </div>
+        </div>
+      </MainLayout>
+    )
   }
 
   const searchParams = await searchParamsPromise;
