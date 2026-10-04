@@ -208,3 +208,155 @@ export async function getActiveCategories() {
 
   return data || []
 }
+
+async function verifyAdmin(): Promise<ActionResult | null> {
+  const supabase = await createSupabaseServerClient()
+
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError || !user) {
+    return { success: false, error: 'Utilizador não autenticado' }
+  }
+
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user?.email || !session.user.email.includes('@admin')) {
+    return { success: false, error: 'Acesso negado. Privilégios de administrador necessários.' }
+  }
+
+  return null
+}
+
+export async function approveService(serviceId: string): Promise<ActionResult> {
+  const authError = await verifyAdmin()
+  if (authError) return authError
+
+  if (!serviceId || typeof serviceId !== 'string') {
+    return { success: false, error: 'ID do serviço inválido' }
+  }
+
+  const supabase = await createSupabaseServerClient()
+
+  const { data: existingService, error: fetchError } = await supabase
+    .from('servicos')
+    .select('id')
+    .eq('id', serviceId)
+    .single()
+
+  if (fetchError || !existingService) {
+    return { success: false, error: 'Serviço não encontrado' }
+  }
+
+  const { error } = await supabase
+    .from('servicos')
+    .update({ estado: 'aprovado' })
+    .eq('id', serviceId)
+
+  if (error) {
+    console.error('Erro ao aprovar serviço:', error)
+    return { success: false, error: 'Erro ao aprovar serviço. Tente novamente.' }
+  }
+
+  revalidatePath('/admin/servicos')
+  return { success: true }
+}
+
+export async function rejectService(serviceId: string): Promise<ActionResult> {
+  const authError = await verifyAdmin()
+  if (authError) return authError
+
+  if (!serviceId || typeof serviceId !== 'string') {
+    return { success: false, error: 'ID do serviço inválido' }
+  }
+
+  const supabase = await createSupabaseServerClient()
+
+  const { data: existingService, error: fetchError } = await supabase
+    .from('servicos')
+    .select('id')
+    .eq('id', serviceId)
+    .single()
+
+  if (fetchError || !existingService) {
+    return { success: false, error: 'Serviço não encontrado' }
+  }
+
+  const { error } = await supabase
+    .from('servicos')
+    .update({ estado: 'rejeitado' })
+    .eq('id', serviceId)
+
+  if (error) {
+    console.error('Erro ao rejeitar serviço:', error)
+    return { success: false, error: 'Erro ao rejeitar serviço. Tente novamente.' }
+  }
+
+  revalidatePath('/admin/servicos')
+  return { success: true }
+}
+
+export async function suspendService(serviceId: string): Promise<ActionResult> {
+  const authError = await verifyAdmin()
+  if (authError) return authError
+
+  if (!serviceId || typeof serviceId !== 'string') {
+    return { success: false, error: 'ID do serviço inválido' }
+  }
+
+  const supabase = await createSupabaseServerClient()
+
+  const { data: existingService, error: fetchError } = await supabase
+    .from('servicos')
+    .select('id')
+    .eq('id', serviceId)
+    .single()
+
+  if (fetchError || !existingService) {
+    return { success: false, error: 'Serviço não encontrado' }
+  }
+
+  const { error } = await supabase
+    .from('servicos')
+    .update({ estado: 'suspenso' })
+    .eq('id', serviceId)
+
+  if (error) {
+    console.error('Erro ao suspender serviço:', error)
+    return { success: false, error: 'Erro ao suspender serviço. Tente novamente.' }
+  }
+
+  revalidatePath('/admin/servicos')
+  return { success: true }
+}
+
+export async function reactivateService(serviceId: string): Promise<ActionResult> {
+  const authError = await verifyAdmin()
+  if (authError) return authError
+
+  if (!serviceId || typeof serviceId !== 'string') {
+    return { success: false, error: 'ID do serviço inválido' }
+  }
+
+  const supabase = await createSupabaseServerClient()
+
+  const { data: existingService, error: fetchError } = await supabase
+    .from('servicos')
+    .select('id')
+    .eq('id', serviceId)
+    .single()
+
+  if (fetchError || !existingService) {
+    return { success: false, error: 'Serviço não encontrado' }
+  }
+
+  const { error } = await supabase
+    .from('servicos')
+    .update({ estado: 'aprovado' })
+    .eq('id', serviceId)
+
+  if (error) {
+    console.error('Erro ao reativar serviço:', error)
+    return { success: false, error: 'Erro ao reativar serviço. Tente novamente.' }
+  }
+
+  revalidatePath('/admin/servicos')
+  return { success: true }
+}
