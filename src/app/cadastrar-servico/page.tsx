@@ -26,7 +26,7 @@ export default async function CadastrarServicoPage() {
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect('/login')
+    redirect('/login?redirectTo=/cadastrar-servico')
   }
 
   const [profile, categorias] = await Promise.all([getProfile(), getCategories()])
