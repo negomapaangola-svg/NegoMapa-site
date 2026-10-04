@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useState } from "react"
-import { supabase } from "@/lib/supabase"
+import { createBrowserSupabaseClient } from "@/lib/supabase-browser"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/Button"
 import Link from "next/link"
@@ -21,6 +21,7 @@ function LoginForm() {
 
     const cleanEmail = email.trim().toLowerCase()
 
+    const supabase = createBrowserSupabaseClient()
     const { data, error } = await supabase.auth.signInWithPassword({
       email: cleanEmail,
       password,
