@@ -14,6 +14,15 @@ export async function getUser() {
 
 export async function isAdmin(): Promise<boolean> {
   const user = await getUser()
-  if (!user?.email) return false
-  return user.email.includes('@admin')
+  if (!user) return false
+
+  const supabase = await createSupabaseServerClient()
+  const { data, error } = await supabase.rpc('is_admin')
+
+  if (error) {
+    console.error('[isAdmin] Error checking admin status:', error.message)
+    return false
+  }
+
+  return data === true
 }

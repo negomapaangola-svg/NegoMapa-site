@@ -1,11 +1,10 @@
 "use client"
 
 import * as React from "react"
-import { useState } from "react"
-import { createBrowserSupabaseClient } from "@/lib/supabase-browser"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/Button"
 import Link from "next/link"
+import { loginAction } from "@/lib/actions/login"
 
 function isValidRedirect(path: string): boolean {
   return path.startsWith("/") && !path.startsWith("//") && !path.startsWith("/api/")
@@ -15,37 +14,29 @@ function LoginForm() {
   const [email, setEmail] = React.useState("")
   const [password, setPassword] = React.useState("")
   const [error, setError] = React.useState<string | null>(null)
-  const router = useRouter()
+  const [isLoading, setIsLoading] = React.useState(false)
   const searchParams = useSearchParams()
   const rawRedirectTo = searchParams.get("redirectTo")
   const redirectTo = rawRedirectTo && isValidRedirect(rawRedirectTo) ? rawRedirectTo : "/admin/servicos"
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setError(null)
+    setIsLoading(true)
 
     const cleanEmail = email.trim().toLowerCase()
 
-    const supabase = createBrowserSupabaseClient()
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: cleanEmail,
-      password,
-    })
+    const formData = new FormData()
+    formData.append('email', cleanEmail)
+    formData.append('password', password)
+    formData.append('redirectTo', redirectTo)
 
-    if (error) {
-      console.log("[login] signInWithPassword error:", error.message)
-      setError(error.message)
-      return
+    const result = await loginAction(formData)
+    setIsLoading(false)
+
+    if (result?.error) {
+      setError(result.error)
     }
-
-    if (!data.session) {
-      console.log("[login] no session returned")
-      setError("Sessão não criada. Tente novamente.")
-      return
-    }
-
-    console.log("[login] login successful, redirecting to:", redirectTo)
-    router.push(redirectTo)
   }
 
   return (
@@ -74,6 +65,7 @@ function LoginForm() {
             onChange={(e) => setEmail(e.target.value)}
             className="w-full px-3 py-2 border border-card-border rounded-[4px] shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-neutral-700 dark:text-cream"
             required
+            disabled={isLoading}
           />
         </div>
 
@@ -87,11 +79,12 @@ function LoginForm() {
             onChange={(e) => setPassword(e.target.value)}
             className="w-full px-3 py-2 border border-card-border rounded-[4px] shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-neutral-700 dark:text-cream"
             required
+            disabled={isLoading}
           />
         </div>
 
-        <Button type="submit" className="w-full">
-          Entrar
+        <Button type="submit" className="w-full" disabled={isLoading}>
+          {isLoading ? 'A entrar...' : 'Entrar'}
         </Button>
       </form>
 
