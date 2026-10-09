@@ -2,8 +2,8 @@
 
 import { forwardRef, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
+import { AuthUserMenu } from './AuthUserMenu';
 
 interface HeaderProps {
   className?: string;
@@ -72,15 +72,7 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(
             </div>
 
             <div className="flex items-center gap-3">
-              <Link
-                href="/login"
-                className="text-sm font-medium text-navy dark:text-cream hover:text-orange-500 dark:hover:text-orange-400 px-3 py-2 rounded-[4px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2"
-              >
-                Entrar
-              </Link>
-              <Button size="sm" asChild>
-                <Link href="/cadastrar-empresa">Cadastrar</Link>
-              </Button>
+              <AuthUserMenu />
             </div>
           </div>
         </div>
