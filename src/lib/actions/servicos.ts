@@ -106,6 +106,42 @@ export async function createProfile(formData: ProfileFormData): Promise<ActionRe
   return { success: true }
 }
 
+export async function updateProfile(formData: ProfileFormData): Promise<ActionResult> {
+  const supabase = await createSupabaseServerClient()
+
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError || !user) {
+    return { success: false, error: 'Utilizador não autenticado' }
+  }
+
+  const fieldErrors = validateProfile(formData)
+  if (Object.keys(fieldErrors).length > 0) {
+    return { success: false, error: 'Dados inválidos', fieldErrors }
+  }
+
+  const { error } = await supabase
+    .from('profissionais')
+    .update({
+      nome: formData.nome.trim(),
+      telefone: formData.telefone.trim(),
+      whatsapp: formData.whatsapp.trim(),
+      bio: formData.bio.trim(),
+      provincia: formData.provincia.trim(),
+      municipio: formData.municipio.trim(),
+      avatar_url: formData.avatar_url || null,
+    })
+    .eq('user_id', user.id)
+
+  if (error) {
+    console.error('Erro ao actualizar perfil:', error)
+    return { success: false, error: 'Erro ao actualizar perfil. Tente novamente.' }
+  }
+
+  revalidatePath('/cadastrar-servico')
+  revalidatePath('/editar-perfil')
+  return { success: true }
+}
+
 export async function createService(formData: ServiceFormData): Promise<ActionResult> {
   const supabase = await createSupabaseServerClient()
 

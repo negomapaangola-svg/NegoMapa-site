@@ -1,28 +1,40 @@
 'use client'
 
 import * as React from 'react'
-import { createProfile } from '@/lib/actions/servicos'
+import { createProfile, updateProfile } from '@/lib/actions/servicos'
 import { Button } from '@/components/ui/Button'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card'
 import { FileUpload } from '@/components/ui/FileUpload'
 import { useRouter } from 'next/navigation'
 
+interface ProfileData {
+  nome: string
+  telefone: string
+  whatsapp: string
+  bio: string
+  provincia: string
+  municipio: string
+  avatar_url: string
+}
+
 interface ProfileFormProps {
   initialData: { userId: string }
   categorias: { id: string; nome: string; slug: string }[]
+  defaultData?: ProfileData | null
 }
 
-export function ProfileForm({ initialData, categorias }: ProfileFormProps) {
+export function ProfileForm({ initialData, categorias, defaultData }: ProfileFormProps) {
   const router = useRouter()
+  const isEditing = !!defaultData
 
-  const [formData, setFormData] = React.useState({
-    nome: '',
-    telefone: '',
-    whatsapp: '',
-    bio: '',
-    provincia: '',
-    municipio: '',
-    avatar_url: '',
+  const [formData, setFormData] = React.useState<ProfileData>({
+    nome: defaultData?.nome || '',
+    telefone: defaultData?.telefone || '',
+    whatsapp: defaultData?.whatsapp || '',
+    bio: defaultData?.bio || '',
+    provincia: defaultData?.provincia || '',
+    municipio: defaultData?.municipio || '',
+    avatar_url: defaultData?.avatar_url || '',
   })
 
   const [fieldErrors, setFieldErrors] = React.useState<Record<string, string>>({})
@@ -65,7 +77,8 @@ export function ProfileForm({ initialData, categorias }: ProfileFormProps) {
     setFieldErrors({})
 
     try {
-      const result = await createProfile(formData)
+      const action = isEditing ? updateProfile : createProfile
+      const result = await action(formData)
 
       if (result.success) {
         setStatus('success')
@@ -77,7 +90,7 @@ export function ProfileForm({ initialData, categorias }: ProfileFormProps) {
         if (result.fieldErrors) {
           setFieldErrors(result.fieldErrors)
         }
-        setGeneralError(result.error || 'Erro ao criar perfil')
+        setGeneralError(result.error || (isEditing ? 'Erro ao actualizar perfil' : 'Erro ao criar perfil'))
       }
     } catch {
       setStatus('idle')
@@ -88,9 +101,11 @@ export function ProfileForm({ initialData, categorias }: ProfileFormProps) {
   return (
     <Card variant="liquid" padding="lg" className="border-card-border">
       <CardHeader>
-        <CardTitle className="text-2xl">Dados do Profissional</CardTitle>
+        <CardTitle className="text-2xl">{isEditing ? 'Editar Perfil Profissional' : 'Dados do Profissional'}</CardTitle>
         <CardDescription>
-          Estas informações serão visíveis publicamente no seu perfil.
+          {isEditing
+            ? 'Actualize os seus dados. As alterações serão visíveis publicamente.'
+            : 'Estas informações serão visíveis publicamente no seu perfil.'}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -110,12 +125,12 @@ export function ProfileForm({ initialData, categorias }: ProfileFormProps) {
               folder="avatars"
               accept="image/png,image/jpeg,image/webp"
               onUpload={handleAvatarUpload}
-              label="Carregar avatar"
+              label={isEditing ? 'Actualizar avatar' : 'Carregar avatar'}
             />
             {fieldErrors.avatar && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{fieldErrors.avatar}</p>}
             {formData.avatar_url && (
               <p className="mt-2 text-sm text-green-600 dark:text-green-400">
-                Avatar selecionado. Será guardado ao submeter o formulário.
+                {isEditing ? 'Novo avatar selecionado. Será guardado ao submeter.' : 'Avatar selecionado. Será guardado ao submeter o formulário.'}
               </p>
             )}
           </div>
@@ -258,12 +273,12 @@ export function ProfileForm({ initialData, categorias }: ProfileFormProps) {
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
-              A criar perfil...
+              {isEditing ? 'A actualizar...' : 'A criar perfil...'}
             </>
           ) : status === 'success' ? (
-            'Perfil criado! A redirecionar...'
+            isEditing ? 'Perfil actualizado!' : 'Perfil criado! A redirecionar...'
           ) : (
-            'Criar Perfil e Continuar'
+            isEditing ? 'Actualizar Perfil' : 'Criar Perfil e Continuar'
           )}
         </Button>
       </CardFooter>
