@@ -42,7 +42,7 @@ export function AuthUserMenu() {
           Entrar
         </Link>
         <Button size="sm" asChild>
-          <Link href="/cadastrar-empresa">Cadastrar</Link>
+          <Link href="/login?redirectTo=/cadastrar-empresa">Cadastrar</Link>
         </Button>
       </div>
     )
