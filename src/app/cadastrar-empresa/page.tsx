@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { supabase } from "@/lib/supabase"
+import { createBrowserSupabaseClient } from "@/lib/supabase-browser"
 import { Button } from "@/components/ui/Button"
 
 type FormData = {
@@ -33,6 +33,7 @@ export default function CadastrarEmpresaPage() {
 
   React.useEffect(() => {
     async function fetchUser() {
+      const supabase = createBrowserSupabaseClient()
       const { data } = await supabase.auth.getUser()
       setUser(data.user ?? null)
       setLoading(false)
@@ -93,6 +94,7 @@ export default function CadastrarEmpresaPage() {
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-|-$/g, "")
 
+    const supabase = createBrowserSupabaseClient()
     const { data, error } = await supabase
       .from("companies")
       .insert({
