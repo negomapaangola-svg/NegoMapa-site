@@ -126,6 +126,7 @@ export function ProfileForm({ initialData, categorias, defaultData }: ProfileFor
               accept="image/png,image/jpeg,image/webp"
               onUpload={handleAvatarUpload}
               label={isEditing ? 'Actualizar avatar' : 'Carregar avatar'}
+              currentUrl={isEditing ? defaultData?.avatar_url || '' : ''}
             />
             {fieldErrors.avatar && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{fieldErrors.avatar}</p>}
             {formData.avatar_url && (

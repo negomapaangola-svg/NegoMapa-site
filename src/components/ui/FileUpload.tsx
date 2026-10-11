@@ -20,6 +20,7 @@ interface FileUploadProps {
   onUpload: (result: { url?: string; path?: string }) => void
   label?: string
   accept?: string
+  currentUrl?: string
 }
 
 const bucketConfig: Record<AllowedBucket, { allowedTypes: string[]; maxSize: number; isPublic: boolean }> = {
@@ -58,16 +59,17 @@ const formatBytes = (bytes: number): string => {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-export function FileUpload({ bucket, folder, onUpload, label, accept }: FileUploadProps) {
+export function FileUpload({ bucket, folder, onUpload, label, accept, currentUrl }: FileUploadProps) {
   const config = bucketConfig[bucket]
   const defaultLabel = label || `Carregar ${bucketLabels[bucket].toLowerCase()}`
   const defaultAccept = accept || config.allowedTypes.join(',')
 
   const [status, setStatus] = useState<UploadStatus>('idle')
   const [error, setError] = useState<string | null>(null)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(currentUrl ?? null)
   const [fileName, setFileName] = useState<string | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [showingCurrentUrl, setShowingCurrentUrl] = useState(!!currentUrl)
 
   const validateFile = useCallback((file: File): string | null => {
     if (!config.allowedTypes.includes(file.type)) {
@@ -95,6 +97,7 @@ export function FileUpload({ bucket, folder, onUpload, label, accept }: FileUplo
     setFileName(file.name)
     setError(null)
     setStatus('idle')
+    setShowingCurrentUrl(false)
 
     if (config.isPublic && file.type.startsWith('image/')) {
       const objectUrl = URL.createObjectURL(file)
@@ -118,6 +121,7 @@ export function FileUpload({ bucket, folder, onUpload, label, accept }: FileUplo
       }
 
       setStatus('success')
+      setShowingCurrentUrl(false)
       onUpload(result)
 
       if ('url' in result && config.isPublic) {
@@ -132,13 +136,19 @@ export function FileUpload({ bucket, folder, onUpload, label, accept }: FileUplo
   const handleRemove = useCallback(() => {
     setSelectedFile(null)
     setFileName(null)
-    setPreviewUrl(null)
+    if (currentUrl) {
+      setPreviewUrl(currentUrl)
+      setShowingCurrentUrl(true)
+    } else {
+      setPreviewUrl(null)
+      setShowingCurrentUrl(false)
+    }
     setError(null)
     setStatus('idle')
-  }, [])
+  }, [currentUrl])
 
   const isPublicBucket = config.isPublic
-  const showPreview = isPublicBucket && previewUrl && (status === 'success' || status === 'idle')
+  const showPreview = isPublicBucket && previewUrl && (status === 'success' || status === 'idle' || showingCurrentUrl)
 
   return (
     <Card variant="liquid" padding="md">
