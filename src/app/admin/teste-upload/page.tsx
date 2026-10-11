@@ -2,19 +2,11 @@ import { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { isAdmin, getUser } from '@/lib/auth'
 import { MainLayout } from '@/components/layout/MainLayout'
-import { FileUpload } from '@/components/ui/FileUpload'
+import { TestBucketCard } from './_components/TestBucketCard'
 
 export const metadata: Metadata = {
   title: 'Teste de Upload - Admin',
   description: 'Página temporária para testar o componente FileUpload',
-}
-
-type TestResult = {
-  bucket: string
-  status: 'idle' | 'success' | 'error'
-  url?: string
-  path?: string
-  error?: string
 }
 
 const testBuckets = [
@@ -99,28 +91,5 @@ export default async function TesteUploadPage() {
         </main>
       </div>
     </MainLayout>
-  )
-}
-
-function TestBucketCard({ bucket, folder, label }: { bucket: string; folder: string; label: string }) {
-  return (
-    <div className="bg-white dark:bg-neutral-800 rounded-[4px] border border-card-border dark:border-neutral-700 p-6 shadow-sm">
-      <h3 className="text-lg font-heading font-semibold text-ink dark:text-cream mb-2">
-        {label}
-      </h3>
-      <FileUpload
-        bucket={bucket as 'empresas-logos' | 'profissionais-avatars' | 'servicos-imagens' | 'documentos-privados'}
-        folder={folder}
-        onUpload={(result) => {
-          console.log(`[${bucket}] Upload result:`, result)
-        }}
-      />
-      <div className="mt-4 p-3 bg-neutral-50 dark:bg-neutral-900 rounded-[4px] text-xs font-mono">
-        <p className="text-neutral-500 dark:text-neutral-400">Resultado do upload:</p>
-        <pre id={`result-${bucket}`} className="mt-1 whitespace-pre-wrap text-neutral-700 dark:text-neutral-300">
-          {`Aguardando upload...`}
-        </pre>
-      </div>
-    </div>
   )
 }
