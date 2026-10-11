@@ -49,7 +49,7 @@ export default function CadastrarEmpresaPage() {
           </h1>
           <p className="text-neutral-600 dark:text-cream-text">Por favor, faça login para cadastrar uma empresa.</p>
           <Button asChild>
-            <a href="/login" className="inline-flex items-center px-4 py-2 rounded-[4px] font-medium">
+            <a href="/login?redirectTo=/cadastrar-empresa" className="inline-flex items-center px-4 py-2 rounded-[4px] font-medium">
               Login
             </a>
           </Button>
