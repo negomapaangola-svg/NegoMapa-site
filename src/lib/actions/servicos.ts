@@ -187,7 +187,7 @@ export async function getUserProfile() {
 
   const { data: perfil } = await supabase
     .from('profissionais')
-    .select('id, nome, telefone, whatsapp, bio, provincia, municipio, estado, slug')
+    .select('id, nome, telefone, whatsapp, bio, provincia, municipio, estado, slug, avatar_url')
     .eq('user_id', user.id)
     .single()
 

@@ -36,7 +36,8 @@ interface ServiceDetailRaw {
     provincia: string | null;
     municipio: string | null;
     estado: string;
-  } | { id: string; nome: string; slug: string; whatsapp: string | null; bio: string | null; telefone: string | null; provincia: string | null; municipio: string | null; estado: string }[] | null;
+    avatar_url: string | null;
+  } | { id: string; nome: string; slug: string; whatsapp: string | null; bio: string | null; telefone: string | null; provincia: string | null; municipio: string | null; estado: string; avatar_url: string | null }[] | null;
 }
 
 interface ServiceDetail {
@@ -67,6 +68,7 @@ interface ServiceDetail {
     provincia: string | null;
     municipio: string | null;
     estado: string;
+    avatar_url: string | null;
   } | null;
 }
 
@@ -88,7 +90,7 @@ async function getService(slug: string): Promise<ServiceDetail | null> {
       created_at,
       estado,
       categoria:categoria_id (id, nome, slug, ativo),
-      profissional:profissional_id (id, nome, slug, whatsapp, bio, telefone, provincia, municipio, estado)
+      profissional:profissional_id (id, nome, slug, whatsapp, bio, telefone, provincia, municipio, estado, avatar_url)
     `)
     .eq('slug', slug)
     .eq('estado', 'aprovado')
@@ -233,8 +235,17 @@ export default async function ServicoPage({ params }: { params: Promise<{ slug: 
               <h2 className="text-lg font-semibold text-ink dark:text-cream mb-4">Profissional</h2>
               {service.profissional ? (
                 <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
-                  <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-2xl md:text-3xl font-bold text-orange-500 dark:text-orange-400 flex-shrink-0">
-                    {service.profissional.nome.charAt(0).toUpperCase()}
+                  <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-2xl md:text-3xl font-bold text-orange-500 dark:text-orange-400 flex-shrink-0 overflow-hidden">
+                    {service.profissional.avatar_url ? (
+                      <img
+                        src={service.profissional.avatar_url}
+                        alt={service.profissional.nome}
+                        className="w-full h-full object-cover"
+                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                      />
+                    ) : (
+                      service.profissional.nome.charAt(0).toUpperCase()
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="text-xl font-bold text-ink dark:text-cream truncate">
