@@ -1,10 +1,10 @@
 'use client'
 
 import * as React from 'react'
-import { useActionState } from 'react'
 import { createProfile } from '@/lib/actions/servicos'
 import { Button } from '@/components/ui/Button'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card'
+import { FileUpload } from '@/components/ui/FileUpload'
 import { useRouter } from 'next/navigation'
 
 interface ProfileFormProps {
@@ -22,6 +22,7 @@ export function ProfileForm({ initialData, categorias }: ProfileFormProps) {
     bio: '',
     provincia: '',
     municipio: '',
+    avatar_url: '',
   })
 
   const [fieldErrors, setFieldErrors] = React.useState<Record<string, string>>({})
@@ -33,6 +34,14 @@ export function ProfileForm({ initialData, categorias }: ProfileFormProps) {
     setFormData(prev => ({ ...prev, [name]: value }))
     if (fieldErrors[name]) {
       setFieldErrors(prev => ({ ...prev, [name]: '' }))
+    }
+  }
+
+  const handleAvatarUpload = (result: { url?: string; path?: string; error?: string }) => {
+    if (result.url) {
+      setFormData(prev => ({ ...prev, avatar_url: result.url! }))
+    } else if (result.error) {
+      setFieldErrors(prev => ({ ...prev, avatar: result.error! }))
     }
   }
 
@@ -91,6 +100,25 @@ export function ProfileForm({ initialData, categorias }: ProfileFormProps) {
               {generalError}
             </div>
           )}
+
+          <div>
+            <label htmlFor="avatar" className="block text-sm font-medium text-ink dark:text-cream mb-2">
+              Avatar <span className="text-neutral-500 dark:text-neutral-400 text-normal">(opcional)</span>
+            </label>
+            <FileUpload
+              bucket="profissionais-avatars"
+              folder="avatars"
+              accept="image/png,image/jpeg,image/webp"
+              onUpload={handleAvatarUpload}
+              label="Carregar avatar"
+            />
+            {fieldErrors.avatar && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{fieldErrors.avatar}</p>}
+            {formData.avatar_url && (
+              <p className="mt-2 text-sm text-green-600 dark:text-green-400">
+                Avatar selecionado. Será guardado ao submeter o formulário.
+              </p>
+            )}
+          </div>
 
           <div>
             <label htmlFor="nome" className="block text-sm font-medium text-ink dark:text-cream mb-2">

@@ -11,6 +11,7 @@ export type ProfileFormData = {
   bio: string
   provincia: string
   municipio: string
+  avatar_url?: string
 }
 
 export type ServiceFormData = {
@@ -90,6 +91,7 @@ export async function createProfile(formData: ProfileFormData): Promise<ActionRe
       provincia: formData.provincia.trim(),
       municipio: formData.municipio.trim(),
       estado: 'pendente',
+      avatar_url: formData.avatar_url || null,
     })
 
   if (error) {
