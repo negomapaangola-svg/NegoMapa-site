@@ -81,7 +81,7 @@ export async function uploadFile(
 
   const extension = getExtension(file.type)
   const uniqueName = `${randomUUID()}.${extension}`
-  const path = `${folder}/${user.id}/${uniqueName}`
+  const path = `${user.id}/${folder}/${uniqueName}`
 
   const arrayBuffer = await file.arrayBuffer()
   const buffer = Buffer.from(arrayBuffer)
