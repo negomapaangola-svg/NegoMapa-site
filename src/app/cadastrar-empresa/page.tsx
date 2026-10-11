@@ -3,6 +3,7 @@
 import * as React from "react"
 import { createBrowserSupabaseClient } from "@/lib/supabase-browser"
 import { Button } from "@/components/ui/Button"
+import { MainLayout } from "@/components/layout/MainLayout"
 
 type FormData = {
   name: string
@@ -43,19 +44,21 @@ export default function CadastrarEmpresaPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen p-4 md:p-8 bg-cream dark:bg-navy-dark">
-        <div className="max-w-md mx-auto space-y-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-ink dark:text-cream text-center">
-            Cadastro de Empresa
-          </h1>
-          <p className="text-neutral-600 dark:text-cream-text">Por favor, faça login para cadastrar uma empresa.</p>
-          <Button asChild>
-            <a href="/login?redirectTo=/cadastrar-empresa" className="inline-flex items-center px-4 py-2 rounded-[4px] font-medium">
-              Login
-            </a>
-          </Button>
+      <MainLayout>
+        <div className="min-h-screen p-4 md:p-8 bg-cream dark:bg-navy-dark">
+          <div className="max-w-md mx-auto space-y-6">
+            <h1 className="text-2xl md:text-3xl font-bold text-ink dark:text-cream text-center">
+              Cadastro de Empresa
+            </h1>
+            <p className="text-neutral-600 dark:text-cream-text">Por favor, faça login para cadastrar uma empresa.</p>
+            <Button asChild>
+              <a href="/login?redirectTo=/cadastrar-empresa" className="inline-flex items-center px-4 py-2 rounded-[4px] font-medium">
+                Login
+              </a>
+            </Button>
+          </div>
         </div>
-      </div>
+      </MainLayout>
     )
   }
 
@@ -160,24 +163,25 @@ export default function CadastrarEmpresaPage() {
   }
 
   return (
-    <div className="min-h-screen p-4 md:p-8 bg-cream dark:bg-navy-dark">
-      <div className="max-w-md mx-auto space-y-6">
-        <h1 className="text-2xl md:text-3xl font-bold text-ink dark:text-cream text-center">
-          Cadastro de Empresa
-        </h1>
+    <MainLayout>
+      <div className="min-h-screen p-4 md:p-8 bg-cream dark:bg-navy-dark">
+        <div className="max-w-md mx-auto space-y-6">
+          <h1 className="text-2xl md:text-3xl font-bold text-ink dark:text-cream text-center">
+            Cadastro de Empresa
+          </h1>
 
-        {redirect && (
-          <div className="mb-4 text-center">
-            <p className="text-green-600 dark:text-green-400">
-              Cadastro enviado! Aguarde aprovação.
-            </p>
-          </div>
-        )}
+          {redirect && (
+            <div className="mb-4 text-center">
+              <p className="text-green-600 dark:text-green-400">
+                Cadastro enviado! Aguarde aprovação.
+              </p>
+            </div>
+          )}
 
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-4 bg-white rounded-[4px] p-6 shadow dark:bg-neutral-800"
-        >
+          <form
+            onSubmit={handleSubmit}
+            className="space-y-4 bg-white rounded-[4px] p-6 shadow dark:bg-neutral-800"
+          >
           <div>
             <label className="block text-sm font-medium text-ink dark:text-cream mb-2">
               Nome da Empresa
@@ -311,5 +315,6 @@ export default function CadastrarEmpresaPage() {
         </form>
       </div>
     </div>
+  </MainLayout>
   )
 }
