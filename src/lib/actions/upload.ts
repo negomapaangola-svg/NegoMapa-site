@@ -94,8 +94,13 @@ export async function uploadFile(
     })
 
   if (uploadError) {
-    console.error('Erro no upload:', uploadError)
-    return { error: 'Erro ao fazer upload do ficheiro' }
+    console.error('Erro no upload:', {
+      message: uploadError.message,
+      statusCode: uploadError.statusCode,
+      name: uploadError.name,
+      stack: uploadError.stack,
+    })
+    return { error: uploadError.message || 'Erro ao fazer upload do ficheiro' }
   }
 
   if (config.isPublic) {
