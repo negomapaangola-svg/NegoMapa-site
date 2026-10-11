@@ -89,12 +89,33 @@ export default function CadastrarEmpresaPage() {
 
     setStatus("submitting")
 
-    const slug = formData.name
+    const baseSlug = formData.name
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-|-$/g, "")
 
     const supabase = createBrowserSupabaseClient()
+
+    let slug = baseSlug
+    let counter = 2
+    while (true) {
+      const { data: existing, error: findError } = await supabase
+        .from("companies")
+        .select("slug")
+        .eq("slug", slug)
+        .single()
+
+      if (findError && findError.code === "PGRST116") {
+        break
+      }
+      if (existing) {
+        slug = `${baseSlug}-${counter}`
+        counter++
+        continue
+      }
+      break
+    }
+
     const { data, error } = await supabase
       .from("companies")
       .insert({
@@ -114,7 +135,11 @@ export default function CadastrarEmpresaPage() {
 
     if (error) {
       setStatus("idle")
-      alert("Erro ao cadastrar: " + error.message)
+      if (error.code === "23505" && error.message.includes("slug")) {
+        alert("Já existe uma empresa com um nome muito semelhante. Ajusta o nome e tenta novamente.")
+      } else {
+        alert("Erro ao cadastrar: " + error.message)
+      }
       return
     }
 
