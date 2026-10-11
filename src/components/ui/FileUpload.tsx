@@ -266,13 +266,13 @@ export function FileUpload({ bucket, folder, onUpload, label, accept }: FileUplo
           </label>
         </div>
 
-        {(selectedFile && status === 'idle') || status === 'success' || status === 'error') && (
+        {((selectedFile && status === 'idle') || status === 'success' || status === 'error') && (
           <div className="flex items-center gap-3">
             {status === 'idle' && selectedFile && (
               <Button
                 variant="primary"
                 onClick={handleUpload}
-                disabled={status === 'loading'}
+                disabled={(status as UploadStatus) === 'loading'}
                 className="flex-1"
               >
                 Confirmar upload
