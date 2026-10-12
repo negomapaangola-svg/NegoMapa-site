@@ -5,7 +5,6 @@ import Link from "next/link"
 import { supabase } from "@/lib/supabase"
 import { Card, CardContent } from "@/components/ui/Card"
 import { Button } from "@/components/ui/Button"
-import { MainLayout } from "@/components/layout/MainLayout"
 
 type Vaga = {
   id: string
@@ -59,15 +58,16 @@ export function VagasContent() {
           whatsapp,
           estado,
           created_at,
-          company:company_id (
+          company:companies!company_id (
             id,
             name,
             slug,
-            provincia
+            provincia,
+            is_approved
           )
         `)
         .eq("estado", "aprovado")
-        .eq("company.is_approved", true)
+        .filter("company.is_approved", "eq", true)
         .order("created_at", { ascending: false })
 
       if (error) {
@@ -102,17 +102,14 @@ export function VagasContent() {
 
   if (carregando) {
     return (
-      <MainLayout>
-        <div className="min-h-screen flex items-center justify-center p-4 bg-cream dark:bg-navy-dark">
-          <p className="text-ink dark:text-cream">Carregando vagas...</p>
-        </div>
-      </MainLayout>
+      <div className="min-h-screen flex items-center justify-center p-4 bg-cream dark:bg-navy-dark">
+        <p className="text-ink dark:text-cream">Carregando vagas...</p>
+      </div>
     )
   }
 
   return (
-    <MainLayout>
-      <div className="p-6 md:p-8 bg-cream dark:bg-navy-dark">
+    <div className="p-6 md:p-8 bg-cream dark:bg-navy-dark">
         <div className="max-w-7xl mx-auto">
           <div className="mb-6">
             <h1 className="text-3xl md:text-4xl font-bold text-ink dark:text-cream">
@@ -290,6 +287,5 @@ export function VagasContent() {
           )}
         </div>
       </div>
-    </MainLayout>
   )
 }
