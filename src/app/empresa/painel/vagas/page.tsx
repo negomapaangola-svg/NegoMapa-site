@@ -1,5 +1,5 @@
 import { Metadata } from "next"
-import { notFound } from "next/navigation"
+import { redirect } from "next/navigation"
 import Link from "next/link"
 import { getUserCompany, getUserVagas, type VagaListItem } from "@/lib/actions/vagas"
 import { MainLayout } from "@/components/layout/MainLayout"
@@ -35,7 +35,7 @@ export default async function EmpresaVagasPage() {
   const company = await getCompany()
 
   if (!company) {
-    notFound()
+    redirect('/login?redirectTo=/empresa/painel/vagas')
   }
 
   const vagas = await getVagas()
