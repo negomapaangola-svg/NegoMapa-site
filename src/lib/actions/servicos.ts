@@ -4,6 +4,12 @@ import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
+export type PortfolioItem = {
+  titulo: string
+  descricao?: string
+  url_projeto?: string
+}
+
 export type ProfileFormData = {
   nome: string
   telefone: string
@@ -12,6 +18,15 @@ export type ProfileFormData = {
   provincia: string
   municipio: string
   avatar_url?: string
+  bi_numero?: string
+  anos_experiencia?: number
+  disponibilidade_dias?: string[]
+  disponibilidade_horarios?: {
+    manha: boolean
+    tarde: boolean
+    noite: boolean
+  }
+  portfolio?: PortfolioItem[]
 }
 
 export type ServiceFormData = {
@@ -47,6 +62,40 @@ function validateProfile(data: ProfileFormData): Record<string, string> {
   if (!data.whatsapp.trim()) errors.whatsapp = 'WhatsApp é obrigatório'
   if (!data.provincia.trim()) errors.provincia = 'Província é obrigatória'
   if (!data.municipio.trim()) errors.municipio = 'Município é obrigatório'
+  if (data.bi_numero && typeof data.bi_numero !== 'string') {
+    errors.bi_numero = 'BI deve ser texto'
+  }
+  if (data.anos_experiencia !== undefined) {
+    const anos = Number(data.anos_experiencia)
+    if (isNaN(anos) || anos < 0 || anos > 50) {
+      errors.anos_experiencia = 'Anos de experiência deve ser entre 0 e 50'
+    }
+  }
+  if (data.disponibilidade_dias !== undefined) {
+    const validDays = ['seg', 'ter', 'qua', 'qui', 'sex', 'sab', 'dom']
+    if (!Array.isArray(data.disponibilidade_dias) || data.disponibilidade_dias.some(d => !validDays.includes(d))) {
+      errors.disponibilidade_dias = 'Dias de disponibilidade inválidos'
+    }
+  }
+  if (data.disponibilidade_horarios !== undefined) {
+    const horarios = data.disponibilidade_horarios
+    if (typeof horarios !== 'object' || horarios === null) {
+      errors.disponibilidade_horarios = 'Horários de disponibilidade inválidos'
+    } else if (typeof horarios.manha !== 'boolean' || typeof horarios.tarde !== 'boolean' || typeof horarios.noite !== 'boolean') {
+      errors.disponibilidade_horarios = 'Horários deve conter manha, tarde, noite booleanos'
+    }
+  }
+  if (data.portfolio !== undefined) {
+    if (!Array.isArray(data.portfolio)) {
+      errors.portfolio = 'Portfolio deve ser um array'
+    } else {
+      data.portfolio.forEach((item, index) => {
+        if (!item.titulo || !item.titulo.trim()) {
+          errors[`portfolio_${index}`] = `Item ${index + 1}: título é obrigatório`
+        }
+      })
+    }
+  }
   return errors
 }
 
@@ -92,6 +141,11 @@ export async function createProfile(formData: ProfileFormData): Promise<ActionRe
       municipio: formData.municipio.trim(),
       estado: 'pendente',
       avatar_url: formData.avatar_url || null,
+      bi_numero: formData.bi_numero?.trim() || null,
+      anos_experiencia: formData.anos_experiencia ?? null,
+      disponibilidade_dias: formData.disponibilidade_dias ?? [],
+      disponibilidade_horarios: formData.disponibilidade_horarios ?? { manha: false, tarde: false, noite: false },
+      portfolio: formData.portfolio ?? [],
     })
 
   if (error) {
@@ -129,6 +183,11 @@ export async function updateProfile(formData: ProfileFormData): Promise<ActionRe
       provincia: formData.provincia.trim(),
       municipio: formData.municipio.trim(),
       avatar_url: formData.avatar_url || null,
+      bi_numero: formData.bi_numero?.trim() || null,
+      anos_experiencia: formData.anos_experiencia ?? null,
+      disponibilidade_dias: formData.disponibilidade_dias ?? [],
+      disponibilidade_horarios: formData.disponibilidade_horarios ?? { manha: false, tarde: false, noite: false },
+      portfolio: formData.portfolio ?? [],
     })
     .eq('user_id', user.id)
 
@@ -223,7 +282,7 @@ export async function getUserProfile() {
 
   const { data: perfil } = await supabase
     .from('profissionais')
-    .select('id, nome, telefone, whatsapp, bio, provincia, municipio, estado, slug, avatar_url')
+    .select('id, nome, telefone, whatsapp, bio, provincia, municipio, estado, slug, avatar_url, bi_numero, anos_experiencia, disponibilidade_dias, disponibilidade_horarios, portfolio')
     .eq('user_id', user.id)
     .single()
 
