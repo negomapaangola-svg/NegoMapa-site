@@ -12,7 +12,7 @@ export async function loginAction(formData: FormData) {
   const password = formData.get('password') as string
   const rawRedirectTo = formData.get('redirectTo') as string
 
-  const redirectTo = rawRedirectTo && isValidRedirect(rawRedirectTo) ? rawRedirectTo : '/admin/servicos'
+  const redirectTo = rawRedirectTo && isValidRedirect(rawRedirectTo) ? rawRedirectTo : '/'
 
   if (!email || !password) {
     return { error: 'Email e senha são obrigatórios' }

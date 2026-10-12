@@ -17,7 +17,7 @@ function LoginForm() {
   const [isLoading, setIsLoading] = React.useState(false)
   const searchParams = useSearchParams()
   const rawRedirectTo = searchParams.get("redirectTo")
-  const redirectTo = rawRedirectTo && isValidRedirect(rawRedirectTo) ? rawRedirectTo : "/admin/servicos"
+  const redirectTo = rawRedirectTo && isValidRedirect(rawRedirectTo) ? rawRedirectTo : "/"
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
