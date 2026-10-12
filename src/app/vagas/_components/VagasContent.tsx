@@ -42,6 +42,29 @@ export function VagasContent() {
 
   React.useEffect(() => {
     async function carregarVagas() {
+      const { data: approvedCompanies, error: companiesError } = await supabase
+        .from("companies")
+        .select("id")
+        .eq("is_approved", true);
+
+      if (companiesError) {
+        console.error("Erro ao buscar empresas aprovadas:", companiesError);
+        setCarregando(false);
+        return;
+      }
+
+      const approvedIds = (approvedCompanies ?? []).map((company) => company.id);
+
+      console.log("Empresas aprovadas:", approvedIds);
+
+      if (approvedIds.length === 0) {
+        setVagas([]);
+        setCategorias(new Set());
+        setProvincias(new Set());
+        setCarregando(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from("vagas")
         .select(`
@@ -58,31 +81,27 @@ export function VagasContent() {
           whatsapp,
           estado,
           created_at,
-          company:companies!company_id (
-            id,
-            name,
-            slug,
-            provincia,
-            is_approved
-          )
+          company:companies!company_id (id, name, slug, provincia)
         `)
         .eq("estado", "aprovado")
-        .filter("company.is_approved", "eq", true)
-        .order("created_at", { ascending: false })
+        .in("company_id", approvedIds)
+        .order("created_at", { ascending: false });
+
+      console.log("Vagas:", data, "Erro:", error);
 
       if (error) {
-        console.error("Erro ao carregar vagas:", error)
+        console.error("Erro ao carregar vagas:", error);
       } else {
-        setVagas(data || [])
-        const categoriasUnicas = new Set(data?.map((v: any) => v.categoria).filter(Boolean) || [])
-        const provinciasUnicas = new Set(data?.map((v: any) => v.provincia).filter(Boolean) || [])
-        setCategorias(categoriasUnicas)
-        setProvincias(provinciasUnicas)
+        setVagas(data || []);
+        const categoriasUnicas = new Set(data?.map((v: any) => v.categoria).filter(Boolean) || []);
+        const provinciasUnicas = new Set(data?.map((v: any) => v.provincia).filter(Boolean) || []);
+        setCategorias(categoriasUnicas);
+        setProvincias(provinciasUnicas);
       }
-      setCarregando(false)
+      setCarregando(false);
     }
 
-    carregarVagas()
+    carregarVagas();
   }, [])
 
   const vagasFiltradas = vagas.filter((vaga) => {

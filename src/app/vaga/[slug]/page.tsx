@@ -32,6 +32,26 @@ interface Vaga {
 async function getVaga(slug: string): Promise<Vaga | null> {
   const supabase = await createSupabaseServerClient();
 
+  // Primeiro, buscar IDs das empresas aprovadas
+  const { data: approvedCompanies, error: companiesError } = await supabase
+    .from("companies")
+    .select("id")
+    .eq("is_approved", true);
+
+  if (companiesError) {
+    console.error("Erro ao buscar empresas aprovadas:", companiesError);
+    return null;
+  }
+
+  const approvedIds = (approvedCompanies ?? []).map((company) => company.id);
+
+  console.log("Empresas aprovadas (detalhe):", approvedIds);
+
+  if (approvedIds.length === 0) {
+    return null;
+  }
+
+  // Buscar a vaga por slug, estado aprovado e company_id nas empresas aprovadas
   const { data, error } = await supabase
     .from("vagas")
     .select(
@@ -49,7 +69,7 @@ async function getVaga(slug: string): Promise<Vaga | null> {
       whatsapp,
       estado,
       created_at,
-      company:company_id (
+      company:companies!company_id (
         id,
         name,
         slug,
@@ -59,8 +79,10 @@ async function getVaga(slug: string): Promise<Vaga | null> {
     )
     .eq("slug", slug)
     .eq("estado", "aprovado")
-    .eq("company.is_approved", true)
+    .in("company_id", approvedIds)
     .single();
+
+  console.log("Vaga detalhe:", data, "Erro:", error);
 
   if (error || !data) {
     return null;

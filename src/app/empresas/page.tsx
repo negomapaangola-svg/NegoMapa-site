@@ -5,7 +5,6 @@ import Link from "next/link"
 import { supabase } from "@/lib/supabase"
 import { Card, CardContent } from "@/components/ui/Card"
 import { Button } from "@/components/ui/Button"
-import { MainLayout } from "@/components/layout/MainLayout"
 
 type Empresa = {
   id: string
@@ -60,17 +59,14 @@ function EmpresasContent() {
 
   if (carregando) {
     return (
-      <MainLayout>
-        <div className="min-h-screen flex items-center justify-center p-4 bg-cream dark:bg-navy-dark">
-          <p className="text-ink dark:text-cream">Carregando empresas...</p>
-        </div>
-      </MainLayout>
+      <div className="min-h-screen flex items-center justify-center p-4 bg-cream dark:bg-navy-dark">
+        <p className="text-ink dark:text-cream">Carregando empresas...</p>
+      </div>
     )
   }
 
   return (
-    <MainLayout>
-      <div className="p-6 md:p-8 bg-cream dark:bg-navy-dark">
+    <div className="p-6 md:p-8 bg-cream dark:bg-navy-dark">
         <div className="max-w-7xl mx-auto">
           <div className="mb-6">
             <h1 className="text-3xl md:text-4xl font-bold text-ink dark:text-cream">
@@ -191,7 +187,6 @@ function EmpresasContent() {
           </div>
         </div>
       </div>
-    </MainLayout>
   )
 }
 
