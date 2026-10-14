@@ -6,6 +6,10 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { formatDate, truncate } from "@/lib/utils";
+import { getUser } from "@/lib/auth";
+import { getMediaAvaliacoes, getAvaliacoesPorAlvo, AlvoAvaliacao } from "@/lib/actions/avaliacoes";
+import { Rating, RatingStarsOnly } from "@/components/avaliacoes/Rating";
+import { ReviewForm } from "@/components/avaliacoes/ReviewForm";
 
 interface Vaga {
   id: string;
@@ -141,8 +145,16 @@ export default async function VagaDetailPage({
     notFound();
   }
 
+  const [user, media, avaliacoes] = await Promise.all([
+    getUser(),
+    getMediaAvaliacoes({ tipo: 'vaga', id: vaga.id }),
+    getAvaliacoesPorAlvo({ tipo: 'vaga', id: vaga.id }),
+  ]);
+
   const company = vaga.company[0];
   const publishedDate = formatDate(vaga.created_at);
+
+  const alvo: AlvoAvaliacao = { tipo: 'vaga', id: vaga.id };
 
   return (
     <MainLayout>
@@ -320,6 +332,57 @@ export default async function VagaDetailPage({
                     Esta vaga não possui contacto WhatsApp para candidatura.
                   </p>
                 )}
+              </div>
+
+              <div className="pt-6 border-t border-card-border dark:border-neutral-800">
+                <h2 className="text-lg font-semibold text-ink dark:text-cream mb-4">Avalia\u00e7\u00f5es</h2>
+                <div className="space-y-6">
+                  <div className="flex items-center gap-4">
+                    <Rating media={media.media} total={media.total} size="lg" />
+                  </div>
+
+                  {avaliacoes.length > 0 ? (
+                    <div className="space-y-4">
+                      {avaliacoes.map((avaliacao) => (
+                        <Card key={avaliacao.id} variant="outlined" padding="md" className="border-card-border">
+                          <div className="flex items-start gap-3">
+                            <div className="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-lg font-bold text-orange-500 dark:text-orange-400 flex-shrink-0">
+                              {avaliacao.user?.email?.charAt(0).toUpperCase() || 'U'}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between gap-2">
+                                <p className="font-medium text-ink dark:text-cream truncate">
+                                  {avaliacao.user?.email?.split('@')[0] || 'Utilizador'}
+                                </p>
+                                <div className="flex items-center gap-2">
+                                  <RatingStarsOnly media={avaliacao.nota} size="sm" />
+                                  <time className="text-xs text-neutral-500 dark:text-neutral-400">
+                                    {new Date(avaliacao.created_at).toLocaleDateString('pt-AO', {
+                                      day: '2-digit',
+                                      month: '2-digit',
+                                      year: 'numeric',
+                                    })}
+                                  </time>
+                                </div>
+                              </div>
+                              {avaliacao.comentario && (
+                                <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400 whitespace-pre-wrap">
+                                  {avaliacao.comentario}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-neutral-500 dark:text-cream-text/70 text-center py-8">Sem avalia\u00e7\u00f5es</p>
+                  )}
+
+                  {user && (
+                    <ReviewForm alvo={alvo} userId={user.id} />
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>

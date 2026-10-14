@@ -7,6 +7,10 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Button } from '@/components/ui/Button';
 import { formatCurrency } from '@/lib/utils';
 import { ServiceWhatsApp } from './__components/ServiceWhatsApp';
+import { getUser } from '@/lib/auth';
+import { getMediaAvaliacoes, getAvaliacoesPorAlvo, AlvoAvaliacao } from '@/lib/actions/avaliacoes';
+import { Rating, RatingStarsOnly } from '@/components/avaliacoes/Rating';
+import { ReviewForm } from '@/components/avaliacoes/ReviewForm';
 
 interface PortfolioItem {
   titulo: string;
@@ -95,23 +99,11 @@ interface ServiceDetail {
 async function getService(slug: string): Promise<ServiceDetail | null> {
   const supabase = await createSupabaseServerClient();
 
+  const selectQuery = 'id,slug,titulo,descricao,preco,preco_tipo,whatsapp,provincia,municipio,created_at,estado,categoria:categoria_id(id,nome,slug,ativo),profissional:profissional_id(id,nome,slug,whatsapp,bio,telefone,provincia,municipio,estado,avatar_url,anos_experiencia,disponibilidade_dias,disponibilidade_horarios,portfolio)';
+
   const { data, error } = await supabase
     .from('servicos')
-    .select(\
-      id,
-      slug,
-      titulo,
-      descricao,
-      preco,
-      preco_tipo,
-      whatsapp,
-      provincia,
-      municipio,
-      created_at,
-      estado,
-      categoria:categoria_id (id, nome, slug, ativo),
-      profissional:profissional_id (id, nome, slug, whatsapp, bio, telefone, provincia, municipio, estado, avatar_url, anos_experiencia, disponibilidade_dias, disponibilidade_horarios, portfolio)
-    \)
+    .select(selectQuery)
     .eq('slug', slug)
     .eq('estado', 'aprovado')
     .eq('profissional_id.estado', 'aprovado')
@@ -146,10 +138,10 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
   return {
     title: service.titulo,
-    description: service.descricao || \Servi\u00e7o de \ por \.\,
+    description: service.descricao || `Servi\u00e7o de ${service.titulo} por ${service.profissional?.nome}`,
     openGraph: {
       title: service.titulo,
-      description: service.descricao || \Servi\u00e7o de \\,
+      description: service.descricao || `Servi\u00e7o de ${service.titulo}`,
       type: 'website',
     },
   };
@@ -186,8 +178,16 @@ export default async function ServicoPage({ params }: { params: Promise<{ slug: 
     notFound();
   }
 
+  const [user, media, avaliacoes] = await Promise.all([
+    getUser(),
+    getMediaAvaliacoes({ tipo: 'servico', id: service.id }),
+    getAvaliacoesPorAlvo({ tipo: 'servico', id: service.id }),
+  ]);
+
   const serviceWhatsApp = service.whatsapp || service.profissional?.whatsapp;
   const profissional = service.profissional;
+
+  const alvo: AlvoAvaliacao = { tipo: 'servico', id: service.id };
 
   return (
     <MainLayout>
@@ -373,9 +373,9 @@ export default async function ServicoPage({ params }: { params: Promise<{ slug: 
                   </div>
                   <div className="flex flex-col gap-2 w-full md:w-auto">
                     <ServiceWhatsApp telefone={profissional.whatsapp} label="WhatsApp" />
-                    {profissional.telefone && (
+{profissional.telefone && (
                       <a
-                        href={\	el:\\}
+                        href={`tel:${profissional.telefone}`}
                         className="inline-flex items-center justify-center gap-2 px-4 py-2 border border-card-border rounded-[4px] bg-white text-ink dark:text-cream hover:bg-cream dark:hover:bg-navy-dark transition-colors"
                       >
                         <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -388,7 +388,58 @@ export default async function ServicoPage({ params }: { params: Promise<{ slug: 
                 </div>
               ) : (
                 <p className="text-neutral-500 dark:text-cream-text/70">Informa\u00e7\u00f5es do profissional n\u00e3o dispon\u00edveis</p>
-              )}
+)}
+            </div>
+
+            <div className="pt-6 border-t border-card-border">
+              <h2 className="text-lg font-semibold text-ink dark:text-cream mb-4">Avalia\u00e7\u00f5es</h2>
+              <div className="space-y-6">
+                <div className="flex items-center gap-4">
+                  <Rating media={media.media} total={media.total} size="lg" />
+                </div>
+
+                {avaliacoes.length > 0 ? (
+                  <div className="space-y-4">
+                    {avaliacoes.map((avaliacao) => (
+                      <Card key={avaliacao.id} variant="outlined" padding="md" className="border-card-border">
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-lg font-bold text-orange-500 dark:text-orange-400 flex-shrink-0">
+                            {avaliacao.user?.email?.charAt(0).toUpperCase() || 'U'}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="font-medium text-ink dark:text-cream truncate">
+                                {avaliacao.user?.email?.split('@')[0] || 'Utilizador'}
+                              </p>
+                              <div className="flex items-center gap-2">
+                                <RatingStarsOnly media={avaliacao.nota} size="sm" />
+                                <time className="text-xs text-neutral-500 dark:text-neutral-400">
+                                  {new Date(avaliacao.created_at).toLocaleDateString('pt-AO', {
+                                    day: '2-digit',
+                                    month: '2-digit',
+                                    year: 'numeric',
+                                  })}
+                                </time>
+                              </div>
+                            </div>
+                            {avaliacao.comentario && (
+                              <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400 whitespace-pre-wrap">
+                                {avaliacao.comentario}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-neutral-500 dark:text-cream-text/70 text-center py-8">Sem avalia\u00e7\u00f5es</p>
+                )}
+
+                {user && (
+                  <ReviewForm alvo={alvo} userId={user.id} />
+                )}
+              </div>
             </div>
           </Card>
         </div>

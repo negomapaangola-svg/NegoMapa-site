@@ -6,11 +6,19 @@ import Link from "next/link"
 import { supabase } from "@/lib/supabase"
 import { Card, CardContent } from "@/components/ui/Card"
 import { MainLayout } from "@/components/layout/MainLayout"
+import { Rating, RatingStarsOnly } from "@/components/avaliacoes/Rating"
+import { ReviewForm } from "@/components/avaliacoes/ReviewForm"
+import { getMediaAvaliacoes, getAvaliacoesPorAlvo } from "@/lib/actions/avaliacoes"
+import { createBrowserSupabaseClient } from "@/lib/supabase-browser"
 
 function EmpresaContent() {
   const { slug } = useParams<{ slug: string }>()
   const [empresa, setEmpresa] = React.useState<any>(null)
   const [carregando, setCarregando] = React.useState(true)
+  const [media, setMedia] = React.useState({ media: 0, total: 0 })
+  const [avaliacoes, setAvaliacoes] = React.useState<any[]>([])
+  const [userId, setUserId] = React.useState<string | null>(null)
+  const [avaliacoesCarregando, setAvaliacoesCarregando] = React.useState(true)
 
   React.useEffect(() => {
     async function carregarEmpresa() {
@@ -38,6 +46,37 @@ function EmpresaContent() {
     carregarEmpresa()
   }, [slug])
 
+  React.useEffect(() => {
+    if (!empresa) return
+
+    async function carregarAvaliacoes() {
+      setAvaliacoesCarregando(true)
+      try {
+        const [mediaResult, avaliacoesResult] = await Promise.all([
+          getMediaAvaliacoes({ tipo: 'empresa', id: empresa.id }),
+          getAvaliacoesPorAlvo({ tipo: 'empresa', id: empresa.id }),
+        ])
+        setMedia(mediaResult)
+        setAvaliacoes(avaliacoesResult)
+      } catch (error) {
+        console.error("Erro ao carregar avaliações:", error)
+      } finally {
+        setAvaliacoesCarregando(false)
+      }
+    }
+
+    carregarAvaliacoes()
+  }, [empresa])
+
+  React.useEffect(() => {
+    async function getUser() {
+      const browserSupabase = createBrowserSupabaseClient()
+      const { data: { session } } = await browserSupabase.auth.getSession()
+      setUserId(session?.user?.id || null)
+    }
+    getUser()
+  }, [])
+
   if (carregando) {
     return (
       <MainLayout>
@@ -61,6 +100,7 @@ function EmpresaContent() {
   const whatsappNumber = (empresa.phone || "").replace(/\D/g, "")
   const hasPhone = !!empresa.phone
   const hasEmail = !!empresa.email
+  const alvo = { tipo: 'empresa' as const, id: empresa.id }
 
   return (
     <MainLayout>
@@ -180,6 +220,59 @@ function EmpresaContent() {
                 </Link>
               )}
 
+            </div>
+          </div>
+
+          <div className="mt-8 pt-8 border-t border-card-border">
+            <h2 className="text-lg font-semibold text-ink dark:text-cream mb-4">Avaliações</h2>
+            <div className="space-y-6">
+              <div className="flex items-center gap-4">
+                <Rating media={media.media} total={media.total} size="lg" />
+              </div>
+
+              {avaliacoesCarregando ? (
+                <p className="text-neutral-500 dark:text-cream-text/70 text-center py-8">Carregando avaliações...</p>
+              ) : avaliacoes.length > 0 ? (
+                <div className="space-y-4">
+                  {avaliacoes.map((avaliacao) => (
+                    <Card key={avaliacao.id} variant="outlined" padding="md" className="border-card-border">
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-lg font-bold text-orange-500 dark:text-orange-400 flex-shrink-0">
+                          {avaliacao.user?.email?.charAt(0).toUpperCase() || 'U'}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="font-medium text-ink dark:text-cream truncate">
+                              {avaliacao.user?.email?.split('@')[0] || 'Utilizador'}
+                            </p>
+                            <div className="flex items-center gap-2">
+                              <RatingStarsOnly media={avaliacao.nota} size="sm" />
+                              <time className="text-xs text-neutral-500 dark:text-neutral-400">
+                                {new Date(avaliacao.created_at).toLocaleDateString('pt-AO', {
+                                  day: '2-digit',
+                                  month: '2-digit',
+                                  year: 'numeric',
+                                })}
+                              </time>
+                            </div>
+                          </div>
+                          {avaliacao.comentario && (
+                            <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400 whitespace-pre-wrap">
+                              {avaliacao.comentario}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-neutral-500 dark:text-cream-text/70 text-center py-8">Sem avaliações</p>
+              )}
+
+              {userId && (
+                <ReviewForm alvo={alvo} userId={userId} />
+              )}
             </div>
           </div>
 
