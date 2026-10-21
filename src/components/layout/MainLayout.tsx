@@ -12,9 +12,9 @@ interface MainLayoutProps {
 
 export function MainLayout({ children, className }: MainLayoutProps) {
   return (
-    <div className={cn('min-h-screen flex flex-col', className)}>
+    <div className={cn('min-h-screen flex flex-col overflow-x-hidden', className)}>
       <Header />
-      <main className="flex-1 w-full" role="main">
+      <main className="flex-1 w-full max-w-full" role="main">
         {children}
       </main>
       <Footer />
