@@ -1,10 +1,13 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { isAdmin } from '@/lib/auth'
-import { getAllEmpresasAdmin, aprovarEmpresa, rejeitarEmpresa, suspenderEmpresa, EmpresaAdmin } from '@/lib/actions/empresas'
+import { getAllEmpresasAdmin, aprovarEmpresa, rejeitarEmpresa, suspenderEmpresa, EmpresaAdmin, EmpresasAdminResult } from '@/lib/actions/empresas'
 import { MainLayout } from '@/components/layout/MainLayout'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
+
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 export const metadata: Metadata = {
   title: 'Administração de Empresas | NegóMapa Admin',
@@ -12,7 +15,8 @@ export const metadata: Metadata = {
 }
 
 async function AdminEmpresasContent() {
-  const empresas = await getAllEmpresasAdmin()
+  const result: EmpresasAdminResult = await getAllEmpresasAdmin()
+  const empresas: EmpresaAdmin[] = result.success ? result.data : []
 
   const empresasPendentes = empresas.filter(e => !e.is_approved)
   const empresasAprovadas = empresas.filter(e => e.is_approved)

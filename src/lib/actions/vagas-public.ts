@@ -24,7 +24,11 @@ export type VagaPublic = {
   }[]
 }
 
-export async function getVagasPublicas(): Promise<VagaPublic[]> {
+export type VagasPublicasResult =
+  | { success: true; data: VagaPublic[] }
+  | { success: false; error: string }
+
+export async function getVagasPublicas(): Promise<VagasPublicasResult> {
   const supabase = await createSupabaseServerClient()
 
   // Buscar IDs das empresas aprovadas
@@ -35,13 +39,13 @@ export async function getVagasPublicas(): Promise<VagaPublic[]> {
 
   if (companiesError) {
     console.error('Erro ao buscar empresas aprovadas:', companiesError)
-    return []
+    return { success: false, error: 'Erro ao carregar vagas' }
   }
 
   const approvedIds = (approvedCompanies ?? []).map((company) => company.id)
 
   if (approvedIds.length === 0) {
-    return []
+    return { success: true, data: [] }
   }
 
   const { data, error } = await supabase
@@ -68,8 +72,8 @@ export async function getVagasPublicas(): Promise<VagaPublic[]> {
 
   if (error) {
     console.error('Erro ao carregar vagas públicas:', error)
-    return []
+    return { success: false, error: 'Erro ao carregar vagas' }
   }
 
-  return data as VagaPublic[]
+  return { success: true, data: data as VagaPublic[] }
 }

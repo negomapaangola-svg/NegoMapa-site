@@ -17,15 +17,19 @@ export type EmpresaAdmin = {
   user_id: string
 }
 
+export type EmpresasAdminResult =
+  | { success: true; data: EmpresaAdmin[] }
+  | { success: false; error: string }
+
 export type ActionResult = {
   success: boolean
   error?: string
 }
 
-export async function getAllEmpresasAdmin(): Promise<EmpresaAdmin[]> {
+export async function getAllEmpresasAdmin(): Promise<EmpresasAdminResult> {
   const adminCheck = await isAdmin()
   if (!adminCheck) {
-    return []
+    return { success: false, error: 'Acesso negado. Privilégios de administrador necessários.' }
   }
 
   const supabase = await createSupabaseServerClient()
@@ -48,10 +52,10 @@ export async function getAllEmpresasAdmin(): Promise<EmpresaAdmin[]> {
 
   if (error) {
     console.error('Erro ao buscar empresas (admin):', error)
-    return []
+    return { success: false, error: 'Erro ao carregar empresas' }
   }
 
-  return data as EmpresaAdmin[]
+  return { success: true, data: data as EmpresaAdmin[] }
 }
 
 export async function aprovarEmpresa(empresaId: string): Promise<ActionResult> {

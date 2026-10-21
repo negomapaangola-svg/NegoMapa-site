@@ -7,6 +7,9 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { ServiceFilters } from './_components/ServiceFilters';
 import { ServiceListClient } from './_components/ServiceListClient';
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export const metadata: Metadata = {
   title: 'Administração de Serviços',
   description: 'Gerencie os serviços cadastrados no NegóMapa.',

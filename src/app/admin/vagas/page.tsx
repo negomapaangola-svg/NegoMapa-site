@@ -6,6 +6,9 @@ import { getAllVagasAdmin, type VagaAdminItem } from '@/lib/actions/vagas';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { VagasListClient } from './_components/VagasListClient';
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export const metadata: Metadata = {
   title: 'Administração de Vagas',
   description: 'Gerencie as vagas de emprego no NegóMapa.',

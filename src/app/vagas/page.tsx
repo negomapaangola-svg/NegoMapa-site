@@ -1,7 +1,10 @@
 import { Metadata } from "next"
 import { MainLayout } from "@/components/layout/MainLayout"
-import { getVagasPublicas, VagaPublic } from "@/lib/actions/vagas-public"
+import { getVagasPublicas, VagaPublic, VagasPublicasResult } from "@/lib/actions/vagas-public"
 import { VagasContent } from "./_components/VagasContent"
+
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 export const metadata: Metadata = {
   title: "Vagas de Emprego | NegóMapa",
@@ -9,7 +12,8 @@ export const metadata: Metadata = {
 }
 
 export default async function VagasPage() {
-  const vagas = await getVagasPublicas()
+  const result: VagasPublicasResult = await getVagasPublicas()
+  const vagas: VagaPublic[] = result.success ? result.data : []
 
   return (
     <MainLayout>

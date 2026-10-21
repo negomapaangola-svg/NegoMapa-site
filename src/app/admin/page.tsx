@@ -5,6 +5,9 @@ import { MainLayout } from '@/components/layout/MainLayout'
 import { Card, CardContent } from '@/components/ui/Card'
 import Link from 'next/link'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export const metadata: Metadata = {
   title: 'Painel Administrativo | NegóMapa Admin',
   description: 'Painel de administração do NegóMapa',
