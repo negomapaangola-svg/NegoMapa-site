@@ -105,6 +105,26 @@ function EmpresaContent() {
   const alvo = { tipo: 'empresa' as const, id: empresa.id }
   const alvoDenuncia: AlvoDenuncia = { tipo: 'empresa', id: empresa.id }
 
+  // Helper para traduzir estado de legalização
+  const traduzirEstadoLegalizacao = (estado: string): string => {
+    switch (estado) {
+      case 'legalizada':
+        return 'Legalizada'
+      case 'em_processo':
+        return 'Em processo'
+      case 'pendente_documentacao':
+        return 'Documentação pendente'
+      default:
+        return estado
+    }
+  }
+
+  // Verifica se há dados de legalização para exibir
+  const temDadosLegalizacao = empresa.nif || empresa.estado_legalizacao || empresa.documento_legalizacao_url
+
+  // Verifica se há endereço detalhado
+  const temEnderecoDetalhado = empresa.rua || empresa.bairro || empresa.referencia_localizacao
+
   return (
     <MainLayout>
       <div className="max-w-3xl mx-auto p-6 md:p-8 bg-cream dark:bg-navy-dark">
@@ -136,7 +156,19 @@ function EmpresaContent() {
             </CardContent>
             <CardContent className="space-y-1">
               <p className="text-sm text-neutral-500 dark:text-cream-text/70">Endereço</p>
-              <p className="font-medium text-ink dark:text-cream">{empresa.address || "Não informado"}</p>
+              <div className="font-medium text-ink dark:text-cream space-y-1">
+                {temEnderecoDetalhado ? (
+                  <>
+                    {empresa.rua && <p>{empresa.rua}</p>}
+                    {empresa.bairro && <p>Bairro: {empresa.bairro}</p>}
+                    {empresa.referencia_localizacao && <p>Ref.: {empresa.referencia_localizacao}</p>}
+                    {empresa.city && <p>{empresa.city}</p>}
+                    {empresa.province && <p>{empresa.province}</p>}
+                  </>
+                ) : (
+                  <p>{empresa.address || empresa.city || empresa.province || "Não informado"}</p>
+                )}
+              </div>
             </CardContent>
           </div>
 
@@ -146,6 +178,52 @@ function EmpresaContent() {
               <p className="mt-2 text-ink dark:text-cream leading-relaxed">
                 {empresa.description}
               </p>
+            </div>
+          )}
+
+          {/* Secção Legalização */}
+          {temDadosLegalizacao && (
+            <div className="mb-8 pt-8 border-t border-card-border">
+              <h2 className="text-lg font-semibold text-ink dark:text-cream mb-4">Legalização</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <CardContent className="space-y-1">
+                  <p className="text-sm text-neutral-500 dark:text-cream-text/70">NIF</p>
+                  <p className="font-medium text-ink dark:text-cream">{empresa.nif}</p>
+                </CardContent>
+                <CardContent className="space-y-1">
+                  <p className="text-sm text-neutral-500 dark:text-cream-text/70">Estado de legalização</p>
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-secondary-100 dark:bg-secondary-800 text-secondary-700 dark:text-secondary-300 text-sm font-medium">
+                      {traduzirEstadoLegalizacao(empresa.estado_legalizacao)}
+                    </span>
+                  </div>
+                </CardContent>
+              </div>
+              {empresa.documento_legalizacao_url && (
+                <div className="mt-4">
+                  <Link
+                    href={empresa.documento_legalizacao_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-sm text-orange-500 dark:text-orange-400 hover:underline font-medium"
+                  >
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                    Ver documento
+                  </Link>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Secção Horário de atendimento */}
+          {empresa.horario_atendimento && (
+            <div className="mb-8 pt-8 border-t border-card-border">
+              <h2 className="text-lg font-semibold text-ink dark:text-cream mb-4">Horário de atendimento</h2>
+              <div className="prose prose-neutral dark:prose-invert max-w-none whitespace-pre-wrap text-neutral-700 dark:text-cream-text">
+                {empresa.horario_atendimento}
+              </div>
             </div>
           )}
 

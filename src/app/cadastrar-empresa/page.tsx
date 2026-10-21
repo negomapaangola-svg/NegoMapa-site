@@ -13,6 +13,13 @@ type FormData = {
   email: string
   description?: string
   city?: string
+  nif?: string
+  estado_legalizacao?: string
+  documento_legalizacao_url?: string
+  horario_atendimento?: string
+  bairro?: string
+  rua?: string
+  referencia_localizacao?: string
 }
 
 export default function CadastrarEmpresaPage() {
@@ -22,6 +29,13 @@ export default function CadastrarEmpresaPage() {
     province: "",
     phone: "",
     email: "",
+    nif: "",
+    estado_legalizacao: "",
+    documento_legalizacao_url: "",
+    horario_atendimento: "",
+    bairro: "",
+    rua: "",
+    referencia_localizacao: "",
   })
 
   const [errors, setErrors] = React.useState<{ [key: string]: string }>({})
@@ -63,7 +77,7 @@ export default function CadastrarEmpresaPage() {
   }
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target
     setFormData(prev => ({
@@ -131,6 +145,13 @@ export default function CadastrarEmpresaPage() {
         email: formData.email,
         description: formData.description,
         city: formData.city ?? "",
+        nif: formData.nif ?? null,
+        estado_legalizacao: formData.estado_legalizacao ?? null,
+        documento_legalizacao_url: formData.documento_legalizacao_url ?? null,
+        horario_atendimento: formData.horario_atendimento ?? null,
+        bairro: formData.bairro ?? null,
+        rua: formData.rua ?? null,
+        referencia_localizacao: formData.referencia_localizacao ?? null,
         is_approved: false,
       })
       .select()
@@ -153,6 +174,13 @@ export default function CadastrarEmpresaPage() {
       province: "",
       phone: "",
       email: "",
+      nif: "",
+      estado_legalizacao: "",
+      documento_legalizacao_url: "",
+      horario_atendimento: "",
+      bairro: "",
+      rua: "",
+      referencia_localizacao: "",
     })
 
     setRedirect(true)
@@ -304,6 +332,119 @@ export default function CadastrarEmpresaPage() {
               ></textarea>
             </div>
           )}
+
+          {/* Dados legais */}
+          <fieldset className="space-y-4 border border-card-border rounded-[4px] p-4 bg-white/50 dark:bg-neutral-800/50">
+            <legend className="text-sm font-semibold text-ink dark:text-cream px-2">Dados legais</legend>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-ink dark:text-cream mb-2">
+                  NIF
+                </label>
+                <input
+                  type="text"
+                  name="nif"
+                  value={formData.nif ?? ""}
+                  onChange={e => handleChange(e)}
+                  className="w-full mt-1 px-3 py-2 border border-card-border rounded-[4px] shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-neutral-700 dark:text-cream"
+                  placeholder="Ex: 123456789"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-ink dark:text-cream mb-2">
+                  Estado de legalização
+                </label>
+                <select
+                  name="estado_legalizacao"
+                  value={formData.estado_legalizacao ?? ""}
+                  onChange={e => handleChange(e)}
+                  className="w-full mt-1 px-3 py-2 border border-card-border rounded-[4px] shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-neutral-700 dark:text-cream"
+                >
+                  <option value="">Selecionar...</option>
+                  <option value="legalizada">Legalizada</option>
+                  <option value="em_processo">Em processo</option>
+                  <option value="pendente_documentacao">Pendente documentação</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-ink dark:text-cream mb-2">
+                  URL do documento de legalização
+                </label>
+                <input
+                  type="url"
+                  name="documento_legalizacao_url"
+                  value={formData.documento_legalizacao_url ?? ""}
+                  onChange={e => handleChange(e)}
+                  className="w-full mt-1 px-3 py-2 border border-card-border rounded-[4px] shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-neutral-700 dark:text-cream"
+                  placeholder="https://exemplo.com/documento.pdf"
+                />
+              </div>
+            </div>
+          </fieldset>
+
+          {/* Horário */}
+          <fieldset className="space-y-4 border border-card-border rounded-[4px] p-4 bg-white/50 dark:bg-neutral-800/50">
+            <legend className="text-sm font-semibold text-ink dark:text-cream px-2">Horário de atendimento</legend>
+            <div>
+              <label className="block text-sm font-medium text-ink dark:text-cream mb-2">
+                Horário de atendimento
+              </label>
+              <textarea
+                name="horario_atendimento"
+                value={formData.horario_atendimento ?? ""}
+                onChange={e => handleChange(e)}
+                className="w-full mt-1 px-3 py-2 border border-card-border rounded-[4px] shadow-sm resize-y focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-neutral-700 dark:text-cream"
+                rows={3}
+                placeholder="Ex: Segunda a Sexta: 08h00–17h00; Sábado: 08h00–12h00"
+              ></textarea>
+            </div>
+          </fieldset>
+
+          {/* Localização detalhada */}
+          <fieldset className="space-y-4 border border-card-border rounded-[4px] p-4 bg-white/50 dark:bg-neutral-800/50">
+            <legend className="text-sm font-semibold text-ink dark:text-cream px-2">Localização detalhada</legend>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-ink dark:text-cream mb-2">
+                  Rua
+                </label>
+                <input
+                  type="text"
+                  name="rua"
+                  value={formData.rua ?? ""}
+                  onChange={e => handleChange(e)}
+                  className="w-full mt-1 px-3 py-2 border border-card-border rounded-[4px] shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-neutral-700 dark:text-cream"
+                  placeholder="Nome da rua / avenida"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-ink dark:text-cream mb-2">
+                  Bairro
+                </label>
+                <input
+                  type="text"
+                  name="bairro"
+                  value={formData.bairro ?? ""}
+                  onChange={e => handleChange(e)}
+                  className="w-full mt-1 px-3 py-2 border border-card-border rounded-[4px] shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-neutral-700 dark:text-cream"
+                  placeholder="Nome do bairro"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-ink dark:text-cream mb-2">
+                  Referência de localização
+                </label>
+                <input
+                  type="text"
+                  name="referencia_localizacao"
+                  value={formData.referencia_localizacao ?? ""}
+                  onChange={e => handleChange(e)}
+                  className="w-full mt-1 px-3 py-2 border border-card-border rounded-[4px] shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-neutral-700 dark:text-cream"
+                  placeholder="Próximo a / ponto de referência"
+                />
+              </div>
+            </div>
+          </fieldset>
 
           <Button
             type="submit"
