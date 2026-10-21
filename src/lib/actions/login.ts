@@ -36,7 +36,7 @@ export async function loginAction(formData: FormData) {
   }
 
   const adminCheck = await isAdmin()
-  if (adminCheck) {
+  if (adminCheck && redirectTo === '/') {
     redirect('/admin')
   }
 
