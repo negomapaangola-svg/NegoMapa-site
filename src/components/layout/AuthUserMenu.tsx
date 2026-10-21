@@ -5,9 +5,11 @@ import Link from 'next/link'
 import { createBrowserSupabaseClient } from '@/lib/supabase-browser'
 import { Button } from '@/components/ui/Button'
 import { logoutAction } from '@/lib/actions/logout'
+import { checkIsAdmin } from '@/lib/actions/admin'
 
 export function AuthUserMenu() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -16,6 +18,10 @@ export function AuthUserMenu() {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       setIsAuthenticated(!!session)
+      if (session) {
+        const adminResult = await checkIsAdmin()
+        setIsAdmin(adminResult)
+      }
       setIsLoading(false)
     }
 
@@ -23,6 +29,11 @@ export function AuthUserMenu() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setIsAuthenticated(!!session)
+      if (session) {
+        checkIsAdmin().then(setIsAdmin)
+      } else {
+        setIsAdmin(false)
+      }
     })
 
     return () => subscription.unsubscribe()
@@ -50,6 +61,14 @@ export function AuthUserMenu() {
 
   return (
     <div className="flex items-center gap-3">
+      {isAdmin && (
+        <Link
+          href="/admin"
+          className="text-sm font-medium text-orange-500 dark:text-orange-400 hover:text-orange-600 dark:hover:text-orange-300 px-3 py-2 rounded-[4px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2"
+        >
+          Admin
+        </Link>
+      )}
       <Link
         href="/editar-perfil"
         className="text-sm font-medium text-navy dark:text-cream hover:text-orange-500 dark:hover:text-orange-400 px-3 py-2 rounded-[4px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2"

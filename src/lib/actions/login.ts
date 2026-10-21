@@ -2,6 +2,7 @@
 
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { redirect } from 'next/navigation'
+import { isAdmin } from '@/lib/auth'
 
 function isValidRedirect(path: string): boolean {
   return path.startsWith('/') && !path.startsWith('//') && !path.startsWith('/api/')
@@ -32,6 +33,11 @@ export async function loginAction(formData: FormData) {
 
   if (!data.session) {
     return { error: 'Sessão não criada. Tente novamente.' }
+  }
+
+  const adminCheck = await isAdmin()
+  if (adminCheck) {
+    redirect('/admin')
   }
 
   redirect(redirectTo)
