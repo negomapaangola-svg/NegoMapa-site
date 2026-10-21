@@ -11,6 +11,8 @@ import { getUser } from '@/lib/auth';
 import { getMediaAvaliacoes, getAvaliacoesPorAlvo, AlvoAvaliacao } from '@/lib/actions/avaliacoes';
 import { Rating, RatingStarsOnly } from '@/components/avaliacoes/Rating';
 import { ReviewForm } from '@/components/avaliacoes/ReviewForm';
+import { ReportForm } from '@/components/denuncias/ReportForm';
+import { AlvoDenuncia } from '@/lib/actions/denuncias';
 
 interface PortfolioItem {
   titulo: string;
@@ -188,6 +190,7 @@ export default async function ServicoPage({ params }: { params: Promise<{ slug: 
   const profissional = service.profissional;
 
   const alvo: AlvoAvaliacao = { tipo: 'servico', id: service.id };
+  const alvoDenuncia: AlvoDenuncia = { tipo: 'servico', id: service.id };
 
   return (
     <MainLayout>
@@ -385,10 +388,17 @@ export default async function ServicoPage({ params }: { params: Promise<{ slug: 
                       </a>
                     )}
                   </div>
-                </div>
+</div>
               ) : (
                 <p className="text-neutral-500 dark:text-cream-text/70">Informa\u00e7\u00f5es do profissional n\u00e3o dispon\u00edveis</p>
-)}
+              )}
+            </div>
+
+            <div className="pt-4 border-t border-card-border">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-ink dark:text-cream">Segurança</h2>
+                {user && <ReportForm alvo={alvoDenuncia} userId={user.id} triggerLabel="Denunciar este serviço" />}
+              </div>
             </div>
 
             <div className="pt-6 border-t border-card-border">

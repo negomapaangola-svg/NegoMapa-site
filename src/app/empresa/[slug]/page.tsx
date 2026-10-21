@@ -8,7 +8,9 @@ import { Card, CardContent } from "@/components/ui/Card"
 import { MainLayout } from "@/components/layout/MainLayout"
 import { Rating, RatingStarsOnly } from "@/components/avaliacoes/Rating"
 import { ReviewForm } from "@/components/avaliacoes/ReviewForm"
+import { ReportForm } from "@/components/denuncias/ReportForm"
 import { getMediaAvaliacoes, getAvaliacoesPorAlvo } from "@/lib/actions/avaliacoes"
+import { AlvoDenuncia } from "@/lib/actions/denuncias"
 import { createBrowserSupabaseClient } from "@/lib/supabase-browser"
 
 function EmpresaContent() {
@@ -101,6 +103,7 @@ function EmpresaContent() {
   const hasPhone = !!empresa.phone
   const hasEmail = !!empresa.email
   const alvo = { tipo: 'empresa' as const, id: empresa.id }
+  const alvoDenuncia: AlvoDenuncia = { tipo: 'empresa', id: empresa.id }
 
   return (
     <MainLayout>
@@ -220,6 +223,13 @@ function EmpresaContent() {
                 </Link>
               )}
 
+            </div>
+          </div>
+
+          <div className="mt-4 pt-4 border-t border-card-border">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-ink dark:text-cream">Segurança</h2>
+              {userId && <ReportForm alvo={alvoDenuncia} userId={userId} triggerLabel="Denunciar esta empresa" />}
             </div>
           </div>
 

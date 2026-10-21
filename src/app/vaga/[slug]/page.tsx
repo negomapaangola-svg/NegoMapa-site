@@ -10,6 +10,8 @@ import { getUser } from "@/lib/auth";
 import { getMediaAvaliacoes, getAvaliacoesPorAlvo, AlvoAvaliacao } from "@/lib/actions/avaliacoes";
 import { Rating, RatingStarsOnly } from "@/components/avaliacoes/Rating";
 import { ReviewForm } from "@/components/avaliacoes/ReviewForm";
+import { ReportForm } from "@/components/denuncias/ReportForm";
+import { AlvoDenuncia } from "@/lib/actions/denuncias";
 
 interface Vaga {
   id: string;
@@ -155,6 +157,7 @@ export default async function VagaDetailPage({
   const publishedDate = formatDate(vaga.created_at);
 
   const alvo: AlvoAvaliacao = { tipo: 'vaga', id: vaga.id };
+  const alvoDenuncia: AlvoDenuncia = { tipo: 'vaga', id: vaga.id };
 
   return (
     <MainLayout>
@@ -332,6 +335,13 @@ export default async function VagaDetailPage({
                     Esta vaga não possui contacto WhatsApp para candidatura.
                   </p>
                 )}
+              </div>
+
+              <div className="pt-4 border-t border-card-border dark:border-neutral-800">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-semibold text-ink dark:text-cream">Segurança</h2>
+                  {user && <ReportForm alvo={alvoDenuncia} userId={user.id} triggerLabel="Denunciar esta vaga" />}
+                </div>
               </div>
 
               <div className="pt-6 border-t border-card-border dark:border-neutral-800">
