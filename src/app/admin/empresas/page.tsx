@@ -1,10 +1,10 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { isAdmin } from '@/lib/auth'
-import { getAllEmpresasAdmin, aprovarEmpresa, rejeitarEmpresa, suspenderEmpresa, EmpresaAdmin, EmpresasAdminResult } from '@/lib/actions/empresas'
+import { getAllEmpresasAdmin, EmpresaAdmin, EmpresasAdminResult } from '@/lib/actions/empresas'
 import { MainLayout } from '@/components/layout/MainLayout'
 import { Card } from '@/components/ui/Card'
-import { Button } from '@/components/ui/Button'
+import { EmpresaAdminActions } from './_components/EmpresaAdminActions'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -57,7 +57,7 @@ async function AdminEmpresasContent() {
             ) : (
               <div className="space-y-4">
                 {empresasPendentes.map((empresa) => (
-                  <EmpresaCard key={empresa.id} empresa={empresa} onApprove={aprovarEmpresa} onReject={rejeitarEmpresa} />
+                  <EmpresaCard key={empresa.id} empresa={empresa} />
                 ))}
               </div>
             )}
@@ -79,7 +79,7 @@ async function AdminEmpresasContent() {
             ) : (
               <div className="space-y-4">
                 {empresasAprovadas.map((empresa) => (
-                  <EmpresaCard key={empresa.id} empresa={empresa} onApprove={aprovarEmpresa} onReject={rejeitarEmpresa} onSuspend={suspenderEmpresa} />
+                  <EmpresaCard key={empresa.id} empresa={empresa} />
                 ))}
               </div>
             )}
@@ -90,109 +90,54 @@ async function AdminEmpresasContent() {
   )
 }
 
-interface EmpresaCardProps {
-  empresa: EmpresaAdmin
-  onApprove: (id: string) => Promise<{ success: boolean; error?: string }>
-  onReject: (id: string) => Promise<{ success: boolean; error?: string }>
-  onSuspend?: (id: string) => Promise<{ success: boolean; error?: string }>
-}
-
-function EmpresaCard({ empresa, onApprove, onReject, onSuspend }: EmpresaCardProps) {
+function EmpresaCard({ empresa }: { empresa: EmpresaAdmin }) {
   return (
-    <form action={async () => {
-      // This form is just for the buttons, actual actions are handled by the buttons' formActions
-    }} className="contents">
-      <Card variant="default" padding="none" className="overflow-hidden">
-        <div className="grid grid-cols-1 md:grid-cols-6 gap-0">
-          <div className="p-4 md:p-5 border-b md:border-b-0 md:border-r border-card-border bg-white/50 dark:bg-neutral-800/50">
-            <p className="text-xs font-heading font-semibold text-navy dark:text-cream uppercase tracking-wider mb-1">Nome</p>
-            <p className="text-ink dark:text-cream font-medium">{empresa.name}</p>
-          </div>
-          <div className="p-4 md:p-5 border-b md:border-b-0 md:border-r border-card-border bg-white/50 dark:bg-neutral-800/50 hidden md:block">
-            <p className="text-xs font-heading font-semibold text-navy dark:text-cream uppercase tracking-wider mb-1">Setor</p>
-            <p className="text-neutral-600 dark:text-cream-text/70">{empresa.sector || "-"}</p>
-          </div>
-          <div className="p-4 md:p-5 border-b md:border-b-0 md:border-r border-card-border bg-white/50 dark:bg-neutral-800/50 hidden md:block">
-            <p className="text-xs font-heading font-semibold text-navy dark:text-cream uppercase tracking-wider mb-1">Província</p>
-            <p className="text-neutral-600 dark:text-cream-text/70">{empresa.province || "-"}</p>
-          </div>
-          <div className="p-4 md:p-5 border-b md:border-b-0 md:border-r border-card-border bg-white/50 dark:bg-neutral-800/50 hidden md:block">
-            <p className="text-xs font-heading font-semibold text-navy dark:text-cream uppercase tracking-wider mb-1">Email</p>
-            <p className="text-neutral-600 dark:text-cream-text/70">{empresa.email || "-"}</p>
-          </div>
-          <div className="p-4 md:p-5 border-b md:border-b-0 md:border-r border-card-border bg-white/50 dark:bg-neutral-800/50 hidden md:block">
-            <p className="text-xs font-heading font-semibold text-navy dark:text-cream uppercase tracking-wider mb-1">Contacto</p>
-            <p className="text-neutral-600 dark:text-cream-text/70">{empresa.phone || "-"}</p>
-          </div>
-          <div className="p-4 md:p-5 flex items-center justify-center md:justify-end">
-            {!empresa.is_approved ? (
-              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                <Button
-                  variant="primary"
-                  size="sm"
-                  formAction={async () => {
-                    const result = await onApprove(empresa.id)
-                    if (!result.success) alert(result.error)
-                  }}
-                  className="w-full sm:w-auto"
-                >
-                  Aprovar
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  formAction={async () => {
-                    const result = await onReject(empresa.id)
-                    if (!result.success) alert(result.error)
-                  }}
-                  className="w-full sm:w-auto"
-                >
-                  Rejeitar
-                </Button>
-              </div>
-            ) : (
-              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                <span className="text-sm font-medium text-green-600 dark:text-green-400 self-center sm:self-auto">
-                  Aprovada
-                </span>
-                {onSuspend && (
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    formAction={async () => {
-                      const result = await onSuspend(empresa.id)
-                      if (!result.success) alert(result.error)
-                    }}
-                    className="w-full sm:w-auto"
-                  >
-                    Suspender
-                  </Button>
-                )}
-              </div>
-            )}
-          </div>
+    <Card variant="default" padding="none" className="overflow-hidden">
+      <div className="grid grid-cols-1 md:grid-cols-6 gap-0">
+        <div className="p-4 md:p-5 border-b md:border-b-0 md:border-r border-card-border bg-white/50 dark:bg-neutral-800/50">
+          <p className="text-xs font-heading font-semibold text-navy dark:text-cream uppercase tracking-wider mb-1">Nome</p>
+          <p className="text-ink dark:text-cream font-medium">{empresa.name}</p>
         </div>
+        <div className="p-4 md:p-5 border-b md:border-b-0 md:border-r border-card-border bg-white/50 dark:bg-neutral-800/50 hidden md:block">
+          <p className="text-xs font-heading font-semibold text-navy dark:text-cream uppercase tracking-wider mb-1">Setor</p>
+          <p className="text-neutral-600 dark:text-cream-text/70">{empresa.sector || "-"}</p>
+        </div>
+        <div className="p-4 md:p-5 border-b md:border-b-0 md:border-r border-card-border bg-white/50 dark:bg-neutral-800/50 hidden md:block">
+          <p className="text-xs font-heading font-semibold text-navy dark:text-cream uppercase tracking-wider mb-1">Província</p>
+          <p className="text-neutral-600 dark:text-cream-text/70">{empresa.province || "-"}</p>
+        </div>
+        <div className="p-4 md:p-5 border-b md:border-b-0 md:border-r border-card-border bg-white/50 dark:bg-neutral-800/50 hidden md:block">
+          <p className="text-xs font-heading font-semibold text-navy dark:text-cream uppercase tracking-wider mb-1">Email</p>
+          <p className="text-neutral-600 dark:text-cream-text/70">{empresa.email || "-"}</p>
+        </div>
+        <div className="p-4 md:p-5 border-b md:border-b-0 md:border-r border-card-border bg-white/50 dark:bg-neutral-800/50 hidden md:block">
+          <p className="text-xs font-heading font-semibold text-navy dark:text-cream uppercase tracking-wider mb-1">Contacto</p>
+          <p className="text-neutral-600 dark:text-cream-text/70">{empresa.phone || "-"}</p>
+        </div>
+        <div className="p-4 md:p-5 flex items-center justify-center md:justify-end">
+          <EmpresaAdminActions empresaId={empresa.id} isApproved={empresa.is_approved} />
+        </div>
+      </div>
 
-        <div className="md:hidden p-4 border-t border-card-border bg-white/50 dark:bg-neutral-800/50 grid grid-cols-2 gap-4">
-          <div>
-            <p className="text-xs font-heading font-semibold text-navy dark:text-cream uppercase tracking-wider mb-1">Setor</p>
-            <p className="text-neutral-600 dark:text-cream-text/70">{empresa.sector || "-"}</p>
-          </div>
-          <div>
-            <p className="text-xs font-heading font-semibold text-navy dark:text-cream uppercase tracking-wider mb-1">Província</p>
-            <p className="text-neutral-600 dark:text-cream-text/70">{empresa.province || "-"}</p>
-          </div>
-          <div>
-            <p className="text-xs font-heading font-semibold text-navy dark:text-cream uppercase tracking-wider mb-1">Email</p>
-            <p className="text-neutral-600 dark:text-cream-text/70">{empresa.email || "-"}</p>
-          </div>
-          <div>
-            <p className="text-xs font-heading font-semibold text-navy dark:text-cream uppercase tracking-wider mb-1">Contacto</p>
-            <p className="text-neutral-600 dark:text-cream-text/70">{empresa.phone || "-"}</p>
-          </div>
+      <div className="md:hidden p-4 border-t border-card-border bg-white/50 dark:bg-neutral-800/50 grid grid-cols-2 gap-4">
+        <div>
+          <p className="text-xs font-heading font-semibold text-navy dark:text-cream uppercase tracking-wider mb-1">Setor</p>
+          <p className="text-neutral-600 dark:text-cream-text/70">{empresa.sector || "-"}</p>
         </div>
-      </Card>
-    </form>
+        <div>
+          <p className="text-xs font-heading font-semibold text-navy dark:text-cream uppercase tracking-wider mb-1">Província</p>
+          <p className="text-neutral-600 dark:text-cream-text/70">{empresa.province || "-"}</p>
+        </div>
+        <div>
+          <p className="text-xs font-heading font-semibold text-navy dark:text-cream uppercase tracking-wider mb-1">Email</p>
+          <p className="text-neutral-600 dark:text-cream-text/70">{empresa.email || "-"}</p>
+        </div>
+        <div>
+          <p className="text-xs font-heading font-semibold text-navy dark:text-cream uppercase tracking-wider mb-1">Contacto</p>
+          <p className="text-neutral-600 dark:text-cream-text/70">{empresa.phone || "-"}</p>
+        </div>
+      </div>
+    </Card>
   )
 }
 

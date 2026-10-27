@@ -1,12 +1,14 @@
+import * as React from 'react'
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { isAdmin } from '@/lib/auth'
-import { getDenunciasAdmin, atualizarEstadoDenuncia, FiltrosDenuncias, DenunciaWithDetails } from '@/lib/actions/denuncias'
+import { getDenunciasAdmin, FiltrosDenuncias, DenunciaWithDetails } from '@/lib/actions/denuncias'
 import { MainLayout } from '@/components/layout/MainLayout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
-import { Button } from '@/components/ui/Button'
 import { formatDate } from '@/lib/utils'
+import { FiltroSelect } from './_components/FiltroSelect'
+import { DenunciaActions } from './_components/DenunciaActions'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -119,47 +121,34 @@ export default async function AdminDenunciasPage({
 
           <Card variant="default" padding="md" className="mb-6 border-card-border">
             <div className="flex flex-wrap items-center gap-4">
-              <div className="flex items-center gap-2">
-                <label htmlFor="filtro-estado" className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Estado:</label>
-                <select
+              <React.Suspense fallback={null}>
+                <FiltroSelect
                   id="filtro-estado"
-                  defaultValue={filtros.estado || ''}
-                  onChange={(e) => {
-                    const params = new URLSearchParams(window.location.search)
-                    if (e.target.value) params.set('estado', e.target.value)
-                    else params.delete('estado')
-                    window.location.search = params.toString()
-                  }}
-                  className="px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-[4px] bg-white dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                >
-                  <option value="">Todos</option>
-                  <option value="pendente">Pendente</option>
-                  <option value="analisada">Analisada</option>
-                  <option value="resolvida">Resolvida</option>
-                  <option value="arquivada">Arquivada</option>
-                </select>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <label htmlFor="filtro-tipo" className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Tipo de alvo:</label>
-                <select
+                  label="Estado:"
+                  param="estado"
+                  value={filtros.estado || ''}
+                  options={[
+                    { value: '', label: 'Todos' },
+                    { value: 'pendente', label: 'Pendente' },
+                    { value: 'analisada', label: 'Analisada' },
+                    { value: 'resolvida', label: 'Resolvida' },
+                    { value: 'arquivada', label: 'Arquivada' },
+                  ]}
+                />
+                <FiltroSelect
                   id="filtro-tipo"
-                  defaultValue={filtros.tipo_alvo || ''}
-                  onChange={(e) => {
-                    const params = new URLSearchParams(window.location.search)
-                    if (e.target.value) params.set('tipo_alvo', e.target.value)
-                    else params.delete('tipo_alvo')
-                    window.location.search = params.toString()
-                  }}
-                  className="px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-[4px] bg-white dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                >
-                  <option value="">Todos</option>
-                  <option value="profissional">Profissional</option>
-                  <option value="empresa">Empresa</option>
-                  <option value="servico">Serviço</option>
-                  <option value="vaga">Vaga</option>
-                </select>
-              </div>
+                  label="Tipo de alvo:"
+                  param="tipo_alvo"
+                  value={filtros.tipo_alvo || ''}
+                  options={[
+                    { value: '', label: 'Todos' },
+                    { value: 'profissional', label: 'Profissional' },
+                    { value: 'empresa', label: 'Empresa' },
+                    { value: 'servico', label: 'Serviço' },
+                    { value: 'vaga', label: 'Vaga' },
+                  ]}
+                />
+              </React.Suspense>
 
               <div className="ml-auto text-sm text-neutral-500 dark:text-neutral-400">
                 {denuncias.length} denúncia{denuncias.length !== 1 ? 's' : ''} encontrada{denuncias.length !== 1 ? 's' : ''}
@@ -228,74 +217,7 @@ export default async function AdminDenunciasPage({
                     </div>
 
                     <div className="flex flex-col gap-2 md:w-auto">
-                      {denuncia.estado === 'pendente' && (
-                        <>
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={async () => {
-                              await atualizarEstadoDenuncia({ denunciaId: denuncia.id, estado: 'analisada' })
-                              window.location.reload()
-                            }}
-                          >
-                            Marcar como analisada
-                          </Button>
-                          <Button
-                            variant="primary"
-                            size="sm"
-                            onClick={async () => {
-                              await atualizarEstadoDenuncia({ denunciaId: denuncia.id, estado: 'resolvida' })
-                              window.location.reload()
-                            }}
-                          >
-                            Marcar como resolvida
-                          </Button>
-                        </>
-                      )}
-
-                      {denuncia.estado === 'analisada' && (
-                        <>
-                          <Button
-                            variant="primary"
-                            size="sm"
-                            onClick={async () => {
-                              await atualizarEstadoDenuncia({ denunciaId: denuncia.id, estado: 'resolvida' })
-                              window.location.reload()
-                            }}
-                          >
-                            Marcar como resolvida
-                          </Button>
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={async () => {
-                              await atualizarEstadoDenuncia({ denunciaId: denuncia.id, estado: 'arquivada' })
-                              window.location.reload()
-                            }}
-                          >
-                            Arquivar
-                          </Button>
-                        </>
-                      )}
-
-                      {denuncia.estado === 'resolvida' && (
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={async () => {
-                            await atualizarEstadoDenuncia({ denunciaId: denuncia.id, estado: 'arquivada' })
-                            window.location.reload()
-                          }}
-                        >
-                          Arquivar
-                        </Button>
-                      )}
-
-                      {denuncia.estado === 'arquivada' && (
-                        <span className="text-xs text-neutral-500 dark:text-neutral-400 text-center">
-                          Arquivada
-                        </span>
-                      )}
+                      <DenunciaActions denunciaId={denuncia.id} estado={denuncia.estado} />
                     </div>
                   </div>
                 </Card>

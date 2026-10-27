@@ -64,7 +64,7 @@ export async function getVagasPublicas(): Promise<VagasPublicasResult> {
       whatsapp,
       estado,
       created_at,
-      company:companies!company_id (id, name, slug, provincia)
+      company:companies!company_id (id, name, slug, provincia:province)
     `)
     .eq('estado', 'aprovado')
     .in('company_id', approvedIds)

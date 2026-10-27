@@ -222,8 +222,7 @@ export async function getDenunciasAdmin(filtros: FiltrosDenuncias = {}): Promise
       estado,
       created_at,
       resolvida_em,
-      resolvida_por,
-      user:user_id (id, email)
+      resolvida_por
     `)
     .order('created_at', { ascending: false })
 
