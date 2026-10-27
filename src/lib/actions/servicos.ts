@@ -314,8 +314,13 @@ async function verifyAdmin(): Promise<ActionResult | null> {
     return { success: false, error: 'Utilizador não autenticado' }
   }
 
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session?.user?.email || !session.user.email.includes('@admin')) {
+  const { data: adminRow, error: adminError } = await supabase
+    .from('admin_users')
+    .select('user_id')
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  if (adminError || !adminRow) {
     return { success: false, error: 'Acesso negado. Privilégios de administrador necessários.' }
   }
 
