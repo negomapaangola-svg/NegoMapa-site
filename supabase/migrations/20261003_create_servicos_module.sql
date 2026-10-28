@@ -9,17 +9,16 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 -- FUNÇÕES AUXILIARES
 -- ============================================================================
 
--- Função para verificar se o utilizador é admin (baseado na lógica existente: email contém '@admin')
+-- Função para verificar se o utilizador é admin (baseado na tabela admin_users)
 CREATE OR REPLACE FUNCTION public.is_admin()
 RETURNS boolean
 LANGUAGE sql
 STABLE SECURITY DEFINER
-SET search_path = public
+SET search_path = ''
 AS $$
   SELECT EXISTS (
-    SELECT 1 FROM auth.users
-    WHERE id = auth.uid()
-      AND email LIKE '%@admin%'
+    SELECT 1 FROM public.admin_users
+    WHERE user_id = auth.uid()
   );
 $$;
 
