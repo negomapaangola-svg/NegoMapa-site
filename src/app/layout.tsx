@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter, Space_Grotesk } from 'next/font/google';
 import './globals.css';
+import { AdminBottomBar } from '@/components/layout/AdminBottomBar';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -93,6 +94,7 @@ export default function RootLayout({
           Ir para o conteúdo principal
         </a>
         {children}
+        <AdminBottomBar />
       </body>
     </html>
   );
