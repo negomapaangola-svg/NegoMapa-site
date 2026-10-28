@@ -28,7 +28,7 @@ export default async function TestDbPage() {
 
   const { data, error } = await supabase
     .from('companies')
-    .select('*')
+    .select('id, name, slug, sector, province, is_approved')
     .limit(5)
 
   return (

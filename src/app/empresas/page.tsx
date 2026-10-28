@@ -28,7 +28,7 @@ function EmpresasContent() {
     async function carregarDados() {
       const { data, error } = await supabase
         .from("companies")
-        .select("*, sector, province")
+        .select("id, name, slug, sector, province")
         .eq("is_approved", true)
 
       if (error) {
