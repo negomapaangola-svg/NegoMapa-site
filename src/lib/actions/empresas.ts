@@ -66,14 +66,19 @@ export async function aprovarEmpresa(empresaId: string): Promise<ActionResult> {
 
   const supabase = await createSupabaseServerClient()
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('companies')
     .update({ is_approved: true })
     .eq('id', empresaId)
+    .select('id')
 
   if (error) {
     console.error('Erro ao aprovar empresa:', error)
     return { success: false, error: 'Erro ao aprovar empresa. Tente novamente.' }
+  }
+
+  if (!data || data.length === 0) {
+    return { success: false, error: 'A aprovação falhou ou o utilizador não tem permissão.' }
   }
 
   revalidatePath('/admin/empresas')
