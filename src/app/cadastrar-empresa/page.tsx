@@ -45,35 +45,81 @@ export default function CadastrarEmpresaPage() {
   const [redirect, setRedirect] = React.useState(false)
   const [user, setUser] = React.useState<any>(null)
   const [loading, setLoading] = React.useState(true)
+  const [existingCompany, setExistingCompany] = React.useState<any>(null)
+  const [submitError, setSubmitError] = React.useState<string | null>(null)
+
+  // Criação de conta (visitante anónimo)
+  const [account, setAccount] = React.useState({ email: "", password: "", confirm: "" })
+  const [accountError, setAccountError] = React.useState<string | null>(null)
+  const [accountStatus, setAccountStatus] = React.useState<"idle" | "submitting">("idle")
+  const [pendingEmail, setPendingEmail] = React.useState<string | null>(null)
 
   React.useEffect(() => {
     async function fetchUser() {
       const supabase = createBrowserSupabaseClient()
       const { data } = await supabase.auth.getUser()
-      setUser(data.user ?? null)
+      const current = data.user ?? null
+      setUser(current)
+      if (current) {
+        // Evita duplicados: se já existe empresa para este utilizador, não mostra o formulário
+        const { data: empresa } = await supabase
+          .from("companies")
+          .select("id, name, slug, is_approved")
+          .eq("user_id", current.id)
+          .maybeSingle()
+        setExistingCompany(empresa ?? null)
+      }
       setLoading(false)
     }
     fetchUser()
   }, [])
 
-  if (!user) {
-    return (
-      <MainLayout>
-        <div className="min-h-screen p-4 md:p-8 bg-cream dark:bg-navy-dark">
-          <div className="max-w-md mx-auto space-y-6">
-            <h1 className="text-2xl md:text-3xl font-bold text-ink dark:text-cream text-center">
-              Cadastro de Empresa
-            </h1>
-            <p className="text-neutral-600 dark:text-cream-text">Por favor, faça login para cadastrar uma empresa.</p>
-            <Button asChild>
-              <a href="/login?redirectTo=/cadastrar-empresa" className="inline-flex items-center px-4 py-2 rounded-[4px] font-medium">
-                Login
-              </a>
-            </Button>
-          </div>
-        </div>
-      </MainLayout>
-    )
+  const handleAccountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    setAccount(prev => ({ ...prev, [name]: value }))
+  }
+
+  const handleAccountSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setAccountError(null)
+
+    if (account.password.length < 8) {
+      setAccountError("A palavra-passe deve ter pelo menos 8 caracteres.")
+      return
+    }
+    if (account.password !== account.confirm) {
+      setAccountError("As palavras-passe não coincidem.")
+      return
+    }
+
+    setAccountStatus("submitting")
+    const email = account.email.trim().toLowerCase()
+    const supabase = createBrowserSupabaseClient()
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password: account.password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=/cadastrar-empresa`,
+      },
+    })
+    setAccountStatus("idle")
+
+    if (error) {
+      setAccountError(error.message)
+      return
+    }
+    // Email já registado: o Supabase não devolve utilizador novo
+    if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+      setAccountError("Já existe uma conta com este email. Entre na sua conta.")
+      return
+    }
+    // Confirmação de email desactivada: a sessão já existe e segue para o formulário
+    if (data.session) {
+      setUser(data.session.user)
+      return
+    }
+    // Confirmação de email activa: mostrar "Verifique o seu email"
+    setPendingEmail(email)
   }
 
   const handleChange = (
@@ -105,6 +151,7 @@ export default function CadastrarEmpresaPage() {
     if (!validate()) return
 
     setStatus("submitting")
+    setSubmitError(null)
 
     const baseSlug = formData.name
       .toLowerCase()
@@ -158,11 +205,12 @@ export default function CadastrarEmpresaPage() {
       .single()
 
     if (error) {
+      // A conta já foi criada: os dados ficam no formulário para repetir só este passo
       setStatus("idle")
       if (error.code === "23505" && error.message.includes("slug")) {
-        alert("Já existe uma empresa com um nome muito semelhante. Ajusta o nome e tenta novamente.")
+        setSubmitError("Já existe uma empresa com um nome muito semelhante. Ajuste o nome e tente novamente.")
       } else {
-        alert("Erro ao cadastrar: " + error.message)
+        setSubmitError("Não foi possível registar a empresa. Os seus dados foram mantidos; tente novamente. (" + error.message + ")")
       }
       return
     }
@@ -188,6 +236,131 @@ export default function CadastrarEmpresaPage() {
       setRedirect(false)
       ;(window as any).location.href = '/'
     }, 3000)
+  }
+
+  if (loading) {
+    return (
+      <MainLayout>
+        <div className="min-h-screen p-8 bg-cream dark:bg-navy-dark">
+          <p className="text-center text-neutral-600 dark:text-cream-text">A carregar...</p>
+        </div>
+      </MainLayout>
+    )
+  }
+
+  // Visitante anónimo: criação de conta (email, senha e confirmação)
+  if (!user && pendingEmail) {
+    return (
+      <MainLayout>
+        <div className="min-h-screen p-4 md:p-8 bg-cream dark:bg-navy-dark">
+          <div className="max-w-md mx-auto space-y-4 bg-white rounded-[4px] p-6 shadow dark:bg-neutral-800">
+            <h1 className="text-2xl font-bold text-ink dark:text-cream text-center">Verifique o seu email</h1>
+            <p className="text-neutral-600 dark:text-cream-text">
+              Enviámos um link de confirmação para <strong>{pendingEmail}</strong>.
+            </p>
+            <ol className="list-decimal pl-5 space-y-2 text-neutral-600 dark:text-cream-text">
+              <li>Abra o email e clique no link de confirmação.</li>
+              <li>Será levado de volta a este cadastro, já com a sessão iniciada.</li>
+              <li>
+                Se já confirmou e a sessão não abrir, entre em{" "}
+                <a href="/login" className="text-orange-500 dark:text-orange-400 hover:underline">Entrar</a>.
+              </li>
+            </ol>
+            <p className="text-sm text-neutral-500 dark:text-cream-text/70">Não recebeu o email? Verifique a pasta de spam.</p>
+          </div>
+        </div>
+      </MainLayout>
+    )
+  }
+
+  if (!user) {
+    return (
+      <MainLayout>
+        <div className="min-h-screen p-4 md:p-8 bg-cream dark:bg-navy-dark">
+          <div className="max-w-md mx-auto space-y-6">
+            <h1 className="text-2xl md:text-3xl font-bold text-ink dark:text-cream text-center">
+              Cadastro de Empresa
+            </h1>
+            <p className="text-neutral-600 dark:text-cream-text text-center">
+              Crie a sua conta para registar a sua empresa.
+            </p>
+
+            <form onSubmit={handleAccountSubmit} className="space-y-4 bg-white rounded-[4px] p-6 shadow dark:bg-neutral-800">
+              <div>
+                <label className="block text-sm font-medium text-ink dark:text-cream mb-2">Email</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={account.email}
+                  onChange={handleAccountChange}
+                  className="w-full px-3 py-2 border border-card-border rounded-[4px] shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-neutral-700 dark:text-cream"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-ink dark:text-cream mb-2">Senha</label>
+                <input
+                  type="password"
+                  name="password"
+                  value={account.password}
+                  onChange={handleAccountChange}
+                  minLength={8}
+                  className="w-full px-3 py-2 border border-card-border rounded-[4px] shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-neutral-700 dark:text-cream"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-ink dark:text-cream mb-2">Confirmar palavra-passe</label>
+                <input
+                  type="password"
+                  name="confirm"
+                  value={account.confirm}
+                  onChange={handleAccountChange}
+                  minLength={8}
+                  className="w-full px-3 py-2 border border-card-border rounded-[4px] shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-neutral-700 dark:text-cream"
+                  required
+                />
+              </div>
+              {accountError && (
+                <p className="text-sm text-red-600 dark:text-red-400">{accountError}</p>
+              )}
+              <Button type="submit" className="w-full" disabled={accountStatus === "submitting"}>
+                {accountStatus === "submitting" ? "A criar conta..." : "Criar conta"}
+              </Button>
+            </form>
+
+            <p className="text-center text-sm text-neutral-600 dark:text-cream-text">
+              Já tem conta?{" "}
+              <a href="/login" className="font-medium text-orange-500 dark:text-orange-400 hover:underline">Entrar</a>
+            </p>
+          </div>
+        </div>
+      </MainLayout>
+    )
+  }
+
+  // Já existe empresa para esta conta: não mostra formulário (evita duplicados)
+  if (existingCompany) {
+    return (
+      <MainLayout>
+        <div className="min-h-screen p-4 md:p-8 bg-cream dark:bg-navy-dark">
+          <div className="max-w-md mx-auto space-y-4 bg-white rounded-[4px] p-6 shadow dark:bg-neutral-800">
+            <h1 className="text-2xl font-bold text-ink dark:text-cream text-center">Empresa já registada</h1>
+            <p className="text-neutral-600 dark:text-cream-text">
+              A empresa <strong>{existingCompany.name}</strong> já está registada na sua conta.
+            </p>
+            {existingCompany.is_approved ? (
+              <p className="text-neutral-600 dark:text-cream-text">
+                Está aprovada.{" "}
+                <a href={`/empresa/${existingCompany.slug}`} className="text-orange-500 dark:text-orange-400 hover:underline">Ver página da empresa</a>
+              </p>
+            ) : (
+              <p className="text-neutral-600 dark:text-cream-text">Aguarda aprovação pela equipa NegóMapa.</p>
+            )}
+          </div>
+        </div>
+      </MainLayout>
+    )
   }
 
   return (
@@ -445,6 +618,12 @@ export default function CadastrarEmpresaPage() {
               </div>
             </div>
           </fieldset>
+
+          {submitError && (
+            <div className="p-3 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded-[4px] text-sm">
+              {submitError}
+            </div>
+          )}
 
           <Button
             type="submit"

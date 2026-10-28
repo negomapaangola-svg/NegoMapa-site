@@ -93,7 +93,7 @@ export default function Home() {
             </CardHeader>
             <CardContent>
               <Button size="lg" asChild>
-                <Link href="/login?redirectTo=/cadastrar-empresa">Começar grátis</Link>
+                <Link href="/cadastrar-empresa">Começar grátis</Link>
               </Button>
             </CardContent>
           </Card>

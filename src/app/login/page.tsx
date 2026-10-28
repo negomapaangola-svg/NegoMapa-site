@@ -41,9 +41,18 @@ function LoginForm() {
 
   return (
     <div className="max-w-md w-full bg-white rounded-[4px] p-8 shadow dark:bg-neutral-800 border border-card-border">
-      <h2 className="text-2xl font-bold text-center mb-6 text-ink dark:text-cream">
-        Entrar no NegóMapa
+      <h2 className="text-2xl font-bold text-center mb-2 text-ink dark:text-cream">
+        Entrar
       </h2>
+      <p className="text-center text-neutral-600 dark:text-cream-text mb-6">
+        Bem-vindo de volta ao NegóMapa.
+      </p>
+
+      {searchParams.get("erro") === "confirmacao" && !error && (
+        <div className="mb-4 p-3 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded-[4px] text-sm">
+          Não foi possível confirmar o seu email. Tente novamente ou crie a conta de novo.
+        </div>
+      )}
 
       {error && (
         <div className="mb-4 p-3 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded-[4px] text-sm">
@@ -88,7 +97,13 @@ function LoginForm() {
         </Button>
       </form>
 
-      <div className="mt-6 text-center">
+      <div className="mt-6 text-center space-y-3">
+        <p className="text-sm text-neutral-600 dark:text-cream-text">
+          Ainda não tem conta?{" "}
+          <Link href="/cadastrar-empresa" className="font-medium text-orange-500 dark:text-orange-400 hover:underline">
+            Criar conta
+          </Link>
+        </p>
         <Link
           href="/"
           className="text-neutral-600 dark:text-cream-text hover:text-orange-500 hover:underline"
