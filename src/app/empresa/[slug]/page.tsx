@@ -31,7 +31,7 @@ function EmpresaContent() {
 
       const { data, error } = await supabase
         .from("companies")
-        .select("*")
+        .select("id, name, sector, province, city, bairro, rua, referencia_localizacao, description, email, phone, horario_atendimento, estado_legalizacao, documento_legalizacao_url, slug, is_approved")
         .eq("slug", slug)
         .eq("is_approved", true)
         .single()
@@ -120,7 +120,7 @@ function EmpresaContent() {
   }
 
   // Verifica se há dados de legalização para exibir
-  const temDadosLegalizacao = empresa.nif || empresa.estado_legalizacao || empresa.documento_legalizacao_url
+  const temDadosLegalizacao = empresa.estado_legalizacao || empresa.documento_legalizacao_url
 
   // Verifica se há endereço detalhado
   const temEnderecoDetalhado = empresa.rua || empresa.bairro || empresa.referencia_localizacao
@@ -186,10 +186,6 @@ function EmpresaContent() {
             <div className="mb-8 pt-8 border-t border-card-border">
               <h2 className="text-lg font-semibold text-ink dark:text-cream mb-4">Legalização</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <CardContent className="space-y-1">
-                  <p className="text-sm text-neutral-500 dark:text-cream-text/70">NIF</p>
-                  <p className="font-medium text-ink dark:text-cream">{empresa.nif}</p>
-                </CardContent>
                 <CardContent className="space-y-1">
                   <p className="text-sm text-neutral-500 dark:text-cream-text/70">Estado de legalização</p>
                   <div className="flex items-center gap-2">

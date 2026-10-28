@@ -183,11 +183,12 @@ export async function updateProfile(formData: ProfileFormData): Promise<ActionRe
       provincia: formData.provincia.trim(),
       municipio: formData.municipio.trim(),
       avatar_url: formData.avatar_url || null,
-      bi_numero: formData.bi_numero?.trim() || null,
       anos_experiencia: formData.anos_experiencia ?? null,
       disponibilidade_dias: formData.disponibilidade_dias ?? [],
       disponibilidade_horarios: formData.disponibilidade_horarios ?? { manha: false, tarde: false, noite: false },
       portfolio: formData.portfolio ?? [],
+      // BI só é escrito quando vem preenchido; campo vazio preserva o valor actual
+      ...(formData.bi_numero?.trim() ? { bi_numero: formData.bi_numero.trim() } : {}),
     })
     .eq('user_id', user.id)
 
@@ -282,11 +283,16 @@ export async function getUserProfile() {
 
   const { data: perfil } = await supabase
     .from('profissionais')
-    .select('id, nome, telefone, whatsapp, bio, provincia, municipio, estado, slug, avatar_url, bi_numero, anos_experiencia, disponibilidade_dias, disponibilidade_horarios, portfolio')
+    .select('id, nome, telefone, whatsapp, bio, provincia, municipio, estado, slug, avatar_url, anos_experiencia, disponibilidade_dias, disponibilidade_horarios, portfolio')
     .eq('user_id', user.id)
     .single()
 
-  return perfil
+  if (!perfil) return perfil
+
+  // BI só é lido pelo próprio dono, através de função segura (obter_bi_proprio)
+  const { data: bi } = await supabase.rpc('obter_bi_proprio')
+
+  return { ...perfil, bi_numero: bi ?? null }
 }
 
 export async function getActiveCategories() {
