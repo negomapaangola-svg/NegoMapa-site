@@ -4,6 +4,7 @@ import * as React from "react"
 import { useParams } from "next/navigation"
 import Link from "next/link"
 import { supabase } from "@/lib/supabase"
+import { isHttpsUrl } from "@/lib/utils"
 import { Card, CardContent } from "@/components/ui/Card"
 import { MainLayout } from "@/components/layout/MainLayout"
 import { Rating, RatingStarsOnly } from "@/components/avaliacoes/Rating"
@@ -120,7 +121,7 @@ function EmpresaContent() {
   }
 
   // Verifica se há dados de legalização para exibir
-  const temDadosLegalizacao = empresa.estado_legalizacao || empresa.documento_legalizacao_url
+  const temDadosLegalizacao = empresa.estado_legalizacao || isHttpsUrl(empresa.documento_legalizacao_url)
 
   // Verifica se há endereço detalhado
   const temEnderecoDetalhado = empresa.rua || empresa.bairro || empresa.referencia_localizacao
@@ -195,7 +196,7 @@ function EmpresaContent() {
                   </div>
                 </CardContent>
               </div>
-              {empresa.documento_legalizacao_url && (
+              {isHttpsUrl(empresa.documento_legalizacao_url) && (
                 <div className="mt-4">
                   <Link
                     href={empresa.documento_legalizacao_url}
