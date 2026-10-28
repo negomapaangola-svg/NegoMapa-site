@@ -180,7 +180,7 @@ export default function CadastrarEmpresaPage() {
       break
     }
 
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from("companies")
       .insert({
         user_id: user.id,
@@ -201,8 +201,7 @@ export default function CadastrarEmpresaPage() {
         referencia_localizacao: formData.referencia_localizacao ?? null,
         is_approved: false,
       })
-      .select()
-      .single()
+      .select("id")
 
     if (error) {
       // A conta já foi criada: os dados ficam no formulário para repetir só este passo
