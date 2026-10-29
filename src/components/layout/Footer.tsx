@@ -11,6 +11,7 @@ interface FooterProps {
 const footerLinks = {
   servicos: [
     { label: 'Todos os Serviços', href: '/servicos' },
+    { label: 'Empresas', href: '/empresas' },
   ],
 };
 
