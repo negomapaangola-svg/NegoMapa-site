@@ -11,20 +11,6 @@ interface FooterProps {
 const footerLinks = {
   servicos: [
     { label: 'Todos os Serviços', href: '/servicos' },
-    { label: 'Categorias', href: '/servicos/categorias' },
-    { label: 'Como Funciona', href: '/servicos/como-funciona' },
-    { label: 'Anunciar Serviço', href: '/servicos/anunciar' },
-  ],
-  empresa: [
-    { label: 'Blog', href: '/blog' },
-    { label: 'Carreiras', href: '/carreiras' },
-    { label: 'Imprensa', href: '/imprensa' },
-  ],
-  suporte: [
-    { label: 'Central de Ajuda', href: '/ajuda' },
-    { label: 'Contato', href: '/contato' },
-    { label: 'Termos de Uso', href: '/termos' },
-    { label: 'Política de Privacidade', href: '/privacidade' },
   ],
 };
 
@@ -47,7 +33,7 @@ export const Footer = forwardRef<HTMLElement, FooterProps>(
         role="contentinfo"
       >
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
-          <div className="grid grid-cols-2 gap-8 md:grid-cols-4 lg:grid-cols-5">
+          <div className="grid grid-cols-2 gap-8 md:grid-cols-2 lg:grid-cols-2">
             <div className="col-span-2 lg:col-span-1">
               <Link href="/" className="flex items-center gap-2 text-xl font-bold text-cream" aria-label="NegóMapa - Página inicial">
                 <img
@@ -104,31 +90,6 @@ export const Footer = forwardRef<HTMLElement, FooterProps>(
               </ul>
             </nav>
 
-            <nav aria-label="Empresa">
-              <h3 className="text-sm font-semibold text-cream uppercase tracking-wider">Empresa</h3>
-              <ul className="mt-4 space-y-3" role="list">
-                {footerLinks.empresa.map((link) => (
-                  <li key={link.href}>
-                    <Link href={link.href} className="text-sm text-cream-text hover:text-orange-500 transition-colors">
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-
-            <nav aria-label="Suporte">
-              <h3 className="text-sm font-semibold text-cream uppercase tracking-wider">Suporte</h3>
-              <ul className="mt-4 space-y-3" role="list">
-                {footerLinks.suporte.map((link) => (
-                  <li key={link.href}>
-                    <Link href={link.href} className="text-sm text-cream-text hover:text-orange-500 transition-colors">
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </nav>
           </div>
 
           <div className="mt-12 border-t border-card-border pt-8">
