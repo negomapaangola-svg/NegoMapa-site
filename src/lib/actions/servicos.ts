@@ -281,13 +281,12 @@ export async function getUserProfile() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
 
-  const { data: perfil } = await supabase
-    .from('profissionais')
-    .select('id, nome, telefone, whatsapp, bio, provincia, municipio, estado, slug, avatar_url, anos_experiencia, disponibilidade_dias, disponibilidade_horarios, portfolio')
-    .eq('user_id', user.id)
-    .single()
+  // Perfil do próprio utilizador, incluindo telefone, via função SECURITY DEFINER.
+  // Não lê a tabela diretamente, para não depender de grant de coluna para telefone.
+  const { data: rows } = await supabase.rpc('get_my_profissional_profile')
+  const perfil = rows?.[0] ?? null
 
-  if (!perfil) return perfil
+  if (!perfil) return null
 
   // BI só é lido pelo próprio dono, através de função segura (obter_bi_proprio)
   const { data: bi } = await supabase.rpc('obter_bi_proprio')
