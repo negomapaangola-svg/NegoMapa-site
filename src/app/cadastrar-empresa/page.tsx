@@ -3,6 +3,7 @@
 import * as React from "react"
 import { createBrowserSupabaseClient } from "@/lib/supabase-browser"
 import { Button } from "@/components/ui/Button"
+import { isHttpsUrl } from "@/lib/utils"
 import { MainLayout } from "@/components/layout/MainLayout"
 
 type FormData = {
@@ -140,6 +141,9 @@ export default function CadastrarEmpresaPage() {
     if (!formData.province) errors.province = "Província é obrigatória"
     if (!formData.phone) errors.phone = "Phone é obrigatório"
     if (!formData.email) errors.email = "Email é obrigatório"
+    if (formData.documento_legalizacao_url && !isHttpsUrl(formData.documento_legalizacao_url)) {
+      errors.documento_legalizacao_url = "O link do documento tem de começar por https://"
+    }
 
     setErrors(errors)
     return Object.keys(errors).length === 0
@@ -180,7 +184,7 @@ export default function CadastrarEmpresaPage() {
       break
     }
 
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from("companies")
       .insert({
         user_id: user.id,
@@ -201,8 +205,7 @@ export default function CadastrarEmpresaPage() {
         referencia_localizacao: formData.referencia_localizacao ?? null,
         is_approved: false,
       })
-      .select()
-      .single()
+      .select("id")
 
     if (error) {
       // A conta já foi criada: os dados ficam no formulário para repetir só este passo
@@ -551,6 +554,11 @@ export default function CadastrarEmpresaPage() {
                   className="w-full mt-1 px-3 py-2 border border-card-border rounded-[4px] shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-neutral-700 dark:text-cream"
                   placeholder="https://exemplo.com/documento.pdf"
                 />
+                {errors.documento_legalizacao_url && (
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                    {errors.documento_legalizacao_url}
+                  </p>
+                )}
               </div>
             </div>
           </fieldset>
