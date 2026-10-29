@@ -15,14 +15,7 @@ const footerLinks = {
     { label: 'Como Funciona', href: '/servicos/como-funciona' },
     { label: 'Anunciar Serviço', href: '/servicos/anunciar' },
   ],
-  empregos: [
-    { label: 'Todas as Vagas', href: '/empregos' },
-    { label: 'Por Área', href: '/empregos/areas' },
-    { label: 'Estágios', href: '/empregos/estagios' },
-    { label: 'Publicar Vaga', href: '/empregos/publicar' },
-  ],
   empresa: [
-    { label: 'Sobre Nós', href: '/sobre' },
     { label: 'Blog', href: '/blog' },
     { label: 'Carreiras', href: '/carreiras' },
     { label: 'Imprensa', href: '/imprensa' },
@@ -102,19 +95,6 @@ export const Footer = forwardRef<HTMLElement, FooterProps>(
               <h3 className="text-sm font-semibold text-cream uppercase tracking-wider">Serviços</h3>
               <ul className="mt-4 space-y-3" role="list">
                 {footerLinks.servicos.map((link) => (
-                  <li key={link.href}>
-                    <Link href={link.href} className="text-sm text-cream-text hover:text-orange-500 transition-colors">
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-
-            <nav aria-label="Empregos">
-              <h3 className="text-sm font-semibold text-cream uppercase tracking-wider">Empregos</h3>
-              <ul className="mt-4 space-y-3" role="list">
-                {footerLinks.empregos.map((link) => (
                   <li key={link.href}>
                     <Link href={link.href} className="text-sm text-cream-text hover:text-orange-500 transition-colors">
                       {link.label}
