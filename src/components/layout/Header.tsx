@@ -14,9 +14,7 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(
   ({ className }, ref) => {
     const navLinks = [
       { href: '/servicos', label: 'Serviços' },
-      { href: '/empregos', label: 'Empregos' },
       { href: '/empresas', label: 'Empresas' },
-      { href: '/sobre', label: 'Sobre' },
     ];
 
     const [isDark, setIsDark] = useState(false);
