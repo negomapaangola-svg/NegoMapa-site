@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import { HomeSection, EstadoVazio } from './HomeSection';
-import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 
 export type EmpresaHome = {
   id: string;
@@ -31,25 +30,19 @@ export function HomeEmpresas({ empresas, erro }: Props) {
           texto="As empresas aprovadas aparecerão aqui."
         />
       ) : (
-        <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" aria-label="Empresas em destaque">
+        <ul className="nm-grid3" aria-label="Empresas em destaque" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
           {empresas.map((e) => (
             <li key={e.id}>
-              <Link href={`/empresa/${e.slug}`} className="block h-full">
-                <Card variant="liquid" padding="lg" hover className="h-full">
-                  <CardHeader>
-                    <CardTitle>{e.name}</CardTitle>
-                    <CardDescription>
-                      {[e.sector, e.city || e.province].filter(Boolean).join(' · ') || 'Angola'}
-                    </CardDescription>
-                  </CardHeader>
-                  <span className="text-sm font-medium text-orange-600 dark:text-orange-400">Ver empresa →</span>
-                </Card>
+              <Link href={`/empresa/${e.slug}`} className="nm-card">
+                <h3>{e.name}</h3>
+                <p>{[e.sector, e.city || e.province].filter(Boolean).join(' · ') || 'Angola'}</p>
+                <span className="nm-go">Ver empresa →</span>
               </Link>
             </li>
           ))}
         </ul>
       )}
-      <p className="mt-6 text-sm text-neutral-600 dark:text-cream-text">
+      <p className="nm-foot-note">
         Produtos das empresas: ainda sem listagem pública. Aparecerão aqui quando a funcionalidade estiver disponível.
       </p>
     </HomeSection>

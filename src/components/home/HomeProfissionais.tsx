@@ -1,5 +1,4 @@
 import { HomeSection, EstadoVazio } from './HomeSection';
-import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 
 export type ProfissionalHome = {
   id: string;
@@ -31,34 +30,30 @@ export function HomeProfissionais({ profissionais, erro }: Props) {
           texto="Os perfis aprovados aparecerão aqui."
         />
       ) : (
-        <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" aria-label="Profissionais em destaque">
+        <ul className="nm-grid3" aria-label="Profissionais em destaque" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
           {profissionais.map((p) => (
             <li key={p.id}>
-              <Card variant="liquid" padding="lg" className="h-full">
-                <CardHeader>
-                  <div className="flex items-center gap-4">
+              <div className="nm-card">
+                <div className="nm-head">
+                  <div className="nm-avatar">
                     {p.avatar_url ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={p.avatar_url} alt="" className="h-12 w-12 rounded-full object-cover" width={48} height={48} />
+                      <img src={p.avatar_url} alt="" width={56} height={56} />
                     ) : (
-                      <span className="h-12 w-12 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-orange-600 font-bold" aria-hidden="true">
-                        {p.nome.charAt(0).toUpperCase()}
-                      </span>
+                      <span aria-hidden="true">{p.nome.charAt(0).toUpperCase()}</span>
                     )}
-                    <div>
-                      <CardTitle>{p.nome}</CardTitle>
-                      <CardDescription>
-                        {[p.municipio, p.provincia].filter(Boolean).join(', ') || 'Angola'}
-                      </CardDescription>
-                    </div>
                   </div>
-                </CardHeader>
+                  <div>
+                    <h3>{p.nome}</h3>
+                    <p>{[p.municipio, p.provincia].filter(Boolean).join(', ') || 'Angola'}</p>
+                  </div>
+                </div>
                 {p.anos_experiencia != null && (
-                  <p className="text-sm text-neutral-600 dark:text-cream-text">
+                  <p>
                     {p.anos_experiencia} {p.anos_experiencia === 1 ? 'ano' : 'anos'} de experiência
                   </p>
                 )}
-              </Card>
+              </div>
             </li>
           ))}
         </ul>
