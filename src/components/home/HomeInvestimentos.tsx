@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import { HomeSection, EstadoVazio } from './HomeSection';
-import { Button } from '@/components/ui/Button';
 import type { Perfil } from './constants';
 
 interface Props {
@@ -19,9 +18,7 @@ export function HomeInvestimentos({ perfil }: Props) {
           titulo="As oportunidades são para utilizadores registados"
           texto="Entre na sua conta para consultar as oportunidades de investimento."
         >
-          <Button asChild>
-            <Link href="/login?redirectTo=/">Entrar</Link>
-          </Button>
+          <Link href="/login?redirectTo=/" className="nm-btn nm-btn-p">Entrar</Link>
         </EstadoVazio>
       </HomeSection>
     );
@@ -37,7 +34,7 @@ export function HomeInvestimentos({ perfil }: Props) {
             : 'As oportunidades de investimento aparecerão aqui quando forem publicadas.'
         }
       />
-      <p className="mt-6 rounded-[4px] border border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/20 p-4 text-sm text-yellow-800 dark:text-yellow-300">
+      <p className="nm-notice">
         <strong>Aviso de responsabilidade.</strong> As oportunidades são publicadas por terceiros. A NegóMapa não verifica retornos, não garante lucros e não presta aconselhamento financeiro.
       </p>
     </HomeSection>

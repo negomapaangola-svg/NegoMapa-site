@@ -9,6 +9,7 @@ import { HomeEmpresas, type EmpresaHome } from '@/components/home/HomeEmpresas';
 import { HomeVagas, type VagaHome } from '@/components/home/HomeVagas';
 import { HomeInvestimentos } from '@/components/home/HomeInvestimentos';
 import { HomeCtaFinal } from '@/components/home/HomeCtaFinal';
+import { HomeStyles } from '@/components/home/HomeStyles';
 import type { Perfil } from '@/components/home/constants';
 
 export const dynamic = 'force-dynamic';
@@ -83,19 +84,24 @@ export default async function Home() {
 
   return (
     <MainLayout>
-      <HomeHero />
-      <HomeSearch />
-      <HomeCategorias
-        categorias={dados.categorias}
-        servicos={dados.servicos}
-        erroCategorias={dados.erros.categorias}
-        erroServicos={dados.erros.servicos}
-      />
-      <HomeProfissionais profissionais={dados.profissionais} erro={dados.erros.profissionais} />
-      <HomeEmpresas empresas={dados.empresas} erro={dados.erros.empresas} />
-      <HomeVagas perfil={dados.perfil} vagas={dados.vagas} erro={dados.erros.vagas} />
-      <HomeInvestimentos perfil={dados.perfil} />
-      <HomeCtaFinal perfil={dados.perfil} />
+      <div className="nm-home">
+        <HomeStyles />
+        <div className="nm-wrap">
+          <HomeHero />
+          <HomeSearch />
+          <HomeCategorias
+            categorias={dados.categorias}
+            servicos={dados.servicos}
+            erroCategorias={dados.erros.categorias}
+            erroServicos={dados.erros.servicos}
+          />
+          <HomeProfissionais profissionais={dados.profissionais} erro={dados.erros.profissionais} />
+          <HomeEmpresas empresas={dados.empresas} erro={dados.erros.empresas} />
+          <HomeVagas perfil={dados.perfil} vagas={dados.vagas} erro={dados.erros.vagas} />
+          <HomeInvestimentos perfil={dados.perfil} />
+          <HomeCtaFinal perfil={dados.perfil} />
+        </div>
+      </div>
     </MainLayout>
   );
 }
