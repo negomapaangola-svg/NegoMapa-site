@@ -75,6 +75,12 @@ export function AuthUserMenu() {
       >
         Editar perfil
       </Link>
+      <Link
+        href="/cadastrar-servico"
+        className="text-sm font-medium text-navy dark:text-cream hover:text-orange-500 dark:hover:text-orange-400 px-3 py-2 rounded-[4px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2"
+      >
+        Tornar-me profissional
+      </Link>
       <form action={logoutAction}>
         <Button type="submit" size="sm" variant="ghost" className="text-navy dark:text-cream hover:text-orange-500 dark:hover:text-orange-400">
           Sair
