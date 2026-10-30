@@ -1,104 +1,101 @@
 import { MainLayout } from '@/components/layout/MainLayout';
-import { Button } from '@/components/ui/Button';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
-import Link from 'next/link';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { getVagasPublicas } from '@/lib/actions/vagas-public';
+import { HomeHero } from '@/components/home/HomeHero';
+import { HomeSearch } from '@/components/home/HomeSearch';
+import { HomeCategorias, type CategoriaHome, type ServicoHome } from '@/components/home/HomeCategorias';
+import { HomeProfissionais, type ProfissionalHome } from '@/components/home/HomeProfissionais';
+import { HomeEmpresas, type EmpresaHome } from '@/components/home/HomeEmpresas';
+import { HomeVagas, type VagaHome } from '@/components/home/HomeVagas';
+import { HomeInvestimentos } from '@/components/home/HomeInvestimentos';
+import { HomeCtaFinal } from '@/components/home/HomeCtaFinal';
+import type { Perfil } from '@/components/home/constants';
 
-export default function Home() {
+export const dynamic = 'force-dynamic';
+
+type Erros = { categorias: boolean; servicos: boolean; profissionais: boolean; empresas: boolean; vagas: boolean };
+
+/**
+ * Carrega apenas dados já existentes e permitidos por RLS para o perfil atual.
+ * Colunas escolhidas respeitam os GRANTs de coluna de `anon`/`authenticated`
+ * (ex.: `companies` não expõe `created_at` nem `logo_url` ao anon).
+ */
+async function carregarHome() {
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  let perfil: Perfil = 'visitante';
+  if (user) {
+    const [prof, emp] = await Promise.all([
+      supabase.from('profissionais').select('id').eq('user_id', user.id).maybeSingle(),
+      supabase.from('companies').select('id').eq('user_id', user.id).maybeSingle(),
+    ]);
+    if (prof.data) perfil = 'profissional';
+    else if (emp.data) perfil = 'empresa';
+  }
+
+  const [categorias, servicos, profissionais, empresas] = await Promise.all([
+    supabase.from('categorias').select('id, nome, slug').eq('ativo', true).order('nome').limit(12),
+    supabase
+      .from('servicos')
+      .select('id, titulo, slug, preco, preco_tipo, provincia, municipio')
+      .eq('estado', 'aprovado')
+      .order('created_at', { ascending: false })
+      .limit(6),
+    supabase
+      .from('profissionais')
+      .select('id, nome, slug, provincia, municipio, anos_experiencia, avatar_url')
+      .eq('estado', 'aprovado')
+      .order('created_at', { ascending: false })
+      .limit(6),
+    supabase
+      .from('companies')
+      .select('id, name, slug, sector, province, city')
+      .eq('is_approved', true)
+      .order('name')
+      .limit(6),
+  ]);
+
+  // Vagas só são carregadas para profissionais autenticados (regra de acesso).
+  const vagasResult = perfil === 'profissional' ? await getVagasPublicas() : null;
+
+  const erros: Erros = {
+    categorias: !!categorias.error,
+    servicos: !!servicos.error,
+    profissionais: !!profissionais.error,
+    empresas: !!empresas.error,
+    vagas: vagasResult ? !vagasResult.success : false,
+  };
+
+  return {
+    perfil,
+    categorias: (categorias.data ?? []) as CategoriaHome[],
+    servicos: (servicos.data ?? []) as ServicoHome[],
+    profissionais: (profissionais.data ?? []) as ProfissionalHome[],
+    empresas: (empresas.data ?? []) as EmpresaHome[],
+    vagas: (vagasResult && vagasResult.success ? vagasResult.data.slice(0, 3) : []) as VagaHome[],
+    erros,
+  };
+}
+
+export default async function Home() {
+  const dados = await carregarHome();
+
   return (
     <MainLayout>
-      <section className="relative py-20 lg:py-32 overflow-hidden" aria-labelledby="hero-title">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto">
-            <h1
-              id="hero-title"
-              className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-ink dark:text-cream"
-            >
-              Tudo o que precisa para crescer em Angola
-            </h1>
-            <p className="mt-6 text-lg sm:text-xl text-neutral-600 dark:text-cream-text max-w-2xl mx-auto">
-              Encontre produtos e serviços, profissionais qualificados, vagas de emprego e oportunidades de investimento em Angola.
-            </p>
-            <div className="mt-10 flex flex-col sm:flex-row flex-wrap items-center justify-center gap-4 w-full max-w-5xl mx-auto">
-              <Button size="lg" asChild className="flex-1 sm:flex-none min-w-[160px]">
-                <Link href="/servicos">Produtos e Serviços</Link>
-              </Button>
-              <Button size="lg" variant="outline" asChild className="flex-1 sm:flex-none min-w-[160px]">
-                <Link href="/profissionais">Profissionais</Link>
-              </Button>
-              <Button size="lg" variant="outline" asChild className="flex-1 sm:flex-none min-w-[160px]">
-                <Link href="/vagas">Vagas de Emprego</Link>
-              </Button>
-              <Button size="lg" variant="outline" asChild className="flex-1 sm:flex-none min-w-[160px]">
-                <Link href="/investimentos">Investimento</Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="mt-16" aria-labelledby="objectives-title">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h2 id="objectives-title" className="sr-only">Objectivos da NegóMapa</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" role="list" aria-label="Objectivos da plataforma">
-            <Link href="/servicos" role="listitem">
-              <Card variant="liquid" padding="lg" hover className="h-full">
-                <CardHeader>
-                  <CardTitle>Produtos e Serviços</CardTitle>
-                  <CardDescription>Encontre empresas, produtos e serviços perto de si.</CardDescription>
-                </CardHeader>
-                <CardContent />
-              </Card>
-            </Link>
-            <Link href="/profissionais" role="listitem">
-              <Card variant="liquid" padding="lg" hover className="h-full">
-                <CardHeader>
-                  <CardTitle>Profissionais</CardTitle>
-                  <CardDescription>Encontre profissionais qualificados para o que precisa.</CardDescription>
-                </CardHeader>
-                <CardContent />
-              </Card>
-            </Link>
-            <Link href="/vagas" role="listitem">
-              <Card variant="liquid" padding="lg" hover className="h-full">
-                <CardHeader>
-                  <CardTitle>Vagas de Emprego</CardTitle>
-                  <CardDescription>Descubra vagas de emprego em todas as províncias de Angola.</CardDescription>
-                </CardHeader>
-                <CardContent />
-              </Card>
-            </Link>
-            <Link href="/investimentos" role="listitem">
-              <Card variant="liquid" padding="lg" hover className="h-full">
-                <CardHeader>
-                  <CardTitle>Investimento</CardTitle>
-                  <CardDescription>Explore oportunidades de investimento e crescimento.</CardDescription>
-                </CardHeader>
-                <CardContent />
-              </Card>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      <section className="py-16 lg:py-24" aria-labelledby="cta-title">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <Card variant="liquid" padding="lg" className="max-w-3xl mx-auto text-center">
-            <CardHeader>
-              <CardTitle id="cta-title" className="text-2xl sm:text-3xl">
-                Comece a usar a NegóMapa
-              </CardTitle>
-              <CardDescription>
-                Encontre serviços, profissionais, vagas e oportunidades de investimento em Angola.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button size="lg" asChild>
-                <Link href="/cadastrar-empresa">Começar grátis</Link>
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
+      <HomeHero />
+      <HomeSearch />
+      <HomeCategorias
+        categorias={dados.categorias}
+        servicos={dados.servicos}
+        erroCategorias={dados.erros.categorias}
+        erroServicos={dados.erros.servicos}
+      />
+      <HomeProfissionais profissionais={dados.profissionais} erro={dados.erros.profissionais} />
+      <HomeEmpresas empresas={dados.empresas} erro={dados.erros.empresas} />
+      <HomeVagas perfil={dados.perfil} vagas={dados.vagas} erro={dados.erros.vagas} />
+      <HomeInvestimentos perfil={dados.perfil} />
+      <HomeCtaFinal perfil={dados.perfil} />
     </MainLayout>
   );
 }
