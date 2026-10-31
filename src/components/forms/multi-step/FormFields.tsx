@@ -50,7 +50,7 @@ interface TextFieldProps {
   required?: boolean
   error?: string
   hint?: string
-  type?: 'text' | 'email' | 'tel'
+  type?: 'text' | 'email' | 'tel' | 'url'
   placeholder?: string
   autoComplete?: string
 }

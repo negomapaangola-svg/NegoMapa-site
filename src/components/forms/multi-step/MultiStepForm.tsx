@@ -72,6 +72,11 @@ export function MultiStepForm<T extends object>({
     setIndex((i) => Math.max(i - 1, 0))
   }
 
+  function goTo(i: number) {
+    setErrors({})
+    setIndex(Math.min(Math.max(i, 0), total - 1))
+  }
+
   const progressPercent = Math.round(((index + 1) / total) * 100)
   const errorCount = Object.keys(errors).length
 
@@ -124,7 +129,7 @@ export function MultiStepForm<T extends object>({
         )}
 
         <div className="flex flex-col gap-5">
-          {step.render({ data, errors, setField })}
+          {step.render({ data, errors, setField, goTo })}
         </div>
 
         {/* Botões grandes: Voltar e Continuar */}

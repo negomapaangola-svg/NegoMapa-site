@@ -7,6 +7,8 @@ export interface StepRenderProps<T> {
   data: T
   errors: FormErrors
   setField: <K extends keyof T>(key: K, value: T[K]) => void
+  /** Leva a outra etapa (ex.: botão "Editar" na revisão). Os dados mantêm-se. */
+  goTo: (index: number) => void
 }
 
 export interface StepDefinition<T> {
@@ -18,9 +20,10 @@ export interface StepDefinition<T> {
   description?: string
   /**
    * Campos obrigatórios desta etapa. "Continuar" valida apenas estes.
-   * Campos de outras etapas não são validados aqui.
+   * Pode ser uma função dos dados, para obrigatórios condicionais
+   * (ex.: NIF só quando a empresa é legalizada).
    */
-  requiredFields: ReadonlyArray<string>
+  requiredFields: ReadonlyArray<string> | ((data: T) => ReadonlyArray<string>)
   /** Conteúdo da etapa. Os dados vêm sempre do estado do formulário. */
   render: (props: StepRenderProps<T>) => ReactNode
 }
