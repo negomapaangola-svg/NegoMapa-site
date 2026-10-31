@@ -7,7 +7,15 @@ import { Button } from '@/components/ui/Button'
 import { logoutAction } from '@/lib/actions/logout'
 import { checkIsAdmin } from '@/lib/actions/admin'
 
-export function AuthUserMenu() {
+type AuthUserMenuProps = {
+  // 'inline': barra do cabeçalho (desktop). 'stacked': painel do menu (telemóvel).
+  variant?: 'inline' | 'stacked'
+}
+
+const linkBase =
+  'text-sm font-medium text-navy dark:text-cream hover:text-orange-500 dark:hover:text-orange-400 px-3 py-2 rounded-[4px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2'
+
+export function AuthUserMenu({ variant = 'inline' }: AuthUserMenuProps) {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
@@ -43,16 +51,17 @@ export function AuthUserMenu() {
     return null
   }
 
+  const stacked = variant === 'stacked'
+  const wrapper = stacked ? 'flex flex-col gap-2' : 'flex items-center gap-3'
+  const linkClass = stacked ? `${linkBase} block w-full` : linkBase
+
   if (!isAuthenticated) {
     return (
-      <div className="flex items-center gap-3">
-        <Link
-          href="/login"
-          className="text-sm font-medium text-navy dark:text-cream hover:text-orange-500 dark:hover:text-orange-400 px-3 py-2 rounded-[4px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2"
-        >
+      <div className={wrapper}>
+        <Link href="/login" className={linkClass}>
           Entrar
         </Link>
-        <Button size="sm" asChild>
+        <Button size="sm" asChild className={stacked ? 'w-full' : undefined}>
           <Link href="/cadastrar-empresa">Cadastrar</Link>
         </Button>
       </div>
@@ -60,29 +69,28 @@ export function AuthUserMenu() {
   }
 
   return (
-    <div className="flex items-center gap-3">
+    <div className={wrapper}>
       {isAdmin && (
         <Link
           href="/admin"
-          className="text-sm font-medium text-orange-500 dark:text-orange-400 hover:text-orange-600 dark:hover:text-orange-300 px-3 py-2 rounded-[4px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2"
+          className={`${linkClass} text-orange-500 dark:text-orange-400 hover:text-orange-600 dark:hover:text-orange-300`}
         >
-          Admin
+          Painel Admin
         </Link>
       )}
-      <Link
-        href="/editar-perfil"
-        className="text-sm font-medium text-navy dark:text-cream hover:text-orange-500 dark:hover:text-orange-400 px-3 py-2 rounded-[4px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2"
-      >
+      <Link href="/editar-perfil" className={linkClass}>
         Editar perfil
       </Link>
-      <Link
-        href="/cadastrar-servico"
-        className="text-sm font-medium text-navy dark:text-cream hover:text-orange-500 dark:hover:text-orange-400 px-3 py-2 rounded-[4px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2"
-      >
+      <Link href="/cadastrar-servico" className={linkClass}>
         Tornar-me profissional
       </Link>
-      <form action={logoutAction}>
-        <Button type="submit" size="sm" variant="ghost" className="text-navy dark:text-cream hover:text-orange-500 dark:hover:text-orange-400">
+      <form action={logoutAction} className={stacked ? 'w-full' : undefined}>
+        <Button
+          type="submit"
+          size="sm"
+          variant="ghost"
+          className={`text-navy dark:text-cream hover:text-orange-500 dark:hover:text-orange-400 ${stacked ? 'w-full' : ''}`}
+        >
           Sair
         </Button>
       </form>

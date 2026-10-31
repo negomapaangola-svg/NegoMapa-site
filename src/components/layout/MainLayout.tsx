@@ -3,6 +3,7 @@
 import { ReactNode } from 'react';
 import { Header } from './Header';
 import { Footer } from './Footer';
+import { BackButton } from './BackButton';
 import { cn } from '@/lib/utils';
 
 interface MainLayoutProps {
@@ -15,6 +16,7 @@ export function MainLayout({ children, className }: MainLayoutProps) {
     <div className={cn('min-h-screen flex flex-col overflow-x-hidden', className)}>
       <Header />
       <main className="flex-1 w-full max-w-full" role="main">
+        <BackButton />
         {children}
       </main>
       <Footer />
