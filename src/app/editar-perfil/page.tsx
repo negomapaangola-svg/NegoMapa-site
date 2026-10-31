@@ -34,6 +34,13 @@ export default async function EditarPerfilPage() {
     redirect('/cadastrar-servico')
   }
 
+  // motivo_rejeicao só existe no retorno de get_my_profissional_profile depois da migração
+  // pendente (ver supabase/pendentes). Até lá, a chave não existe e mostra-se o texto de contacto.
+  const motivoRejeicao =
+    'motivo_rejeicao' in profile && typeof profile.motivo_rejeicao === 'string' && profile.motivo_rejeicao.trim()
+      ? profile.motivo_rejeicao
+      : null
+
   return (
     <MainLayout>
       <div className="min-h-screen py-12 lg:py-16 bg-cream dark:bg-navy-dark">
@@ -46,6 +53,27 @@ export default async function EditarPerfilPage() {
               Actualize os seus dados e avatar.
             </p>
           </div>
+          {profile.estado === 'pendente' && (
+            <Card variant="default" padding="lg" className="border-card-border mb-6">
+              <p className="text-neutral-700 dark:text-cream-text">
+                O seu perfil está pendente de aprovação. Só fica visível ao público depois de ser aprovado.
+              </p>
+            </Card>
+          )}
+          {profile.estado === 'rejeitado' && (
+            <Card variant="default" padding="lg" className="border-card-border mb-6">
+              <p role="alert" className="font-semibold text-red-600 dark:text-red-400">
+                O seu perfil foi rejeitado.
+              </p>
+              {motivoRejeicao ? (
+                <p className="mt-2 text-neutral-700 dark:text-cream-text">Motivo: {motivoRejeicao}</p>
+              ) : (
+                <p className="mt-2 text-neutral-700 dark:text-cream-text">
+                  Contacte a equipa do NegóMapa para saber o motivo.
+                </p>
+              )}
+            </Card>
+          )}
           <ProfileForm initialData={{ userId: user.id }} categorias={categorias} defaultData={profile} />
         </div>
       </div>
