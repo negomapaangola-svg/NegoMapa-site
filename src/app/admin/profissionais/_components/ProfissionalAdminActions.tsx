@@ -6,53 +6,49 @@ import { Button } from '@/components/ui/Button'
 import { avaliarProfissional } from '@/lib/actions/admin-profissionais'
 import { MOTIVO_MIN_CARACTERES } from '@/lib/profissionais-avaliacao'
 
+export type FeedbackAvaliacao = { tipo: 'sucesso' | 'erro'; texto: string }
+
 type Props = {
   profissionalId: string
   estado: 'pendente' | 'aprovado' | 'rejeitado'
+  // A mensagem é guardada no pai, porque este componente desmonta quando o perfil muda de secção.
+  onResultado: (feedback: FeedbackAvaliacao) => void
 }
 
-type Feedback = { tipo: 'sucesso' | 'erro'; texto: string } | null
-
-export function ProfissionalAdminActions({ profissionalId, estado }: Props) {
+export function ProfissionalAdminActions({ profissionalId, estado, onResultado }: Props) {
   const router = useRouter()
   const [pending, startTransition] = React.useTransition()
   const [mostrarMotivo, setMostrarMotivo] = React.useState(false)
   const [motivo, setMotivo] = React.useState('')
-  const [feedback, setFeedback] = React.useState<Feedback>(null)
 
   const motivoValido = motivo.trim().length >= MOTIVO_MIN_CARACTERES
 
   function aprovar() {
-    setFeedback(null)
     startTransition(async () => {
       const result = await avaliarProfissional(profissionalId, 'aprovado')
-      setFeedback(
-        result.success
-          ? { tipo: 'sucesso', texto: 'Profissional aprovado com sucesso.' }
-          : { tipo: 'erro', texto: result.error ?? 'Erro ao aprovar profissional.' }
-      )
-      if (result.success) router.refresh()
+      if (result.success) {
+        onResultado({ tipo: 'sucesso', texto: 'Profissional aprovado com sucesso.' })
+        router.refresh()
+      } else {
+        onResultado({ tipo: 'erro', texto: result.error ?? 'Erro ao aprovar profissional.' })
+      }
     })
   }
 
   function confirmarRejeicao() {
-    setFeedback(null)
     if (!motivoValido) {
-      setFeedback({
-        tipo: 'erro',
-        texto: `O motivo deve ter pelo menos ${MOTIVO_MIN_CARACTERES} caracteres.`,
-      })
+      onResultado({ tipo: 'erro', texto: `O motivo deve ter pelo menos ${MOTIVO_MIN_CARACTERES} caracteres.` })
       return
     }
     startTransition(async () => {
       const result = await avaliarProfissional(profissionalId, 'rejeitado', motivo)
       if (result.success) {
-        setFeedback({ tipo: 'sucesso', texto: 'Profissional rejeitado. O motivo foi registado.' })
+        onResultado({ tipo: 'sucesso', texto: 'Profissional rejeitado. O motivo foi registado.' })
         setMotivo('')
         setMostrarMotivo(false)
         router.refresh()
       } else {
-        setFeedback({ tipo: 'erro', texto: result.error ?? 'Erro ao rejeitar profissional.' })
+        onResultado({ tipo: 'erro', texto: result.error ?? 'Erro ao rejeitar profissional.' })
       }
     })
   }
@@ -71,10 +67,7 @@ export function ProfissionalAdminActions({ profissionalId, estado }: Props) {
               variant="destructive"
               size="sm"
               disabled={pending}
-              onClick={() => {
-                setFeedback(null)
-                setMostrarMotivo(true)
-              }}
+              onClick={() => setMostrarMotivo(true)}
               className="w-full sm:w-auto"
             >
               Rejeitar
@@ -111,7 +104,6 @@ export function ProfissionalAdminActions({ profissionalId, estado }: Props) {
               onClick={() => {
                 setMostrarMotivo(false)
                 setMotivo('')
-                setFeedback(null)
               }}
               className="w-full sm:w-auto"
             >
@@ -119,19 +111,6 @@ export function ProfissionalAdminActions({ profissionalId, estado }: Props) {
             </Button>
           </div>
         </div>
-      )}
-
-      {feedback && (
-        <p
-          role={feedback.tipo === 'erro' ? 'alert' : 'status'}
-          className={
-            feedback.tipo === 'erro'
-              ? 'text-sm text-red-600 dark:text-red-400'
-              : 'text-sm text-green-700 dark:text-green-400'
-          }
-        >
-          {feedback.texto}
-        </p>
       )}
     </div>
   )

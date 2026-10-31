@@ -34,9 +34,12 @@ export default async function EditarPerfilPage() {
     redirect('/cadastrar-servico')
   }
 
-  // motivo_rejeicao ainda não é devolvido por get_my_profissional_profile (ver relatório);
-  // enquanto não for, o ecrã mostra o estado e um texto de contacto.
-  const motivoRejeicao = (profile as { motivo_rejeicao?: string | null }).motivo_rejeicao ?? null
+  // motivo_rejeicao só existe no retorno de get_my_profissional_profile depois da migração
+  // pendente (ver supabase/pendentes). Até lá, a chave não existe e mostra-se o texto de contacto.
+  const motivoRejeicao =
+    'motivo_rejeicao' in profile && typeof profile.motivo_rejeicao === 'string' && profile.motivo_rejeicao.trim()
+      ? profile.motivo_rejeicao
+      : null
 
   return (
     <MainLayout>
