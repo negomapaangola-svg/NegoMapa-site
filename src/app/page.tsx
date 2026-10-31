@@ -87,8 +87,9 @@ export default async function Home() {
       <div className="nm-home">
         <HomeStyles />
         <div className="nm-wrap">
-          <HomeHero />
-          <HomeSearch />
+          <HomeHero>
+            <HomeSearch />
+          </HomeHero>
           <HomeCategorias
             categorias={dados.categorias}
             servicos={dados.servicos}

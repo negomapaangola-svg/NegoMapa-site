@@ -3,7 +3,7 @@ import { PROVINCIAS } from './constants';
 /** Pesquisa sem JavaScript: envia para /servicos com os parâmetros q e provincia. */
 export function HomeSearch() {
   return (
-    <section style={{ marginTop: 8 }} aria-labelledby="pesquisa-titulo">
+    <section aria-labelledby="pesquisa-titulo">
       <h2 id="pesquisa-titulo" className="sr-only" style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)' }}>
         Pesquisar serviços
       </h2>
