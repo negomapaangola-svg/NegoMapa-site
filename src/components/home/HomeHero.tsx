@@ -1,7 +1,13 @@
+import type { ReactNode } from 'react';
 import Link from 'next/link';
 
 /** Hero do protótipo: texto à esquerda, painel visual à direita (sem fotografias, ver relatório). */
-export function HomeHero() {
+interface HomeHeroProps {
+  /** Pesquisa do protótipo: fica na coluna de texto, abaixo do lead. */
+  children?: ReactNode;
+}
+
+export function HomeHero({ children }: HomeHeroProps) {
   return (
     <section className="nm-hero" aria-labelledby="hero-title">
       <div>
@@ -10,6 +16,7 @@ export function HomeHero() {
         <p className="nm-lead">
           A NegóMapa liga clientes, profissionais, empresas e investidores. Encontre serviços, vagas e oportunidades perto de si.
         </p>
+        {children}
         <div className="nm-caminhos" aria-label="Ligações por perfil">
           <Link href="/servicos" className="nm-btn nm-btn-g">Clientes</Link>
           <Link href="/profissionais" className="nm-btn nm-btn-g">Profissionais</Link>
