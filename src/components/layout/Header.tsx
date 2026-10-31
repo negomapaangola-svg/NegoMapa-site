@@ -90,7 +90,11 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(
             </div>
 
             <div className="hidden lg:flex items-center gap-3">
-              <AuthUserMenu variant="inline" />
+              <AuthUserMenu variant="desktop" />
+            </div>
+
+            <div className="lg:hidden">
+              <AuthUserMenu variant="icon" />
             </div>
 
             <button
