@@ -5,32 +5,7 @@ import type { TipoPainel } from '@/lib/painel-acesso'
 import { SCRIPT_TEMA_INICIAL } from '@/lib/painel-tema'
 import { BotaoTema } from './BotaoTema'
 import { MenuPainel } from './MenuPainel'
-
-type Item = { href: string; rotulo: string }
-
-const ITENS_COMUNS: Item[] = [
-  { href: '', rotulo: 'Visão geral' },
-  { href: '/perfil', rotulo: 'Perfil' },
-  { href: '/vagas', rotulo: 'Vagas' },
-  { href: '/avaliacoes', rotulo: 'Avaliações' },
-  { href: '/configuracoes', rotulo: 'Configurações' },
-]
-
-const ITENS_POR_TIPO: Record<TipoPainel, Item[]> = {
-  empresa: [
-    ...ITENS_COMUNS,
-    { href: '/produtos-servicos', rotulo: 'Produtos e serviços' },
-    { href: '/investimento', rotulo: 'Investimento' },
-  ],
-  profissional: [
-    ITENS_COMUNS[0],
-    ITENS_COMUNS[1],
-    { href: '/servicos', rotulo: 'Serviços' },
-    { href: '/portfolio', rotulo: 'Portfólio' },
-    { href: '/disponibilidade', rotulo: 'Disponibilidade' },
-    ...ITENS_COMUNS.slice(2),
-  ],
-}
+import { ITENS_POR_TIPO } from './itens'
 
 const TITULO_POR_TIPO: Record<TipoPainel, string> = {
   empresa: 'Painel da empresa',
