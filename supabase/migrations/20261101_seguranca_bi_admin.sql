@@ -19,16 +19,30 @@
 -- Acesso ao BI: apenas pela route handler POST /api/admin/bi-foto (streaming).
 -- Não existe server action nem RPC que devolva bi_numero.
 --
--- Reversão (resumo):
---   DROP POLICY IF EXISTS documentos_privados_select_admin ON storage.objects;
---   CREATE POLICY "documentos-privados_admin_all" ON storage.objects FOR ALL TO authenticated
---     USING (bucket_id = 'documentos-privados' AND public.is_admin())
---     WITH CHECK (bucket_id = 'documentos-privados' AND public.is_admin());
---   DROP FUNCTION IF EXISTS public.purgar_acessos_bi(integer, boolean);
---   DROP FUNCTION IF EXISTS public.admin_registar_acesso_bi_foto(uuid);
---   DROP FUNCTION IF EXISTS public.obter_bi_foto_proprio();
---   DROP FUNCTION IF EXISTS public.caminho_documento_admin_visivel(text);
---   DROP TABLE IF EXISTS public.admin_acessos_bi;
+-- Reversão (resumo, COMENTADA: não executar sem decisão explícita):
+--
+--   Passo 1. Remover a política restrita de admin no storage:
+--     DROP POLICY IF EXISTS documentos_privados_select_admin ON storage.objects;
+--
+--   Passo 2. Remover as funções de acesso ao BI e de purga:
+--     DROP FUNCTION IF EXISTS public.admin_registar_acesso_bi_foto(uuid);
+--     DROP FUNCTION IF EXISTS public.purgar_acessos_bi(integer, boolean);
+--
+--   Passo 3. admin_acessos_bi fica INTACTA por defeito. Não é removida por este bloco.
+--
+--   -- NÃO EXECUTAR sem autorização explícita.
+--   -- Antes de remover, fazer cópia verificada de admin_acessos_bi.
+--   -- A auditoria não deve ser apagada automaticamente.
+--   -- DROP TABLE IF EXISTS public.admin_acessos_bi;
+--
+--   AVISO: após este rollback, a política ampla de produção (is_admin() sem restrição
+--   de caminho) voltará a permitir acesso direto do admin ao bucket documentos-privados,
+--   incluindo fotos de BI, sem auditoria. Essa política NÃO é restaurada por este bloco.
+--   Só deve ser recriada por decisão explícita, e só depois de avaliar esse risco.
+--
+--   Nota: obter_bi_foto_proprio() e caminho_documento_admin_visivel() não são removidas
+--   por este bloco (fora do âmbito desta reversão). Após o passo 1, a função
+--   caminho_documento_admin_visivel() deixa de ser usada por qualquer política.
 -- =====================================================================
 
 BEGIN;
@@ -227,6 +241,8 @@ COMMIT;
 --   g) select policyname, cmd from pg_policies where schemaname='storage'
 --        and tablename='objects' and policyname like 'documentos_privados%'
 --        -> documentos_privados_select_owner, documentos_privados_select_admin (sem duplicados)
---   h) select count(*) from pg_policies where policyname='documentos-privados_admin_all' -> 0
+--   h) select policyname, qual from pg_policies where schemaname='storage'
+--        and tablename='objects' and policyname like 'documentos_privados%'
+--        -> nenhuma política de admin com is_admin() sem caminho_documento_admin_visivel(name)
 --   i) select public.purgar_acessos_bi() -> dry-run (número, sem apagar)
 -- ---------------------------------------------------------------------
