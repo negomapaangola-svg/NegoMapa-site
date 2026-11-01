@@ -2,6 +2,9 @@ import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { logoutAction } from '@/lib/actions/logout'
 import type { TipoPainel } from '@/lib/painel-acesso'
+import { SCRIPT_TEMA_INICIAL } from '@/lib/painel-tema'
+import { BotaoTema } from './BotaoTema'
+import { MenuPainel } from './MenuPainel'
 
 type Item = { href: string; rotulo: string }
 
@@ -35,7 +38,7 @@ const TITULO_POR_TIPO: Record<TipoPainel, string> = {
 }
 
 /**
- * Cabeçalho e menu inferior dos painéis (mobile-first).
+ * Cabeçalho e menus dos painéis (mobile-first).
  * Recebe o tipo já validado pelo layout do servidor; não decide acesso.
  */
 export function PainelShell({
@@ -49,55 +52,33 @@ export function PainelShell({
   const itens = ITENS_POR_TIPO[tipo]
 
   return (
-    <div className="min-h-screen bg-white text-neutral-900">
-      <header className="sticky top-0 z-40 border-b border-neutral-200 bg-white">
-        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
-          <Link href={base} className="text-base font-semibold text-neutral-900">
+    <div className="min-h-screen bg-[var(--painel-fundo)] text-[color:var(--painel-texto)]">
+      {/* Aplica o tema guardado (ou o do sistema) antes da primeira pintura. Script constante. */}
+      <script dangerouslySetInnerHTML={{ __html: SCRIPT_TEMA_INICIAL }} />
+
+      <header className="sticky top-0 z-40 border-b border-[color:var(--painel-borda)] bg-[var(--painel-fundo)]">
+        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-3 px-4">
+          <Link href={base} className="text-base font-semibold text-[color:var(--painel-texto)]">
             NegóMapa
           </Link>
-          <span className="text-sm text-neutral-500">{TITULO_POR_TIPO[tipo]}</span>
-          <form action={logoutAction}>
-            <button type="submit" className="text-sm text-neutral-600 underline-offset-4 hover:underline">
-              Sair
-            </button>
-          </form>
+          <span className="hidden text-sm text-[color:var(--painel-texto-secundario)] sm:inline">{TITULO_POR_TIPO[tipo]}</span>
+          <div className="flex items-center gap-3">
+            <BotaoTema />
+            <form action={logoutAction}>
+              <button
+                type="submit"
+                className="text-sm text-[color:var(--painel-texto-secundario)] underline-offset-4 hover:text-[color:var(--painel-texto)] hover:underline"
+              >
+                Sair
+              </button>
+            </form>
+          </div>
         </div>
       </header>
 
       <main className="mx-auto max-w-5xl px-4 pb-24 pt-6 md:pb-10">{children}</main>
 
-      <nav
-        aria-label="Menu do painel"
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-neutral-200 bg-white pb-[env(safe-area-inset-bottom)] md:hidden"
-      >
-        <ul className="flex h-16 snap-x items-stretch overflow-x-auto text-xs [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {itens.map((item) => (
-            <li key={item.rotulo} className="flex shrink-0 snap-start">
-              <Link
-                href={`${base}${item.href}`}
-                className="flex items-center whitespace-nowrap px-4 text-neutral-600 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-orange-500"
-              >
-                {item.rotulo}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </nav>
-
-      <nav aria-label="Menu lateral do painel" className="mx-auto hidden max-w-5xl px-4 pb-10 md:block">
-        <ul className="flex flex-wrap gap-2 border-b border-neutral-200 pb-3">
-          {itens.map((item) => (
-            <li key={item.rotulo}>
-              <Link
-                href={`${base}${item.href}`}
-                className="inline-block rounded-md px-3 py-1.5 text-sm text-neutral-700 hover:bg-neutral-100"
-              >
-                {item.rotulo}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </nav>
+      <MenuPainel base={base} itens={itens} />
     </div>
   )
 }
