@@ -14,11 +14,17 @@ const ITENS_COMUNS: Item[] = [
 ]
 
 const ITENS_POR_TIPO: Record<TipoPainel, Item[]> = {
-  empresa: ITENS_COMUNS,
+  empresa: [
+    ...ITENS_COMUNS,
+    { href: '/produtos-servicos', rotulo: 'Produtos e serviços' },
+    { href: '/investimento', rotulo: 'Investimento' },
+  ],
   profissional: [
     ITENS_COMUNS[0],
     ITENS_COMUNS[1],
     { href: '/servicos', rotulo: 'Serviços' },
+    { href: '/portfolio', rotulo: 'Portfólio' },
+    { href: '/disponibilidade', rotulo: 'Disponibilidade' },
     ...ITENS_COMUNS.slice(2),
   ],
 }
@@ -64,12 +70,12 @@ export function PainelShell({
         aria-label="Menu do painel"
         className="fixed inset-x-0 bottom-0 z-40 border-t border-neutral-200 bg-white pb-[env(safe-area-inset-bottom)] md:hidden"
       >
-        <ul className="grid h-16 grid-cols-6 items-stretch text-xs">
+        <ul className="flex h-16 snap-x items-stretch overflow-x-auto text-xs [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {itens.map((item) => (
-            <li key={item.rotulo} className="flex">
+            <li key={item.rotulo} className="flex shrink-0 snap-start">
               <Link
                 href={`${base}${item.href}`}
-                className="flex flex-1 items-center justify-center px-1 text-center text-neutral-600 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-orange-500"
+                className="flex items-center whitespace-nowrap px-4 text-neutral-600 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-orange-500"
               >
                 {item.rotulo}
               </Link>
@@ -79,7 +85,7 @@ export function PainelShell({
       </nav>
 
       <nav aria-label="Menu lateral do painel" className="mx-auto hidden max-w-5xl px-4 pb-10 md:block">
-        <ul className="flex gap-2 border-b border-neutral-200 pb-3">
+        <ul className="flex flex-wrap gap-2 border-b border-neutral-200 pb-3">
           {itens.map((item) => (
             <li key={item.rotulo}>
               <Link
