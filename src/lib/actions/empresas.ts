@@ -138,3 +138,133 @@ export async function suspenderEmpresa(empresaId: string): Promise<ActionResult>
   revalidatePath('/admin/empresas')
   return { success: true }
 }
+
+export type EmpresaAdminDetalhe = {
+  id: string
+  name: string
+  slug: string
+  sector: string | null
+  province: string | null
+  city: string | null
+  bairro: string | null
+  description: string | null
+  phone: string | null
+  whatsapp: string | null
+  email: string | null
+  website: string | null
+  logo_url: string | null
+  nif: string | null
+  estado_legalizacao: string | null
+  documento_legalizacao_path: string | null
+  is_approved: boolean
+  created_at: string
+  user_id: string | null
+}
+
+export type EmpresaAdminDetalheResult =
+  | {
+      success: true
+      data: EmpresaAdminDetalhe
+      logoUrl: string | null
+      logoErro: string | null
+      comprovativoUrl: string | null
+      comprovativoErro: string | null
+    }
+  | { success: false; error: string; naoEncontrada?: boolean }
+
+const URL_ASSINADO_SEGUNDOS = 600
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+/**
+ * Detalhe de uma empresa para o administrador.
+ * Os ficheiros privados são devolvidos como URL assinado (válido 10 minutos).
+ */
+export async function getEmpresaAdminDetalhe(empresaId: string): Promise<EmpresaAdminDetalheResult> {
+  const adminCheck = await isAdmin()
+  if (!adminCheck) {
+    return { success: false, error: 'Acesso negado. Privilégios de administrador necessários.' }
+  }
+
+  if (!UUID_RE.test(empresaId)) {
+    return { success: false, error: 'Empresa não encontrada.', naoEncontrada: true }
+  }
+
+  const supabase = await createSupabaseServerClient()
+
+  const { data, error } = await supabase
+    .from('companies')
+    .select(`
+      id,
+      name,
+      slug,
+      sector,
+      province,
+      city,
+      bairro,
+      description,
+      phone,
+      whatsapp,
+      email,
+      website,
+      logo_url,
+      nif,
+      estado_legalizacao,
+      documento_legalizacao_path,
+      is_approved,
+      created_at,
+      user_id
+    `)
+    .eq('id', empresaId)
+    .maybeSingle()
+
+  if (error) {
+    console.error('Erro ao buscar detalhe da empresa (admin):', error)
+    return { success: false, error: 'Erro ao carregar a empresa.' }
+  }
+
+  if (!data) {
+    return { success: false, error: 'Empresa não encontrada.', naoEncontrada: true }
+  }
+
+  const empresa = data as EmpresaAdminDetalhe
+
+  const logo = await assinarFicheiro(supabase, 'empresas-logos', empresa.logo_url)
+  const comprovativo = await assinarFicheiro(
+    supabase,
+    'documentos-privados',
+    empresa.documento_legalizacao_path
+  )
+
+  return {
+    success: true,
+    data: empresa,
+    logoUrl: logo.url,
+    logoErro: logo.erro,
+    comprovativoUrl: comprovativo.url,
+    comprovativoErro: comprovativo.erro,
+  }
+}
+
+type SupabaseServer = Awaited<ReturnType<typeof createSupabaseServerClient>>
+
+async function assinarFicheiro(
+  supabase: SupabaseServer,
+  bucket: 'empresas-logos' | 'documentos-privados',
+  caminho: string | null
+): Promise<{ url: string | null; erro: string | null }> {
+  if (!caminho) return { url: null, erro: null }
+
+  // Registos antigos podem guardar um URL completo em vez de um caminho no bucket.
+  if (/^https?:\/\//i.test(caminho)) return { url: caminho, erro: null }
+
+  const { data, error } = await supabase.storage
+    .from(bucket)
+    .createSignedUrl(caminho, URL_ASSINADO_SEGUNDOS)
+
+  if (error || !data?.signedUrl) {
+    console.error(`Erro ao gerar URL assinado (${bucket}):`, error?.message)
+    return { url: null, erro: 'Não foi possível abrir o ficheiro. Verifique as permissões de leitura do administrador no bucket.' }
+  }
+
+  return { url: data.signedUrl, erro: null }
+}

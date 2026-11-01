@@ -8,9 +8,11 @@ import { aprovarEmpresa, rejeitarEmpresa, suspenderEmpresa } from '@/lib/actions
 type Props = {
   empresaId: string
   isApproved: boolean
+  /** Caminho para onde ir depois de rejeitar (o registo deixa de existir). */
+  redirectAfterReject?: string
 }
 
-export function EmpresaAdminActions({ empresaId, isApproved }: Props) {
+export function EmpresaAdminActions({ empresaId, isApproved, redirectAfterReject }: Props) {
   const router = useRouter()
   const [pending, startTransition] = React.useTransition()
 
@@ -18,6 +20,10 @@ export function EmpresaAdminActions({ empresaId, isApproved }: Props) {
     startTransition(async () => {
       const result = await action(empresaId)
       if (!result.success) alert(result.error)
+      if (result.success && action === rejeitarEmpresa && redirectAfterReject) {
+        router.push(redirectAfterReject)
+        return
+      }
       router.refresh()
     })
   }
