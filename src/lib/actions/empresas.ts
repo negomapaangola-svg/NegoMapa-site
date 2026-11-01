@@ -51,7 +51,7 @@ export async function getAllEmpresasAdmin(): Promise<EmpresasAdminResult> {
     .order('created_at', { ascending: false })
 
   if (error) {
-    console.error('Erro ao buscar empresas (admin):', error)
+    console.error('Erro ao buscar empresas (admin). Código:', error?.code)
     return { success: false, error: 'Erro ao carregar empresas' }
   }
 
@@ -73,7 +73,7 @@ export async function aprovarEmpresa(empresaId: string): Promise<ActionResult> {
     .select('id')
 
   if (error) {
-    console.error('Erro ao aprovar empresa:', error)
+    console.error('Erro ao aprovar empresa. Código:', error?.code)
     return { success: false, error: 'Erro ao aprovar empresa. Tente novamente.' }
   }
 
@@ -99,7 +99,7 @@ export async function rejeitarEmpresa(empresaId: string): Promise<ActionResult> 
     .eq('id', empresaId)
 
   if (error) {
-    console.error('Erro ao rejeitar empresa:', error)
+    console.error('Erro ao rejeitar empresa. Código:', error?.code)
     return { success: false, error: 'Erro ao rejeitar empresa. Tente novamente.' }
   }
 
@@ -131,7 +131,7 @@ export async function suspenderEmpresa(empresaId: string): Promise<ActionResult>
     .eq('id', empresaId)
 
   if (error) {
-    console.error('Erro ao suspender empresa:', error)
+    console.error('Erro ao suspender empresa. Código:', error?.code)
     return { success: false, error: 'Erro ao suspender empresa. Tente novamente.' }
   }
 

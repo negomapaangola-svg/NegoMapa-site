@@ -179,7 +179,8 @@ REVOKE ALL ON FUNCTION public.purgar_acessos_bi(integer, boolean) FROM PUBLIC, a
 -- ---------------------------------------------------------------------
 -- 5a. Função auxiliar da política de storage (SECURITY DEFINER para não
 --     depender de RLS de profissionais/companies no contexto da política).
---     Admin só vê caminhos vinculados a um perfil de profissional ou a uma empresa.
+--     Admin só vê comprovativos de empresa vinculados a uma empresa.
+--     Fotos de BI (profissionais.bi_foto_path) NÃO são visíveis por storage: só pela rota.
 -- ---------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.caminho_documento_admin_visivel(p_name text)
 RETURNS boolean
@@ -189,10 +190,7 @@ SECURITY DEFINER
 SET search_path = ''
 AS $f$
   SELECT public.is_admin()
-    AND (
-      EXISTS (SELECT 1 FROM public.profissionais p WHERE p.bi_foto_path = p_name)
-      OR EXISTS (SELECT 1 FROM public.companies c WHERE c.documento_legalizacao_path = p_name)
-    )
+    AND EXISTS (SELECT 1 FROM public.companies c WHERE c.documento_legalizacao_path = p_name)
 $f$;
 
 REVOKE ALL ON FUNCTION public.caminho_documento_admin_visivel(text) FROM PUBLIC, anon;
@@ -203,7 +201,8 @@ GRANT EXECUTE ON FUNCTION public.caminho_documento_admin_visivel(text) TO authen
 --     Remove a política ampla do admin (SELECT em todo o bucket) e recria-a restrita.
 --     O dono já tem SELECT na própria pasta (documentos_privados_select_owner,
 --     existente em produção): NÃO é criada outra.
---     Admin passa a apenas LER caminhos vinculados; não escreve nem apaga.
+--     Admin passa a apenas LER comprovativos de empresa; não escreve nem apaga.
+--     Fotos de BI não estão nesta política.
 -- ---------------------------------------------------------------------
 DROP POLICY IF EXISTS "documentos-privados_admin_all" ON storage.objects;
 
