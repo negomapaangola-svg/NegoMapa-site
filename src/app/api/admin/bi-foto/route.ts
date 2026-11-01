@@ -15,6 +15,9 @@ export const runtime = 'nodejs'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
+/** Tipos de conteúdo aceites para a foto de BI. Qualquer outro é recusado. */
+const TIPOS_PERMITIDOS = new Set(['application/pdf', 'image/png', 'image/jpeg'])
+
 const CABECALHOS_BASE = {
   'Cache-Control': 'private, no-store, max-age=0',
   'X-Content-Type-Options': 'nosniff',
@@ -79,8 +82,9 @@ export async function POST(request: Request): Promise<Response> {
     .from('documentos-privados')
     .download(caminho)
 
-  if (erroDownload || !ficheiro) {
-    // O acesso já está registado (foi autorizado). Não se regista o erro nem o caminho.
+  // O acesso já está registado (foi autorizado). Erros e tipos inválidos não são registados
+  // nem detalhados; a resposta é genérica.
+  if (erroDownload || !ficheiro || !TIPOS_PERMITIDOS.has(ficheiro.type)) {
     return semConteudo(500)
   }
 
@@ -89,7 +93,7 @@ export async function POST(request: Request): Promise<Response> {
     status: 200,
     headers: {
       ...CABECALHOS_BASE,
-      'Content-Type': ficheiro.type || 'application/octet-stream',
+      'Content-Type': ficheiro.type,
     },
   })
 }

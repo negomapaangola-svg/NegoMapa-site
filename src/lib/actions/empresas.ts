@@ -197,7 +197,7 @@ export async function getEmpresaAdminDetalhe(empresaId: string): Promise<Empresa
   const { data, error } = await supabase.rpc('admin_obter_empresa', { p_id: empresaId })
 
   if (error) {
-    console.error('Erro ao buscar detalhe da empresa (admin):', error)
+    console.error('Erro ao buscar detalhe da empresa (admin). Código:', error.code)
     return { success: false, error: 'Erro ao carregar a empresa.' }
   }
 
@@ -260,9 +260,7 @@ async function assinarFicheiro(
 ): Promise<{ url: string | null; erro: string | null }> {
   if (!caminho) return { url: null, erro: null }
 
-  // Registos antigos podem guardar um URL completo em vez de um caminho no bucket.
-  if (/^https?:\/\//i.test(caminho)) return { url: caminho, erro: null }
-
+  // O valor é sempre tratado como caminho de objeto no bucket.
   const { data, error } = await supabase.storage
     .from(bucket)
     .createSignedUrl(caminho, URL_ASSINADO_SEGUNDOS)

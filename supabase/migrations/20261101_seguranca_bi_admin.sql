@@ -59,7 +59,6 @@ ALTER TABLE public.admin_acessos_bi ENABLE ROW LEVEL SECURITY;
 -- (dona: postgres) e purga manual pelo dono da base.
 REVOKE ALL ON public.admin_acessos_bi FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON public.admin_acessos_bi FROM service_role;
-REVOKE UPDATE, DELETE, TRUNCATE ON public.admin_acessos_bi FROM service_role;
 GRANT SELECT ON public.admin_acessos_bi TO authenticated;
 
 DROP POLICY IF EXISTS admin_acessos_bi_select_admin ON public.admin_acessos_bi;
@@ -121,7 +120,7 @@ BEGIN
     RAISE EXCEPTION 'BI disponível apenas para perfis pendentes' USING ERRCODE = '42501';
   END IF;
 
-  IF v_caminho IS NULL THEN
+  IF v_caminho IS NULL OR v_caminho = '' THEN
     RAISE EXCEPTION 'Sem foto de BI' USING ERRCODE = 'P0002';
   END IF;
 
