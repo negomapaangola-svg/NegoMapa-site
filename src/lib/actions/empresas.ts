@@ -155,7 +155,6 @@ export type EmpresaAdminDetalhe = {
   logo_url: string | null
   nif: string | null
   estado_legalizacao: string | null
-  documento_legalizacao_path: string | null
   is_approved: boolean
   created_at: string
   user_id: string | null
@@ -172,12 +171,13 @@ export type EmpresaAdminDetalheResult =
     }
   | { success: false; error: string; naoEncontrada?: boolean }
 
-const URL_ASSINADO_SEGUNDOS = 600
+const URL_ASSINADO_SEGUNDOS = 300
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 /**
  * Detalhe de uma empresa para o administrador.
- * Os ficheiros privados são devolvidos como URL assinado (válido 10 minutos).
+ * Os ficheiros privados são devolvidos como URL assinado (válido 5 minutos).
+ * O caminho do comprovativo é usado apenas no servidor e não é devolvido.
  */
 export async function getEmpresaAdminDetalhe(empresaId: string): Promise<EmpresaAdminDetalheResult> {
   const adminCheck = await isAdmin()
@@ -207,13 +207,15 @@ export async function getEmpresaAdminDetalhe(empresaId: string): Promise<Empresa
     return { success: false, error: 'Empresa não encontrada.', naoEncontrada: true }
   }
 
-  const empresa = pickEmpresaDetalhe(linha as Record<string, unknown>)
+  const campos = linha as Record<string, unknown>
+  const empresa = pickEmpresaDetalhe(campos)
+  const caminhoComprovativo = (campos.documento_legalizacao_path as string | null) ?? null
 
   const logo = await assinarFicheiro(supabase, 'empresas-logos', empresa.logo_url)
   const comprovativo = await assinarFicheiro(
     supabase,
     'documentos-privados',
-    empresa.documento_legalizacao_path
+    caminhoComprovativo
   )
 
   return {
@@ -243,7 +245,6 @@ function pickEmpresaDetalhe(row: Record<string, unknown>): EmpresaAdminDetalhe {
     logo_url: (row.logo_url as string | null) ?? null,
     nif: (row.nif as string | null) ?? null,
     estado_legalizacao: (row.estado_legalizacao as string | null) ?? null,
-    documento_legalizacao_path: (row.documento_legalizacao_path as string | null) ?? null,
     is_approved: Boolean(row.is_approved),
     created_at: row.created_at as string,
     user_id: (row.user_id as string | null) ?? null,
@@ -267,7 +268,8 @@ async function assinarFicheiro(
     .createSignedUrl(caminho, URL_ASSINADO_SEGUNDOS)
 
   if (error || !data?.signedUrl) {
-    console.error(`Erro ao gerar URL assinado (${bucket}):`, error?.message)
+    // Sem a mensagem do storage: pode conter o caminho do ficheiro.
+    console.error(`Erro ao gerar URL assinado (${bucket}).`)
     return { url: null, erro: 'Não foi possível abrir o ficheiro. Verifique as permissões de leitura do administrador no bucket.' }
   }
 
