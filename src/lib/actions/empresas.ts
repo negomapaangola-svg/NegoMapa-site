@@ -191,42 +191,23 @@ export async function getEmpresaAdminDetalhe(empresaId: string): Promise<Empresa
 
   const supabase = await createSupabaseServerClient()
 
-  const { data, error } = await supabase
-    .from('companies')
-    .select(`
-      id,
-      name,
-      slug,
-      sector,
-      province,
-      city,
-      bairro,
-      description,
-      phone,
-      whatsapp,
-      email,
-      website,
-      logo_url,
-      nif,
-      estado_legalizacao,
-      documento_legalizacao_path,
-      is_approved,
-      created_at,
-      user_id
-    `)
-    .eq('id', empresaId)
-    .maybeSingle()
+  // Função SECURITY DEFINER que verifica admin e devolve só a empresa pedida.
+  // Necessária porque authenticated não tem SELECT em nif, logo_url, whatsapp,
+  // website e documento_legalizacao_path (migração 20261028).
+  const { data, error } = await supabase.rpc('admin_obter_empresa', { p_id: empresaId })
 
   if (error) {
     console.error('Erro ao buscar detalhe da empresa (admin):', error)
     return { success: false, error: 'Erro ao carregar a empresa.' }
   }
 
-  if (!data) {
+  const linha = Array.isArray(data) ? data[0] : data
+
+  if (!linha) {
     return { success: false, error: 'Empresa não encontrada.', naoEncontrada: true }
   }
 
-  const empresa = data as EmpresaAdminDetalhe
+  const empresa = pickEmpresaDetalhe(linha as Record<string, unknown>)
 
   const logo = await assinarFicheiro(supabase, 'empresas-logos', empresa.logo_url)
   const comprovativo = await assinarFicheiro(
@@ -242,6 +223,30 @@ export async function getEmpresaAdminDetalhe(empresaId: string): Promise<Empresa
     logoErro: logo.erro,
     comprovativoUrl: comprovativo.url,
     comprovativoErro: comprovativo.erro,
+  }
+}
+
+function pickEmpresaDetalhe(row: Record<string, unknown>): EmpresaAdminDetalhe {
+  return {
+    id: row.id as string,
+    name: row.name as string,
+    slug: row.slug as string,
+    sector: (row.sector as string | null) ?? null,
+    province: (row.province as string | null) ?? null,
+    city: (row.city as string | null) ?? null,
+    bairro: (row.bairro as string | null) ?? null,
+    description: (row.description as string | null) ?? null,
+    phone: (row.phone as string | null) ?? null,
+    whatsapp: (row.whatsapp as string | null) ?? null,
+    email: (row.email as string | null) ?? null,
+    website: (row.website as string | null) ?? null,
+    logo_url: (row.logo_url as string | null) ?? null,
+    nif: (row.nif as string | null) ?? null,
+    estado_legalizacao: (row.estado_legalizacao as string | null) ?? null,
+    documento_legalizacao_path: (row.documento_legalizacao_path as string | null) ?? null,
+    is_approved: Boolean(row.is_approved),
+    created_at: row.created_at as string,
+    user_id: (row.user_id as string | null) ?? null,
   }
 }
 
