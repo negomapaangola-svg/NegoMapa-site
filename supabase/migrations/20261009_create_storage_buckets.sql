@@ -1,5 +1,10 @@
 -- Migration: Create Storage Buckets and RLS Policies
 -- Date: 2026-10-09
+--
+-- !!! NÃO APLICAR. Migração histórica. NÃO reflete o estado atual de produção:
+-- as políticas de storage em produção têm outros nomes (ex.: documentos_privados_*,
+-- imagens_*) e o admin_all de documentos-privados não existe. Ver B.6.30.
+-- Executar este ficheiro criaria políticas duplicadas ou amplas.
 
 -- Enable RLS on storage.objects (already enabled by default in Supabase)
 -- ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;

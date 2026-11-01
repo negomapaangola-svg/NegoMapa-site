@@ -1,4 +1,5 @@
 import { Metadata } from 'next'
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { isAdmin } from '@/lib/auth'
 import { getAllEmpresasAdmin, EmpresaAdmin, EmpresasAdminResult } from '@/lib/actions/empresas'
@@ -96,7 +97,12 @@ function EmpresaCard({ empresa }: { empresa: EmpresaAdmin }) {
       <div className="grid grid-cols-1 md:grid-cols-6 gap-0">
         <div className="p-4 md:p-5 border-b md:border-b-0 md:border-r border-card-border bg-white/50 dark:bg-neutral-800/50">
           <p className="text-xs font-heading font-semibold text-navy dark:text-cream uppercase tracking-wider mb-1">Nome</p>
-          <p className="text-ink dark:text-cream font-medium">{empresa.name}</p>
+          <Link
+            href={`/admin/empresas/${empresa.id}`}
+            className="text-ink dark:text-cream font-medium hover:text-orange-600 dark:hover:text-orange-400 underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 rounded-[2px]"
+          >
+            {empresa.name}
+          </Link>
         </div>
         <div className="p-4 md:p-5 border-b md:border-b-0 md:border-r border-card-border bg-white/50 dark:bg-neutral-800/50 hidden md:block">
           <p className="text-xs font-heading font-semibold text-navy dark:text-cream uppercase tracking-wider mb-1">Setor</p>
