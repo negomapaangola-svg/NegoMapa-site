@@ -61,7 +61,7 @@ export function AuthUserMenu({ variante = 'cabecalho' }: { variante?: 'cabecalho
           Entrar
         </Link>
         <Button size="sm" asChild className={lista ? 'w-full justify-center' : undefined}>
-          <Link href="/cadastrar-empresa">Cadastrar</Link>
+          <Link href="/cadastrar-empresa">Cadastro de Empresa</Link>
         </Button>
       </div>
     )
@@ -81,7 +81,7 @@ export function AuthUserMenu({ variante = 'cabecalho' }: { variante?: 'cabecalho
         Editar perfil
       </Link>
       <Link href="/cadastrar-servico" className={classeLink}>
-        Tornar-me profissional
+        Cadastro de Profissional
       </Link>
       <form action={logoutAction} className={lista ? 'w-full' : undefined}>
         <Button
