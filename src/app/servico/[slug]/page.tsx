@@ -13,6 +13,8 @@ import { Rating, RatingStarsOnly } from '@/components/avaliacoes/Rating';
 import { ReviewForm } from '@/components/avaliacoes/ReviewForm';
 import { ReportForm } from '@/components/denuncias/ReportForm';
 import { AlvoDenuncia } from '@/lib/actions/denuncias';
+import { obterPerfilProfissionalDoUtilizador } from '@/lib/actions/profissional-painel';
+import { BotoesContactoServico } from './_components/BotoesContactoServico';
 
 interface PortfolioItem {
   titulo: string;
@@ -185,6 +187,10 @@ export default async function ServicoPage({ params }: { params: Promise<{ slug: 
     getMediaAvaliacoes({ tipo: 'servico', id: service.id }),
     getAvaliacoesPorAlvo({ tipo: 'servico', id: service.id }),
   ]);
+
+  // O próprio profissional não pede orçamento nem se contacta a si mesmo.
+  const perfilProprio = user ? await obterPerfilProfissionalDoUtilizador() : null;
+  const ehProprio = !!perfilProprio && perfilProprio.id === service.profissional?.id;
 
   const serviceWhatsApp = service.whatsapp || service.profissional?.whatsapp;
   const profissional = service.profissional;
@@ -393,6 +399,27 @@ export default async function ServicoPage({ params }: { params: Promise<{ slug: 
                 <p className="text-neutral-500 dark:text-cream-text/70">Informa\u00e7\u00f5es do profissional n\u00e3o dispon\u00edveis</p>
               )}
             </div>
+
+            {!ehProprio && profissional && (
+              <div className="pt-6 border-t border-card-border">
+                <h2 className="text-lg font-semibold text-ink dark:text-cream mb-4">Pedir orçamento ou contactar</h2>
+                {user ? (
+                  <BotoesContactoServico servicoId={service.id} profissionalId={profissional.id} />
+                ) : (
+                  <div className="space-y-3">
+                    <p className="text-neutral-600 dark:text-cream-text/80">
+                      Entre na sua conta ou crie uma para pedir orçamento ou enviar mensagem a este profissional.
+                    </p>
+                    <Link
+                      href={`/registar?redirectTo=${encodeURIComponent(`/servico/${slug}`)}`}
+                      className="inline-flex items-center justify-center px-4 py-2 rounded-[4px] bg-orange-500 text-white hover:bg-orange-600 transition-colors"
+                    >
+                      Entrar ou criar conta
+                    </Link>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="pt-4 border-t border-card-border">
               <div className="flex items-center justify-between">
