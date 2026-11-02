@@ -11,7 +11,10 @@
 -- Valores encontrados em produção (leitura, data de preparação):
 --   companies:     'Benguela' (1), 'Luanda' (11), 'Luanda ' com espaço final (1)
 --   profissionais: 'Luanda' (2)
---   servicos:      'Bengo' (1), 'Bié' (1)
+--   servicos:      'Bengo' (2), 'Bié' (1)
+--     Bengo (2): serviço 'Professor' (305b8532-…, criado 2026-11-01) e serviço 'Gerir empresas'
+--     (5fe0ac07-…, criado 2026-11-02). Ambos com provincia = 'Bengo', valor oficial, já normalizado;
+--     não são alterados por esta migração. Corrigido na Tarefa 41 (contagem esperada 1 -> 2).
 --   vagas:         'Luanda' (2)
 -- Única alteração real: companies 'Luanda ' -> 'Luanda' (id d06cdfee-1c85-4043-a1e1-e11ce74280bf, empresa "Serafim", aprovada).
 -- Os restantes valores já são o nome oficial e ficam como identidade no mapa.
@@ -51,7 +54,7 @@ INSERT INTO tmp_mapa_provincias (tabela, valor_atual, valor_normalizado, contage
   ('companies',     'Luanda',    'Luanda',    11),
   ('companies',     'Luanda ',   'Luanda',    1),
   ('profissionais', 'Luanda',    'Luanda',    2),
-  ('servicos',      'Bengo',     'Bengo',     1),
+  ('servicos',      'Bengo',     'Bengo',     2),
   ('servicos',      'Bié',       'Bié',       1),
   ('vagas',         'Luanda',    'Luanda',    2);
 
