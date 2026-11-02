@@ -1,40 +1,50 @@
 import { Metadata } from 'next';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import Link from 'next/link';
+import { listarProfissionaisPublicos } from '@/lib/actions/profissionais-publicos';
+import { ProfissionalCard } from './_components/ProfissionalCard';
 
 export const metadata: Metadata = {
   title: 'Profissionais | NegóMapa',
-  description: 'Encontre profissionais qualificados por área, localização, portfólio e avaliações em Angola.',
+  description: 'Encontre profissionais qualificados por área, localização e experiência em Angola.',
 };
 
-export default function ProfissionaisPage() {
+export default async function ProfissionaisPage() {
+  const profissionais = await listarProfissionaisPublicos();
+
   return (
     <MainLayout>
-      <section className="py-12 lg:py-20 bg-cream dark:bg-navy-dark" aria-labelledby="profissionais-title">
-        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 text-center">
-          <h1 id="profissionais-title" className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-ink dark:text-cream">
-            Encontre Profissionais
-          </h1>
-          <p className="mt-6 text-lg sm:text-xl text-neutral-600 dark:text-cream-text max-w-2xl mx-auto">
-            Procure profissionais qualificados por área, localização, portfólio e avaliações em Angola.
-          </p>
-          <div className="mt-8 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 text-sm font-medium">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-500 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
-            </span>
-            Em breve
+      <section className="py-16 lg:py-24 bg-cream dark:bg-navy-dark" aria-labelledby="profissionais-title">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-12">
+            <h1 id="profissionais-title" className="text-4xl sm:text-5xl font-bold tracking-tight text-ink dark:text-cream">
+              Profissionais
+            </h1>
+            <p className="mt-4 text-lg text-neutral-600 dark:text-cream-text">
+              Encontre profissionais qualificados por área e localização em Angola.
+            </p>
           </div>
-          <p className="mt-6 text-neutral-600 dark:text-cream-text">
-            Estamos a preparar a área de profissionais da NegóMapa.
-          </p>
-          <div className="mt-10">
-            <Button size="lg" asChild>
-              <Link href="/login?redirectTo=/profissionais">Criar conta gratuita</Link>
-            </Button>
-          </div>
+
+          {profissionais.length > 0 ? (
+            <>
+              <p className="mb-4 text-sm text-neutral-600 dark:text-cream-text" role="status" aria-live="polite">
+                {`${profissionais.length} profissional${profissionais.length !== 1 ? 'is' : ''}`}
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" role="list" aria-label="Lista de profissionais">
+                {profissionais.map((profissional) => (
+                  <div key={profissional.id} role="listitem">
+                    <ProfissionalCard profissional={profissional} />
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-16" role="status">
+              <h2 className="text-xl font-semibold text-ink dark:text-cream">Nenhum profissional disponível</h2>
+              <p className="mt-2 text-neutral-600 dark:text-cream-text max-w-md mx-auto">
+                Volte mais tarde para ver novos profissionais.
+              </p>
+            </div>
+          )}
         </div>
       </section>
     </MainLayout>

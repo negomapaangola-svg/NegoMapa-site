@@ -5,10 +5,7 @@ import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/Button"
 import Link from "next/link"
 import { loginAction } from "@/lib/actions/login"
-
-function isValidRedirect(path: string): boolean {
-  return path.startsWith("/") && !path.startsWith("//") && !path.startsWith("/api/")
-}
+import { redirectSeguro } from "@/lib/redirect-seguro"
 
 function LoginForm() {
   const [email, setEmail] = React.useState("")
@@ -17,7 +14,11 @@ function LoginForm() {
   const [isLoading, setIsLoading] = React.useState(false)
   const searchParams = useSearchParams()
   const rawRedirectTo = searchParams.get("redirectTo")
-  const redirectTo = rawRedirectTo && isValidRedirect(rawRedirectTo) ? rawRedirectTo : "/"
+  const redirectTo = redirectSeguro(rawRedirectTo)
+  // Preserva o destino seguro na criação de conta; sem destino, o link é só /registar.
+  const criarContaHref = rawRedirectTo
+    ? `/registar?redirectTo=${encodeURIComponent(redirectTo)}`
+    : "/registar"
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -100,7 +101,7 @@ function LoginForm() {
       <div className="mt-6 text-center space-y-3">
         <p className="text-sm text-neutral-600 dark:text-cream-text">
           Ainda não tem conta?{" "}
-          <Link href="/cadastrar-empresa" className="font-medium text-orange-500 dark:text-orange-400 hover:underline">
+          <Link href={criarContaHref} className="font-medium text-orange-500 dark:text-orange-400 hover:underline">
             Criar conta
           </Link>
         </p>

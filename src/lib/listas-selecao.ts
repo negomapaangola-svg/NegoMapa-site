@@ -159,3 +159,52 @@ export function encontrarNaLista<T extends string>(valor: string | null | undefi
 //   ("Tecnologia ", "Construção ") e "Medicina", que não existe aqui.
 //   Usar encontrarNaLista para mostrar esses registos sem os perder.
 // ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// 5. Províncias de Angola: 21 (divisão de 2024, Lei n.º 14/24)
+// Usadas pelo cadastro de profissional. As listas anteriores (18) mantêm-se
+// para o cadastro de empresa até haver decisão sobre a migração de valores.
+// Municípios: só existe lista partilhada para algumas províncias; nas restantes
+// o formulário mostra um campo de texto (ver municipiosDeProvincia).
+// ---------------------------------------------------------------------------
+
+export const PROVINCIAS_ANGOLA = [
+  'Bengo',
+  'Benguela',
+  'Bié',
+  'Cabinda',
+  'Cuando',
+  'Cubango',
+  'Cuanza Norte',
+  'Cuanza Sul',
+  'Cunene',
+  'Huambo',
+  'Huíla',
+  'Icolo e Bengo',
+  'Luanda',
+  'Lunda Norte',
+  'Lunda Sul',
+  'Malanje',
+  'Moxico',
+  'Moxico Leste',
+  'Namibe',
+  'Uíge',
+  'Zaire',
+] as const
+
+export type ProvinciaAngola = (typeof PROVINCIAS_ANGOLA)[number]
+
+/**
+ * Municípios por província (21). Só as províncias com lista partilhada aparecem aqui.
+ * Luanda e Moxico vêm da lista anterior e podem incluir municípios que passaram
+ * para Icolo e Bengo ou Moxico Leste: validar antes de publicar.
+ */
+const MUNICIPIOS_PROVINCIAS_ANGOLA: Partial<Record<ProvinciaAngola, ReadonlyArray<string>>> = {
+  Luanda: MUNICIPIOS_POR_PROVINCIA.Luanda,
+  Moxico: MUNICIPIOS_POR_PROVINCIA.Moxico,
+}
+
+/** Lista de municípios da província, ou null se não houver lista partilhada. */
+export function municipiosDeProvincia(provincia: string): ReadonlyArray<string> | null {
+  return (MUNICIPIOS_PROVINCIAS_ANGOLA as Record<string, ReadonlyArray<string>>)[provincia] ?? null
+}

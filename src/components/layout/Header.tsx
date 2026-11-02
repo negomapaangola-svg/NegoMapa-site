@@ -10,14 +10,27 @@ interface HeaderProps {
   children?: React.ReactNode;
 }
 
+/** Destinos do cabeçalho. Todos têm página em src/app (verificado). */
+const NAV_LINKS = [
+  { href: '/servicos', label: 'Serviços' },
+  { href: '/profissionais', label: 'Profissionais' },
+  { href: '/empresas', label: 'Empresas' },
+  { href: '/vagas', label: 'Vagas' },
+  { href: '/investimentos', label: 'Investimentos' },
+] as const;
+
+function IconeMenu({ aberto }: { aberto: boolean }) {
+  return (
+    <svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      {aberto ? <path d="M6 6l12 12M18 6L6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
+    </svg>
+  );
+}
+
 export const Header = forwardRef<HTMLElement, HeaderProps>(
   ({ className }, ref) => {
-    const navLinks = [
-      { href: '/servicos', label: 'Serviços' },
-      { href: '/empresas', label: 'Empresas' },
-    ];
-
     const [isDark, setIsDark] = useState(false);
+    const [menuAberto, setMenuAberto] = useState(false);
 
     useEffect(() => {
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -28,6 +41,16 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(
 
       return () => mediaQuery.removeEventListener('change', handler);
     }, []);
+
+    // Fecha o menu do telemóvel com Escape.
+    useEffect(() => {
+      if (!menuAberto) return;
+      function aoTeclar(e: KeyboardEvent) {
+        if (e.key === 'Escape') setMenuAberto(false);
+      }
+      document.addEventListener('keydown', aoTeclar);
+      return () => document.removeEventListener('keydown', aoTeclar);
+    }, [menuAberto]);
 
     return (
       <header
@@ -56,12 +79,13 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(
                 />
               </Link>
 
-              <nav className="hidden md:flex items-center gap-6" role="navigation" aria-label="Navegação principal">
-                {navLinks.map((link) => (
+              {/* Desktop: todas as opções visíveis. */}
+              <nav className="hidden lg:flex items-center gap-6" role="navigation" aria-label="Navegação principal">
+                {NAV_LINKS.map((link) => (
                   <Link
                     key={link.href}
                     href={link.href}
-                    className="text-sm font-medium text-neutral-600 dark:text-cream-text hover:text-orange-500 dark:hover:text-orange-400 transition-colors"
+                    className="whitespace-nowrap text-sm font-medium text-neutral-700 dark:text-cream-text hover:text-orange-500 dark:hover:text-orange-400 transition-colors"
                   >
                     {link.label}
                   </Link>
@@ -70,10 +94,51 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(
             </div>
 
             <div className="flex items-center gap-3">
-              <AuthUserMenu />
+              <div className="hidden lg:block">
+                <AuthUserMenu />
+              </div>
+
+              {/* Telemóvel e tablet: botão Menu com rótulo visível. */}
+              <button
+                type="button"
+                onClick={() => setMenuAberto((aberto) => !aberto)}
+                aria-expanded={menuAberto}
+                aria-controls="menu-principal"
+                className="inline-flex min-h-11 items-center gap-2 rounded-md border border-card-border bg-white px-3 text-sm font-semibold text-navy hover:border-orange-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:bg-navy-dark dark:text-cream lg:hidden"
+              >
+                <IconeMenu aberto={menuAberto} />
+                <span>{menuAberto ? 'Fechar' : 'Menu'}</span>
+              </button>
             </div>
           </div>
         </div>
+
+        {/* Telemóvel e tablet: lista completa de opções e conta. */}
+        {menuAberto && (
+          <div
+            id="menu-principal"
+            className="absolute inset-x-0 top-full border-t border-card-border bg-white shadow-lg dark:bg-navy-dark lg:hidden"
+          >
+            <nav aria-label="Navegação principal (menu)" className="mx-auto max-w-7xl px-4 py-3">
+              <ul className="flex flex-col">
+                {NAV_LINKS.map((link) => (
+                  <li key={link.href}>
+                    <Link
+                      href={link.href}
+                      onClick={() => setMenuAberto(false)}
+                      className="flex min-h-12 items-center rounded-md px-3 text-base font-medium text-navy hover:bg-cream hover:text-orange-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:text-cream dark:hover:bg-white/5 dark:hover:text-orange-400"
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-3 border-t border-card-border pt-3">
+                <AuthUserMenu variante="lista" />
+              </div>
+            </nav>
+          </div>
+        )}
       </header>
     );
   }

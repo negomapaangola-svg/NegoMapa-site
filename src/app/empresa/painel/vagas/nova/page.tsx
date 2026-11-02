@@ -209,7 +209,7 @@ export default function NovaVagaPage() {
               </p>
               <Button asChild>
                 <a href="/cadastrar-empresa" className="inline-flex items-center px-4 py-2 rounded-[4px] font-medium">
-                  Cadastrar Empresa
+                  Cadastro de Empresa
                 </a>
               </Button>
             </div>

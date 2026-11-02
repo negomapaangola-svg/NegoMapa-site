@@ -4,6 +4,10 @@ import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card';
 import { formatCurrency } from '@/lib/utils';
+import {
+  obterIdsProfissionaisPublicos,
+  obterProfissionaisContactoPorIds,
+} from '@/lib/actions/profissionais-publicos';
 import { FiltersForm } from './_components/FiltersForm';
 import { ServiceCard } from './_components/ServiceCard';
 import { Pagination } from './_components/Pagination';
@@ -24,17 +28,12 @@ interface ServiceRaw {
   provincia: string | null;
   municipio: string | null;
   created_at: string;
+  profissional_id: string;
   categoria: {
     id: string;
     nome: string;
     slug: string;
   } | { id: string; nome: string; slug: string }[] | null;
-  profissional: {
-    id: string;
-    nome: string;
-    slug: string;
-    whatsapp: string | null;
-  } | { id: string; nome: string; slug: string; whatsapp: string | null }[] | null;
 }
 
 interface Service {
@@ -78,6 +77,12 @@ async function getServices(params: {
 }) {
   const supabase = await createSupabaseServerClient();
 
+  // Profissionais aprovados, pela vista pública. Os serviços filtram-se por estes ids (sem embed).
+  const idsProfissionais = await obterIdsProfissionaisPublicos();
+  if (idsProfissionais.length === 0) {
+    return { services: [], total: 0 };
+  }
+
   const page = parseInt(params.page || '1', 10);
   const from = (page - 1) * SERVICES_PER_PAGE;
   const to = from + SERVICES_PER_PAGE - 1;
@@ -95,11 +100,11 @@ async function getServices(params: {
       provincia,
       municipio,
       created_at,
-      categoria:categoria_id (id, nome, slug),
-      profissional:profissional_id (id, nome, slug, whatsapp)
+      profissional_id,
+      categoria:categoria_id (id, nome, slug)
     `, { count: 'exact' })
     .eq('estado', 'aprovado')
-    .eq('profissional_id.estado', 'aprovado')
+    .in('profissional_id', idsProfissionais)
     .eq('categoria_id.ativo', true)
     .order('created_at', { ascending: false })
     .range(from, to);
@@ -128,11 +133,27 @@ async function getServices(params: {
   }
 
   const rawData = data as ServiceRaw[];
-  const services: Service[] = rawData.map((item) => ({
-    ...item,
-    categoria: Array.isArray(item.categoria) ? item.categoria[0] : item.categoria,
-    profissional: Array.isArray(item.profissional) ? item.profissional[0] : item.profissional,
-  }));
+
+  // Segunda consulta à vista, só para os profissionais desta página.
+  const profissionais = await obterProfissionaisContactoPorIds(rawData.map((item) => item.profissional_id));
+
+  const services: Service[] = rawData.map((item) => {
+    const p = profissionais.get(item.profissional_id);
+    return {
+      id: item.id,
+      slug: item.slug,
+      titulo: item.titulo,
+      descricao: item.descricao,
+      preco: item.preco,
+      preco_tipo: item.preco_tipo,
+      whatsapp: item.whatsapp,
+      provincia: item.provincia,
+      municipio: item.municipio,
+      created_at: item.created_at,
+      categoria: Array.isArray(item.categoria) ? item.categoria[0] ?? null : item.categoria,
+      profissional: p ? { id: p.id, nome: p.nome, slug: p.slug, whatsapp: p.whatsapp } : null,
+    };
+  });
 
   return { services, total: count || 0 };
 }

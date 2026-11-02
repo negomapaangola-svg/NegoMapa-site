@@ -36,7 +36,7 @@ export function HomeVagas({ perfil, vagas, erro }: Props) {
           texto="Entre ou crie uma conta de profissional para ver as vagas disponíveis em Angola."
         >
           <Link href="/login?redirectTo=/" className="nm-btn nm-btn-p">Entrar</Link>
-          <Link href="/editar-perfil" className="nm-btn nm-btn-g">Tornar-me profissional</Link>
+          <Link href="/cadastrar-servico" className="nm-btn nm-btn-g">Cadastro de Profissional</Link>
         </EstadoVazio>
       </HomeSection>
     );
