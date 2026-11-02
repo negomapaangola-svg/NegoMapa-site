@@ -12,6 +12,7 @@ import { Rating, RatingStarsOnly } from "@/components/avaliacoes/Rating";
 import { ReviewForm } from "@/components/avaliacoes/ReviewForm";
 import { ReportForm } from "@/components/denuncias/ReportForm";
 import { AlvoDenuncia } from "@/lib/actions/denuncias";
+import { CandidaturaForm } from "./_components/CandidaturaForm";
 
 interface Vaga {
   id: string;
@@ -24,45 +25,27 @@ interface Vaga {
   municipio: string | null;
   tipo_contrato: string | null;
   salario: string | null;
-  whatsapp: string | null;
   estado: string;
   created_at: string;
   company: {
     id: string;
     name: string;
     slug: string;
-    provincia: string | null;
+    province: string | null;
   }[];
 }
 
+// Dados públicos da vaga. Sem whatsapp nem campos de moderação.
+// Sem embed company:companies!company_id: a vista não tem relação inferida.
 async function getVaga(slug: string): Promise<Vaga | null> {
   const supabase = await createSupabaseServerClient();
 
-  // Primeiro, buscar IDs das empresas aprovadas
-  const { data: approvedCompanies, error: companiesError } = await supabase
-    .from("companies")
-    .select("id")
-    .eq("is_approved", true);
-
-  if (companiesError) {
-    console.error("Erro ao buscar empresas aprovadas:", companiesError);
-    return null;
-  }
-
-  const approvedIds = (approvedCompanies ?? []).map((company) => company.id);
-
-  console.log("Empresas aprovadas (detalhe):", approvedIds);
-
-  if (approvedIds.length === 0) {
-    return null;
-  }
-
-  // Buscar a vaga por slug, estado aprovado e company_id nas empresas aprovadas
-  const { data, error } = await supabase
-    .from("vagas")
+  const { data: vaga, error: vagaError } = await supabase
+    .from("vagas_publicas")
     .select(
       `
       id,
+      company_id,
       titulo,
       slug,
       descricao,
@@ -72,41 +55,41 @@ async function getVaga(slug: string): Promise<Vaga | null> {
       municipio,
       tipo_contrato,
       salario,
-      whatsapp,
       estado,
-      created_at,
-      company:companies!company_id (
-        id,
-        name,
-        slug,
-        provincia
-      )
+      created_at
     `
     )
     .eq("slug", slug)
     .eq("estado", "aprovado")
-    .in("company_id", approvedIds)
-    .single();
+    .maybeSingle();
 
-  console.log("Vaga detalhe:", data, "Erro:", error);
-
-  if (error || !data) {
+  if (vagaError) {
+    console.error("Erro ao carregar vaga pública:", vagaError.code);
     return null;
   }
 
-  return data as Vaga;
-}
+  if (!vaga) {
+    return null;
+  }
 
-function cleanWhatsAppNumber(whatsapp: string): string {
-  return whatsapp.replace(/[\s+\-()]/g, "");
-}
+  const { data: empresa, error: empresaError } = await supabase
+    .from("empresas_publicas")
+    .select("id, name, slug, province")
+    .eq("id", vaga.company_id)
+    .eq("is_approved", true)
+    .maybeSingle();
 
-function formatWhatsAppLink(whatsapp: string, titulo: string): string {
-  const cleanNumber = cleanWhatsAppNumber(whatsapp);
-  const encodedText = encodeURIComponent(
-    `Olá, tenho interesse na vaga ${titulo}`
-  );
-  return `https://wa.me/${cleanNumber}?text=${encodedText}`;
+  if (empresaError) {
+    console.error("Erro ao carregar empresa da vaga:", empresaError.code);
+    return null;
+  }
+
+  if (!empresa) {
+    return null;
+  }
+
+  const { company_id, ...resto } = vaga;
+  return { ...resto, company: [empresa] } as Vaga;
 }
 
 export async function generateMetadata({
@@ -246,7 +229,7 @@ export default async function VagaDetailPage({
                     </svg>
                     {vaga.provincia}
                     {vaga.municipio && `, ${vaga.municipio}`}
-                    {company.provincia && ` • ${company.provincia}`}
+                    {company.province && ` • ${company.province}`}
                   </span>
                   <span className="flex items-center gap-1">
                     <svg
@@ -316,24 +299,19 @@ export default async function VagaDetailPage({
                 <h2 className="text-xl font-bold text-ink dark:text-cream mb-4">
                   Candidatar-se
                 </h2>
-                {vaga.whatsapp && vaga.whatsapp.trim() ? (
-                  <Link href={formatWhatsAppLink(vaga.whatsapp, vaga.titulo)} target="_blank" rel="noopener noreferrer">
-                    <Button variant="liquid" size="lg" fullWidth className="w-full max-w-xs">
-                      <svg
-                        className="h-5 w-5"
-                        fill="currentColor"
-                        viewBox="0 0 24 24"
-                        aria-hidden="true"
-                      >
-                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.454.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.42 5.42h-.01a3.9 3.9 0 01-3.9-3.9V8.43a3.9 3.9 0 013.9-3.9h5.16a3.9 3.9 0 013.9 3.9v11.18c0 2.151-1.748 3.9-3.9 3.9h-5.16a3.9 3.9 0 01-3.9-3.9v-.22z" />
-                      </svg>
-                      Candidatar-se via WhatsApp
-                    </Button>
-                  </Link>
+                {user ? (
+                  <CandidaturaForm vagaId={vaga.id} />
                 ) : (
-                  <p className="text-neutral-600 dark:text-cream-text/80">
-                    Esta vaga não possui contacto WhatsApp para candidatura.
-                  </p>
+                  <div className="space-y-4">
+                    <p className="text-neutral-600 dark:text-cream-text/80">
+                      Entre na sua conta ou crie uma para se candidatar a esta vaga.
+                    </p>
+                    <Link href={`/registar?redirectTo=${encodeURIComponent(`/vaga/${vaga.slug}`)}`}>
+                      <Button variant="liquid" size="lg">
+                        Entrar ou criar conta
+                      </Button>
+                    </Link>
+                  </div>
                 )}
               </div>
 
