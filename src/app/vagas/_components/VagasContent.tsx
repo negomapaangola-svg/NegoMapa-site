@@ -16,7 +16,6 @@ export type VagaPublic = {
   municipio?: string | null
   tipo_contrato?: string | null
   salario?: string | null
-  whatsapp?: string | null
   estado: string
   created_at: string
   company: {

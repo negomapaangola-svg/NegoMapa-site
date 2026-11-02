@@ -2,6 +2,8 @@
 
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 
+// Sem whatsapp, motivo_rejeicao, avaliado_por nem avaliado_em.
+// O contacto de candidatura é obtido só por obter_contacto_candidatura().
 export type VagaPublic = {
   id: string
   titulo: string
@@ -13,7 +15,6 @@ export type VagaPublic = {
   municipio?: string | null
   tipo_contrato?: string | null
   salario?: string | null
-  whatsapp?: string | null
   estado: string
   created_at: string
   company: {
@@ -31,27 +32,31 @@ export type VagasPublicasResult =
 export async function getVagasPublicas(): Promise<VagasPublicasResult> {
   const supabase = await createSupabaseServerClient()
 
-  // Buscar IDs das empresas aprovadas
-  const { data: approvedCompanies, error: companiesError } = await supabase
-    .from('companies')
-    .select('id')
+  // Empresas aprovadas. Filtro explícito: a vista herda a RLS do chamador,
+  // e para o dono a RLS também devolve a própria empresa não aprovada.
+  const { data: empresas, error: empresasError } = await supabase
+    .from('empresas_publicas')
+    .select('id, name, slug, province')
     .eq('is_approved', true)
 
-  if (companiesError) {
-    console.error('Erro ao buscar empresas aprovadas:', companiesError)
+  if (empresasError) {
+    console.error('Erro ao buscar empresas aprovadas:', empresasError)
     return { success: false, error: 'Erro ao carregar vagas' }
   }
 
-  const approvedIds = (approvedCompanies ?? []).map((company) => company.id)
+  const empresasPorId = new Map((empresas ?? []).map((e) => [e.id, e]))
 
-  if (approvedIds.length === 0) {
+  if (empresasPorId.size === 0) {
     return { success: true, data: [] }
   }
 
-  const { data, error } = await supabase
-    .from('vagas')
+  // Sem embed company:companies!company_id: relações não se inferem sobre vistas.
+  // A junção é feita aqui, com a lista de empresas já filtrada.
+  const { data: vagas, error: vagasError } = await supabase
+    .from('vagas_publicas')
     .select(`
       id,
+      company_id,
       titulo,
       slug,
       descricao,
@@ -61,19 +66,28 @@ export async function getVagasPublicas(): Promise<VagasPublicasResult> {
       municipio,
       tipo_contrato,
       salario,
-      whatsapp,
       estado,
-      created_at,
-      company:companies!company_id (id, name, slug, provincia:province)
+      created_at
     `)
     .eq('estado', 'aprovado')
-    .in('company_id', approvedIds)
+    .in('company_id', Array.from(empresasPorId.keys()))
     .order('created_at', { ascending: false })
 
-  if (error) {
-    console.error('Erro ao carregar vagas públicas:', error)
+  if (vagasError) {
+    console.error('Erro ao carregar vagas públicas:', vagasError)
     return { success: false, error: 'Erro ao carregar vagas' }
   }
 
-  return { success: true, data: data as VagaPublic[] }
+  const data: VagaPublic[] = (vagas ?? []).map((vaga) => {
+    const { company_id, ...resto } = vaga
+    const empresa = empresasPorId.get(company_id)
+    return {
+      ...resto,
+      company: empresa
+        ? [{ id: empresa.id, name: empresa.name, slug: empresa.slug, provincia: empresa.province }]
+        : [],
+    }
+  })
+
+  return { success: true, data }
 }
