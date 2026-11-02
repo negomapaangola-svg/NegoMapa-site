@@ -231,3 +231,24 @@ body {
 .skip-link:focus {
   top: 0;
 }
+
+/* Tokens do painel (/painel). Só afetam os elementos do painel. */
+:root {
+  --painel-fundo: #ffffff;
+  --painel-superficie: #f5f5f5;
+  --painel-borda: #e5e5e5;
+  --painel-texto: #171717;
+  --painel-texto-secundario: #525252;
+  --painel-ativo: #e5e5e5;
+  --painel-foco: #171717;
+}
+
+html[data-painel-tema='escuro'] {
+  --painel-fundo: #0B1F2E;
+  --painel-superficie: #132C3D;
+  --painel-borda: #2A4657;
+  --painel-texto: #F1F5F9;
+  --painel-texto-secundario: #CFE0E8;
+  --painel-ativo: #1B3A4F;
+  --painel-foco: #F1F5F9;
+}
