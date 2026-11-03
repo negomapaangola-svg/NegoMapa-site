@@ -1,6 +1,4 @@
-'use client';
-
-import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 
 interface FiltersFormProps {
@@ -15,111 +13,84 @@ interface FiltersFormProps {
   municipios: string[];
 }
 
+const campo =
+  'w-full px-3 py-2 border border-card-border rounded-[4px] shadow-sm bg-white text-ink focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-neutral-700 dark:text-cream';
+
+/** Filtros por GET: título do serviço ou nome do profissional, categoria, província e município. */
 export function FiltersForm({ initialSearchParams, categorias, provincias, municipios }: FiltersFormProps) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const params = new URLSearchParams();
-
-    const q = formData.get('q');
-    const categoria = formData.get('categoria');
-    const provincia = formData.get('provincia');
-    const municipio = formData.get('municipio');
-
-    if (q) params.set('q', q as string);
-    if (categoria) params.set('categoria', categoria as string);
-    if (provincia) params.set('provincia', provincia as string);
-    if (municipio) params.set('municipio', municipio as string);
-
-    router.push(`/servicos?${params.toString()}`);
-  };
-
-  const handleClear = () => {
-    router.push('/servicos');
-  };
-
-  const hasActiveFilters = initialSearchParams.q || initialSearchParams.categoria || initialSearchParams.provincia || initialSearchParams.municipio;
+  const hasActiveFilters = Boolean(
+    initialSearchParams.q ||
+      initialSearchParams.categoria ||
+      initialSearchParams.provincia ||
+      initialSearchParams.municipio
+  );
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 md:space-y-0 md:flex md:items-end md:gap-4 flex-wrap" role="search" aria-label="Filtros de serviços">
-      <div className="md:flex-1 min-w-[200px]">
-        <label htmlFor="q" className="sr-only">Buscar serviços</label>
+    <form method="get" action="/servicos" role="search" aria-label="Filtros de serviços" className="grid grid-cols-1 gap-4 md:grid-cols-4">
+      <div className="md:col-span-2">
+        <label htmlFor="q" className="block text-sm font-medium text-ink dark:text-cream-text mb-1">
+          Pesquisar
+        </label>
         <input
           type="search"
           id="q"
           name="q"
           defaultValue={initialSearchParams.q || ''}
-          placeholder="Buscar por título..."
-          className="w-full px-3 py-2 border border-card-border rounded-[4px] shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-neutral-700 dark:text-cream"
+          placeholder="Título do serviço ou nome do profissional"
+          className={campo}
         />
       </div>
 
-      <div className="md:w-[180px]">
+      <div>
         <label htmlFor="categoria" className="block text-sm font-medium text-ink dark:text-cream-text mb-1">
           Categoria
         </label>
-        <select
-          id="categoria"
-          name="categoria"
-          defaultValue={initialSearchParams.categoria || ''}
-          className="w-full px-3 py-2 border border-card-border rounded-[4px] shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-neutral-700 dark:text-cream"
-        >
+        <select id="categoria" name="categoria" defaultValue={initialSearchParams.categoria || ''} className={campo}>
           <option value="">Todas as categorias</option>
           {categorias.map((cat) => (
-            <option key={cat.id} value={cat.slug}>{cat.nome}</option>
+            <option key={cat.id} value={cat.slug}>
+              {cat.nome}
+            </option>
           ))}
         </select>
       </div>
 
-      <div className="md:w-[180px]">
+      <div>
         <label htmlFor="provincia" className="block text-sm font-medium text-ink dark:text-cream-text mb-1">
           Província
         </label>
-        <select
-          id="provincia"
-          name="provincia"
-          defaultValue={initialSearchParams.provincia || ''}
-          className="w-full px-3 py-2 border border-card-border rounded-[4px] shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-neutral-700 dark:text-cream"
-        >
+        <select id="provincia" name="provincia" defaultValue={initialSearchParams.provincia || ''} className={campo}>
           <option value="">Todas as províncias</option>
           {provincias.map((prov) => (
-            <option key={prov} value={prov}>{prov}</option>
+            <option key={prov} value={prov}>
+              {prov}
+            </option>
           ))}
         </select>
       </div>
 
-      <div className="md:w-[180px]">
+      <div>
         <label htmlFor="municipio" className="block text-sm font-medium text-ink dark:text-cream-text mb-1">
           Município
         </label>
-        <select
-          id="municipio"
-          name="municipio"
-          defaultValue={initialSearchParams.municipio || ''}
-          className="w-full px-3 py-2 border border-card-border rounded-[4px] shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-neutral-700 dark:text-cream"
-        >
+        <select id="municipio" name="municipio" defaultValue={initialSearchParams.municipio || ''} className={campo}>
           <option value="">Todos os municípios</option>
           {municipios.map((mun) => (
-            <option key={mun} value={mun}>{mun}</option>
+            <option key={mun} value={mun}>
+              {mun}
+            </option>
           ))}
         </select>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="md:col-span-4 flex flex-wrap items-center gap-3">
         <Button type="submit" variant="primary" size="sm">
-          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 18a9 9 0 009-9 9 9 0 00-9 9 9 9 0 009 9z" />
-          </svg>
           Filtrar
         </Button>
         {hasActiveFilters && (
-          <Button type="button" variant="outline" size="sm" onClick={handleClear}>
-            Limpar
-          </Button>
+          <Link href="/servicos" className="text-sm text-neutral-600 dark:text-cream-text hover:underline">
+            Limpar filtros
+          </Link>
         )}
       </div>
     </form>
