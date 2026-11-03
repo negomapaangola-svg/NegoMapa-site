@@ -84,7 +84,7 @@ export default async function ProfissionaisPage({ searchParams }: { searchParams
               />
 
               <p className="mb-4 text-sm text-neutral-600 dark:text-cream-text" role="status" aria-live="polite">
-                {`${profissionais.length} profissional${profissionais.length !== 1 ? 'is' : ''}`}
+                {profissionais.length === 1 ? '1 profissional' : `${profissionais.length} profissionais`}
               </p>
 
               {profissionais.length > 0 ? (
