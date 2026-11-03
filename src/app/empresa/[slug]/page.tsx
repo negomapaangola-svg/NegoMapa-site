@@ -7,12 +7,15 @@ import { supabase } from "@/lib/supabase"
 import { isHttpsUrl } from "@/lib/utils"
 import { Card, CardContent } from "@/components/ui/Card"
 import { MainLayout } from "@/components/layout/MainLayout"
-import { Rating, RatingStarsOnly } from "@/components/avaliacoes/Rating"
 import { ReviewForm } from "@/components/avaliacoes/ReviewForm"
 import { ReportForm } from "@/components/denuncias/ReportForm"
 import { getMediaAvaliacoes, getAvaliacoesPorAlvo } from "@/lib/actions/avaliacoes"
 import { AlvoDenuncia } from "@/lib/actions/denuncias"
 import { createBrowserSupabaseClient } from "@/lib/supabase-browser"
+// Padrão partilhado com o perfil do profissional (avaliações e portfólio).
+import { AvaliacoesProfissional } from "@/app/profissional/[slug]/_components/AvaliacoesProfissional"
+import { PortfolioProfissional } from "@/app/profissional/[slug]/_components/PortfolioProfissional"
+import { ProfissionalWhatsApp } from "@/app/profissional/[slug]/_components/ProfissionalWhatsApp"
 
 function EmpresaContent() {
   const { slug } = useParams<{ slug: string }>()
@@ -32,7 +35,7 @@ function EmpresaContent() {
 
       const { data, error } = await supabase
         .from("companies")
-        .select("id, name, sector, province, city, bairro, rua, referencia_localizacao, description, email, phone, horario_atendimento, estado_legalizacao, documento_legalizacao_url, slug, is_approved")
+        .select("id, name, sector, province, city, bairro, rua, referencia_localizacao, description, email, phone, horario_atendimento, estado_legalizacao, slug, is_approved")
         .eq("slug", slug)
         .eq("is_approved", true)
         .single()
@@ -41,7 +44,22 @@ function EmpresaContent() {
         console.error("Empresa não encontrada:", error)
         setEmpresa(null)
       } else {
-        setEmpresa(data)
+        // whatsapp, logo_url e portfolio vêm da vista pública. Se a vista ainda não tiver estas colunas,
+        // a página continua a funcionar sem elas, em vez de mostrar "Empresa não encontrada".
+        const { data: extras, error: erroExtras } = await supabase
+          .from("empresas_publicas")
+          .select("whatsapp, logo_url, portfolio")
+          .eq("slug", slug)
+          .maybeSingle()
+
+        if (erroExtras) console.error("Dados públicos adicionais indisponíveis:", erroExtras.code)
+
+        setEmpresa({
+          ...data,
+          whatsapp: extras?.whatsapp ?? null,
+          logo_url: extras?.logo_url ?? null,
+          portfolio: extras?.portfolio ?? null,
+        })
       }
       setCarregando(false)
     }
@@ -100,7 +118,6 @@ function EmpresaContent() {
     )
   }
 
-  const whatsappNumber = (empresa.phone || "").replace(/\D/g, "")
   const hasPhone = !!empresa.phone
   const hasEmail = !!empresa.email
   const alvo = { tipo: 'empresa' as const, id: empresa.id }
@@ -121,7 +138,7 @@ function EmpresaContent() {
   }
 
   // Verifica se há dados de legalização para exibir
-  const temDadosLegalizacao = empresa.estado_legalizacao || isHttpsUrl(empresa.documento_legalizacao_url)
+  const temDadosLegalizacao = !!empresa.estado_legalizacao
 
   // Verifica se há endereço detalhado
   const temEnderecoDetalhado = empresa.rua || empresa.bairro || empresa.referencia_localizacao
@@ -131,6 +148,13 @@ function EmpresaContent() {
       <div className="max-w-3xl mx-auto p-6 md:p-8 bg-cream dark:bg-navy-dark">
         <Card variant="default" padding="lg" className="border-card-border">
           <div className="mb-6">
+            {isHttpsUrl(empresa.logo_url) && (
+              <img
+                src={empresa.logo_url}
+                alt={`Logótipo de ${empresa.name}`}
+                className="mb-4 h-20 w-20 rounded-md object-contain"
+              />
+            )}
             <h1 className="text-3xl md:text-4xl font-bold text-ink dark:text-cream">
               {empresa.name}
             </h1>
@@ -196,21 +220,6 @@ function EmpresaContent() {
                   </div>
                 </CardContent>
               </div>
-              {isHttpsUrl(empresa.documento_legalizacao_url) && (
-                <div className="mt-4">
-                  <Link
-                    href={empresa.documento_legalizacao_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 text-sm text-orange-500 dark:text-orange-400 hover:underline font-medium"
-                  >
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                    </svg>
-                    Ver documento
-                  </Link>
-                </div>
-              )}
             </div>
           )}
 
@@ -224,35 +233,13 @@ function EmpresaContent() {
             </div>
           )}
 
+          {/* Contacto principal: WhatsApp quando existir; senão, telefone ou email. */}
           <div className="mt-8 pt-8 border-t border-card-border">
             <div className="flex flex-wrap gap-3">
 
-              {hasPhone && (
-                <Link
-                  href={`https://wa.me/244${whatsappNumber}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-[4px] hover:bg-green-700 transition-colors"
-                >
-                  <svg
-                    className="h-5 w-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M18 16v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h10a2 2 0 012 2v1m-3.678-1.636A16.039 16.039 0 016 12.353 16.083 16.083 0 0112.05 3s10.03 8.347 10.323 9.378a7.97 7.97 0 00-1.677 2.043 7.926 7.926 0 01-3.062.094A11.956 11.956 0 0018 16z"
-                    />
-                  </svg>
-                  WhatsApp
-                </Link>
-              )}
+              <ProfissionalWhatsApp whatsapp={empresa.whatsapp} />
 
-              {hasPhone && (
+              {!empresa.whatsapp && hasPhone && (
                 <a
                   href={`tel:${empresa.phone}`}
                   className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-[4px] hover:bg-blue-700 transition-colors"
@@ -275,7 +262,7 @@ function EmpresaContent() {
                 </a>
               )}
 
-              {hasEmail && (
+              {!empresa.whatsapp && hasEmail && (
                 <Link
                   href={`mailto:${empresa.email}`}
                   className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-[4px] hover:bg-red-700 transition-colors"
@@ -298,6 +285,10 @@ function EmpresaContent() {
                 </Link>
               )}
 
+              {!empresa.whatsapp && !hasPhone && !hasEmail && (
+                <p className="text-neutral-500 dark:text-cream-text/70">Sem contactos publicados.</p>
+              )}
+
             </div>
           </div>
 
@@ -308,57 +299,23 @@ function EmpresaContent() {
             </div>
           </div>
 
+          {/* Portfólio: lido da vista pública; sem trabalhos, mostra o estado vazio. */}
           <div className="mt-8 pt-8 border-t border-card-border">
-            <h2 className="text-lg font-semibold text-ink dark:text-cream mb-4">Avaliações</h2>
-            <div className="space-y-6">
-              <div className="flex items-center gap-4">
-                <Rating media={media.media} total={media.total} size="lg" />
-              </div>
+            <PortfolioProfissional itens={empresa.portfolio} />
+          </div>
 
-              {avaliacoesCarregando ? (
-                <p className="text-neutral-500 dark:text-cream-text/70 text-center py-8">Carregando avaliações...</p>
-              ) : avaliacoes.length > 0 ? (
-                <div className="space-y-4">
-                  {avaliacoes.map((avaliacao) => (
-                    <Card key={avaliacao.id} variant="outlined" padding="md" className="border-card-border">
-                      <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-lg font-bold text-orange-500 dark:text-orange-400 flex-shrink-0">
-                          {avaliacao.user?.email?.charAt(0).toUpperCase() || 'U'}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between gap-2">
-                            <p className="font-medium text-ink dark:text-cream truncate">
-                              {avaliacao.user?.email?.split('@')[0] || 'Utilizador'}
-                            </p>
-                            <div className="flex items-center gap-2">
-                              <RatingStarsOnly media={avaliacao.nota} size="sm" />
-                              <time className="text-xs text-neutral-500 dark:text-neutral-400">
-                                {new Date(avaliacao.created_at).toLocaleDateString('pt-AO', {
-                                  day: '2-digit',
-                                  month: '2-digit',
-                                  year: 'numeric',
-                                })}
-                              </time>
-                            </div>
-                          </div>
-                          {avaliacao.comentario && (
-                            <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400 whitespace-pre-wrap">
-                              {avaliacao.comentario}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-neutral-500 dark:text-cream-text/70 text-center py-8">Sem avaliações</p>
-              )}
+          <div className="mt-8 pt-8 border-t border-card-border">
+            {avaliacoesCarregando ? (
+              <p className="text-neutral-500 dark:text-cream-text/70 text-center py-8">Carregando avaliações...</p>
+            ) : (
+              <AvaliacoesProfissional avaliacoes={avaliacoes} resumo={media} />
+            )}
 
-              {userId && (
+            {userId && (
+              <div className="mt-8">
                 <ReviewForm alvo={alvo} userId={userId} />
-              )}
-            </div>
+              </div>
+            )}
           </div>
 
           <div className="mt-6 text-right">
