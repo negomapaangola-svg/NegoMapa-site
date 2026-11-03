@@ -12,6 +12,7 @@ import {
 } from '@/lib/actions/profissionais-publicos';
 import { obterPerfilProfissionalDoUtilizador } from '@/lib/actions/profissional-painel';
 import { EnviarMensagemButton } from './_components/EnviarMensagemButton';
+import { MENSAGEM_BLOQUEIO_PROFISSIONAL } from '@/lib/mensagens-bloqueio';
 
 type Params = Promise<{ slug: string }>;
 
@@ -38,11 +39,13 @@ export default async function ProfissionalPublicoPage({ params }: { params: Para
     getUser(),
   ]);
 
-  // Não mostrar "Enviar mensagem" a quem é o próprio profissional.
+  // Não mostrar "Enviar mensagem" a quem é o próprio profissional, nem a outras contas de profissional.
   let eDono = false;
+  let ehProfissional = false;
   if (user) {
     const perfilProprio = await obterPerfilProfissionalDoUtilizador();
     eDono = perfilProprio?.id === profissional.id;
+    ehProfissional = !!perfilProprio;
   }
 
   const localizacao = [profissional.municipio, profissional.provincia].filter(Boolean).join(', ');
@@ -74,7 +77,12 @@ export default async function ProfissionalPublicoPage({ params }: { params: Para
           </header>
 
           <div className="mt-8">
-            {user && !eDono && <EnviarMensagemButton profissionalId={profissional.id} />}
+            {user && !eDono && !ehProfissional && <EnviarMensagemButton profissionalId={profissional.id} />}
+            {user && !eDono && ehProfissional && (
+              <p role="status" className="text-neutral-600 dark:text-cream-text">
+                {MENSAGEM_BLOQUEIO_PROFISSIONAL}
+              </p>
+            )}
             {!user && (
               <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                 <p className="text-neutral-600 dark:text-cream-text">

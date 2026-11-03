@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { PROVINCIAS_ANGOLA } from '@/lib/listas-selecao'
+import { MENSAGEM_BLOQUEIO_PROFISSIONAL } from '@/lib/mensagens-bloqueio'
 
 export type PedidoServico = {
   id: string
@@ -81,6 +82,16 @@ export async function listarMeusPedidos(): Promise<{ success: true; data: Pedido
   return { success: true, data: (data ?? []) as PedidoServico[] }
 }
 
+/** Conta de profissional? A RLS (utilizador_e_profissional) é a barreira real; isto só antecipa a mensagem. */
+async function utilizadorEProfissional(supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>): Promise<boolean> {
+  const { data, error } = await supabase.rpc('utilizador_e_profissional')
+  if (error) {
+    console.error('Erro ao verificar perfil de profissional. Código:', error.code)
+    return false
+  }
+  return data === true
+}
+
 export async function criarPedido(formData: FormData): Promise<ResultadoPedido> {
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -128,6 +139,10 @@ export async function criarPedido(formData: FormData): Promise<ResultadoPedido> 
     return { success: false, error: 'Indique um contacto (entre 3 e 120 caracteres).' }
   }
 
+  if (await utilizadorEProfissional(supabase)) {
+    return { success: false, error: MENSAGEM_BLOQUEIO_PROFISSIONAL }
+  }
+
   const { error } = await supabase.from('pedidos_servico').insert({
     cliente_id: user.id,
     titulo,
@@ -141,6 +156,10 @@ export async function criarPedido(formData: FormData): Promise<ResultadoPedido> 
     profissional_id: profissionalId || null,
     servico_id: servicoId || null,
   })
+
+  if (error?.code === '42501') {
+    return { success: false, error: MENSAGEM_BLOQUEIO_PROFISSIONAL }
+  }
 
   if (error) {
     console.error('Erro ao criar pedido. Código:', error.code)
