@@ -1,6 +1,5 @@
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/Card"
-import { Button } from "@/components/ui/Button"
 import type { VagaPublic } from "@/lib/actions/vagas-public"
 
 export type { VagaPublic }
@@ -14,6 +13,9 @@ interface VagasContentProps {
   parametros: Record<string, string>
   temFiltros: boolean
 }
+
+const botaoPaginacao =
+  "inline-flex items-center justify-center rounded-[4px] border-2 border-orange-500 px-3 py-1.5 text-sm font-bold text-orange-500 hover:bg-orange-50 dark:border-orange-400 dark:text-orange-400 dark:hover:bg-orange-900/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
 
 function hrefComPagina(parametros: Record<string, string>, pagina: number): string {
   const params = new URLSearchParams()
@@ -117,25 +119,31 @@ export function VagasContent({
       {totalPaginas > 1 && (
         <nav aria-label="Paginação de vagas" className="flex items-center justify-center gap-2">
           {paginaAtual > 1 ? (
-            <Button variant="outline" size="sm" asChild>
-              <Link href={hrefComPagina(parametros, paginaAtual - 1)}>Anterior</Link>
-            </Button>
-          ) : (
-            <Button variant="outline" size="sm" disabled>
+            <Link
+              href={hrefComPagina(parametros, paginaAtual - 1)}
+              className={botaoPaginacao}
+            >
               Anterior
-            </Button>
+            </Link>
+          ) : (
+            <span aria-disabled="true" className={`${botaoPaginacao} opacity-50 pointer-events-none`}>
+              Anterior
+            </span>
           )}
           <span className="px-4 text-sm text-ink dark:text-cream">
             Página {paginaAtual} de {totalPaginas}
           </span>
           {paginaAtual < totalPaginas ? (
-            <Button variant="outline" size="sm" asChild>
-              <Link href={hrefComPagina(parametros, paginaAtual + 1)}>Próxima</Link>
-            </Button>
-          ) : (
-            <Button variant="outline" size="sm" disabled>
+            <Link
+              href={hrefComPagina(parametros, paginaAtual + 1)}
+              className={botaoPaginacao}
+            >
               Próxima
-            </Button>
+            </Link>
+          ) : (
+            <span aria-disabled="true" className={`${botaoPaginacao} opacity-50 pointer-events-none`}>
+              Próxima
+            </span>
           )}
         </nav>
       )}
