@@ -1,5 +1,4 @@
 import { Metadata } from 'next';
-import Link from 'next/link';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card';
@@ -299,9 +298,7 @@ export default async function ServicosPage({
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" role="list" aria-label="Lista de serviços">
                 {services.map((service) => (
                   <article key={service.id} role="listitem">
-                    <Link href={`/servico/${service.slug}`} className="block">
-                      <ServiceCard service={service} />
-                    </Link>
+                    <ServiceCard service={service} />
                   </article>
                 ))}
               </div>
