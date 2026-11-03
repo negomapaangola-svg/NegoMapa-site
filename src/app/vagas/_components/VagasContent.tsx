@@ -98,9 +98,12 @@ export function VagasContent({
             <p className="mt-2 text-neutral-600 dark:text-cream-text">
               Tente outro título, categoria ou província.
             </p>
-            <Button variant="outline" size="sm" className="mt-4" asChild>
-              <Link href="/vagas">Limpar filtros</Link>
-            </Button>
+            <Link
+              href="/vagas"
+              className="mt-4 inline-block text-sm font-medium text-orange-500 dark:text-orange-400 hover:underline"
+            >
+              Limpar filtros
+            </Link>
           </div>
         ) : (
           <div className="col-span-full text-center py-12" role="status">
