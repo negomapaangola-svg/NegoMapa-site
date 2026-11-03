@@ -1,140 +1,44 @@
-"use client"
-
-import * as React from "react"
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/Card"
 import { Button } from "@/components/ui/Button"
+import type { VagaPublic } from "@/lib/actions/vagas-public"
 
-export type VagaPublic = {
-  id: string
-  titulo: string
-  slug: string
-  descricao: string
-  requisitos?: string | null
-  categoria: string
-  provincia: string
-  municipio?: string | null
-  tipo_contrato?: string | null
-  salario?: string | null
-  estado: string
-  created_at: string
-  company: {
-    id: string
-    name: string
-    slug: string
-    provincia?: string | null
-  }[]
-}
-
-const VAGAS_PER_PAGE = 9
+export type { VagaPublic }
 
 interface VagasContentProps {
-  initialVagas: VagaPublic[]
+  vagasPagina: VagaPublic[]
+  totalVagas: number
+  paginaAtual: number
+  totalPaginas: number
+  /** Parâmetros de busca atuais (q, categoria, provincia), para manter os filtros na paginação. */
+  parametros: Record<string, string>
+  temFiltros: boolean
 }
 
-export function VagasContent({ initialVagas }: VagasContentProps) {
-  const [vagas, setVagas] = React.useState<VagaPublic[]>(initialVagas)
-  const [categorias, setCategorias] = React.useState<Set<string>>(new Set())
-  const [provincias, setProvincias] = React.useState<Set<string>>(new Set())
-  const [categoriaFiltrada, setCategoriaFiltrada] = React.useState<string | null>(null)
-  const [provinciaFiltrada, setProvinciaFiltrada] = React.useState<string | null>(null)
-  const [nomeBusca, setNomeBusca] = React.useState("")
-  const [paginaAtual, setPaginaAtual] = React.useState(1)
-
-  React.useEffect(() => {
-    setVagas(initialVagas)
-    const categoriasUnicas = new Set(initialVagas?.map((v) => v.categoria).filter(Boolean) || [])
-    const provinciasUnicas = new Set(initialVagas?.map((v) => v.provincia).filter(Boolean) || [])
-    setCategorias(categoriasUnicas)
-    setProvincias(provinciasUnicas)
-  }, [initialVagas])
-
-  const vagasFiltradas = vagas.filter((vaga) => {
-    const categoriaMatch = !categoriaFiltrada || vaga.categoria === categoriaFiltrada
-    const provinciaMatch = !provinciaFiltrada || vaga.provincia === provinciaFiltrada
-    const nomeMatch = !nomeBusca || vaga.titulo.toLowerCase().includes(nomeBusca.toLowerCase())
-    return categoriaMatch && provinciaMatch && nomeMatch
-  })
-
-  const totalPaginas = Math.ceil(vagasFiltradas.length / VAGAS_PER_PAGE)
-  const vagasPagina = vagasFiltradas.slice(
-    (paginaAtual - 1) * VAGAS_PER_PAGE,
-    paginaAtual * VAGAS_PER_PAGE
-  )
-
-  const temFiltrosAtivos = categoriaFiltrada || provinciaFiltrada || nomeBusca
-
-  if (vagas.length === 0) {
-    return (
-      <div className="col-span-full text-center py-12">
-        <p className="text-lg text-neutral-500 dark:text-cream-text">
-          Ainda não há vagas disponíveis.
-        </p>
-      </div>
-    )
+function hrefComPagina(parametros: Record<string, string>, pagina: number): string {
+  const params = new URLSearchParams()
+  for (const [chave, valor] of Object.entries(parametros)) {
+    if (valor) params.set(chave, valor)
   }
+  if (pagina > 1) params.set("pagina", String(pagina))
+  const query = params.toString()
+  return query ? `/vagas?${query}` : "/vagas"
+}
 
+/** Lista de vagas por URL: cartões, estados vazios e paginação. Sem estado no cliente. */
+export function VagasContent({
+  vagasPagina,
+  totalVagas,
+  paginaAtual,
+  totalPaginas,
+  parametros,
+  temFiltros,
+}: VagasContentProps) {
   return (
     <div className="space-y-6">
-      {/* Filtros */}
-<div className="grid grid-cols-1 md:grid-cols-3 gap-4 min-w-0">
-          <div className="min-w-0">
-            <label className="block text-sm font-medium text-ink dark:text-cream-text mb-1">
-              Filtrar por categoria
-            </label>
-            <select
-            value={categoriaFiltrada || ""}
-            onChange={(e) => setCategoriaFiltrada(e.target.value || null)}
-            className="w-full px-3 py-2 border border-card-border rounded-[4px] shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-neutral-700 dark:text-cream"
-          >
-            <option value="">Todas as categorias</option>
-            {Array.from(categorias).sort().map((categoria) => (
-              <option key={categoria} value={categoria}>
-                {categoria}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="min-w-0">
-          <label className="block text-sm font-medium text-ink dark:text-cream-text mb-1">
-            Filtrar por província
-          </label>
-          <select
-            value={provinciaFiltrada || ""}
-            onChange={(e) => setProvinciaFiltrada(e.target.value || null)}
-            className="w-full px-3 py-2 border border-card-border rounded-[4px] shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-neutral-700 dark:text-cream"
-          >
-            <option value="">Todas as províncias</option>
-            {Array.from(provincias).sort().map((provincia) => (
-              <option key={provincia} value={provincia}>
-                {provincia}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="min-w-0">
-          <label className="block text-sm font-medium text-ink dark:text-cream-text mb-1">
-            Buscar por título
-          </label>
-          <div className="flex items-center gap-2 min-w-0">
-            <input
-              type="text"
-              value={nomeBusca}
-              onChange={(e) => setNomeBusca(e.target.value)}
-              placeholder="Buscar por título..."
-              className="w-full px-3 py-2 border border-card-border rounded-[4px] shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-neutral-700 dark:text-cream"
-            />
-            <Button variant="outline" size="sm" onClick={() => {
-              setNomeBusca("")
-              setCategoriaFiltrada(null)
-              setProvinciaFiltrada(null)
-              setPaginaAtual(1)
-            }}>
-              Limpar filtros
-            </Button>
-          </div>
-        </div>
-      </div>
+      <p className="text-sm text-neutral-600 dark:text-cream-text" role="status" aria-live="polite">
+        {totalVagas === 1 ? "1 vaga" : `${totalVagas} vagas`}
+      </p>
 
       {/* Grid de vagas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -188,59 +92,49 @@ export function VagasContent({ initialVagas }: VagasContentProps) {
               </Card>
             </Link>
           ))
+        ) : temFiltros ? (
+          <div className="col-span-full text-center py-12" role="status">
+            <h2 className="text-xl font-semibold text-ink dark:text-cream">Nenhuma vaga encontrada</h2>
+            <p className="mt-2 text-neutral-600 dark:text-cream-text">
+              Tente outro título, categoria ou província.
+            </p>
+            <Button variant="outline" size="sm" className="mt-4" asChild>
+              <Link href="/vagas">Limpar filtros</Link>
+            </Button>
+          </div>
         ) : (
-          temFiltrosAtivos ? (
-            <div className="col-span-full text-center py-12">
-              <p className="text-lg text-neutral-500 dark:text-cream-text">
-                Nenhuma vaga encontrada com os filtros seleccionados.
-              </p>
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-4"
-                onClick={() => {
-                  setNomeBusca("")
-                  setCategoriaFiltrada(null)
-                  setProvinciaFiltrada(null)
-                  setPaginaAtual(1)
-                }}
-              >
-                Limpar filtros
-              </Button>
-            </div>
-          ) : (
-            <div className="col-span-full text-center py-12">
-              <p className="text-lg text-neutral-500 dark:text-cream-text">
-                Nenhuma vaga encontrada.
-              </p>
-            </div>
-          )
+          <div className="col-span-full text-center py-12" role="status">
+            <h2 className="text-xl font-semibold text-ink dark:text-cream">Ainda não há vagas disponíveis</h2>
+            <p className="mt-2 text-neutral-600 dark:text-cream-text">Volte mais tarde para ver novas oportunidades.</p>
+          </div>
         )}
       </div>
 
       {/* Paginação */}
       {totalPaginas > 1 && (
-        <div className="flex items-center justify-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPaginaAtual(p => Math.max(1, p - 1))}
-            disabled={paginaAtual === 1}
-          >
-            Anterior
-          </Button>
+        <nav aria-label="Paginação de vagas" className="flex items-center justify-center gap-2">
+          {paginaAtual > 1 ? (
+            <Button variant="outline" size="sm" asChild>
+              <Link href={hrefComPagina(parametros, paginaAtual - 1)}>Anterior</Link>
+            </Button>
+          ) : (
+            <Button variant="outline" size="sm" disabled>
+              Anterior
+            </Button>
+          )}
           <span className="px-4 text-sm text-ink dark:text-cream">
             Página {paginaAtual} de {totalPaginas}
           </span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPaginaAtual(p => Math.min(totalPaginas, p + 1))}
-            disabled={paginaAtual === totalPaginas}
-          >
-            Próxima
-          </Button>
-        </div>
+          {paginaAtual < totalPaginas ? (
+            <Button variant="outline" size="sm" asChild>
+              <Link href={hrefComPagina(parametros, paginaAtual + 1)}>Próxima</Link>
+            </Button>
+          ) : (
+            <Button variant="outline" size="sm" disabled>
+              Próxima
+            </Button>
+          )}
+        </nav>
       )}
     </div>
   )
