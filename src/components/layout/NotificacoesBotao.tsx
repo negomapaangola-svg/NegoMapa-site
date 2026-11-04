@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { contarNotificacoesNaoLidas } from '@/lib/actions/notificacoes';
 
 function IconeSino() {
@@ -14,19 +15,29 @@ function IconeSino() {
 }
 
 export function NotificacoesBotao() {
+  const pathname = usePathname();
   const [naoLidas, setNaoLidas] = useState(0);
+
+  const atualizarContador = useCallback(async () => {
+    const total = await contarNotificacoesNaoLidas();
+    setNaoLidas(total);
+  }, []);
 
   useEffect(() => {
     let ativo = true;
 
-    contarNotificacoesNaoLidas().then((total) => {
-      if (ativo) setNaoLidas(total);
-    });
+    atualizarContador();
 
     return () => {
       ativo = false;
     };
-  }, []);
+  }, [atualizarContador]);
+
+  useEffect(() => {
+    if (pathname === '/notificacoes') {
+      atualizarContador();
+    }
+  }, [pathname, atualizarContador]);
 
   return (
     <Link
