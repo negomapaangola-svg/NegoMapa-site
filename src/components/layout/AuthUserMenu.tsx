@@ -77,6 +77,9 @@ export function AuthUserMenu({ variante = 'cabecalho' }: { variante?: 'cabecalho
           Admin
         </Link>
       )}
+      <Link href="/profissional/painel" className={classeLink}>
+        Painel
+      </Link>
       <Link href="/editar-perfil" className={classeLink}>
         Editar perfil
       </Link>
