@@ -35,7 +35,7 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 type Resultado<T> = { success: true; data: T } | { success: false; error: string }
 
 /** Estados que a empresa pode atribuir. Espelha o CHECK e a política de update da base de dados. */
-export const ESTADOS_CANDIDATURA: readonly EstadoCandidatura[] = [
+const ESTADOS_CANDIDATURA: readonly EstadoCandidatura[] = [
   'enviada',
   'vista',
   'em_analise',
