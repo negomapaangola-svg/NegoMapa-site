@@ -3,7 +3,6 @@ import { redirect } from 'next/navigation'
 import { getUser } from '@/lib/auth'
 import { MainLayout } from '@/components/layout/MainLayout'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
-import { Button } from '@/components/ui/Button'
 import {
   obterPreferenciasNotificacao,
   guardarPreferenciasNotificacao,
@@ -93,7 +92,12 @@ export default async function PreferenciasNotificacoesPage() {
                   </span>
                 </label>
 
-                <Button type="submit">Guardar preferências</Button>
+                <button
+                  type="submit"
+                  className="inline-flex items-center justify-center rounded-[4px] bg-orange-500 px-[26px] py-[12px] text-[14px] font-bold text-ink transition-colors hover:bg-orange-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2"
+                >
+                  Guardar preferências
+                </button>
               </form>
             </CardContent>
           </Card>
