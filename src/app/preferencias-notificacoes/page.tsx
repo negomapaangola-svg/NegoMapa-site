@@ -29,6 +29,7 @@ export default async function PreferenciasNotificacoesPage({ searchParams }: Pag
   const preferencias = resultado.success
     ? resultado.data
     : { plataforma: true, email: false, whatsapp: false }
+  const erroPreferencias = !resultado.success ? resultado.error : null
 
   return (
     <MainLayout>
@@ -51,9 +52,9 @@ export default async function PreferenciasNotificacoesPage({ searchParams }: Pag
                 </p>
               )}
 
-              {(erro === '1' || !resultado.success) && (
+              {(erro === '1' || erroPreferencias) && (
                 <p role="alert" className="mb-4 text-red-700 dark:text-red-300">
-                  {erro === '1' ? 'Não foi possível guardar as preferências.' : resultado.error}
+                  {erro === '1' ? 'Não foi possível guardar as preferências.' : erroPreferencias}
                 </p>
               )}
 
