@@ -7,11 +7,6 @@ import { Button } from '@/components/ui/Button'
 import { logoutAction } from '@/lib/actions/logout'
 import { checkIsAdmin } from '@/lib/actions/admin'
 
-/**
- * Ações de conta.
- * - 'cabecalho': linha horizontal (desktop).
- * - 'lista': coluna de botões grandes (menu do telemóvel).
- */
 export function AuthUserMenu({ variante = 'cabecalho' }: { variante?: 'cabecalho' | 'lista' }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
@@ -70,13 +65,13 @@ export function AuthUserMenu({ variante = 'cabecalho' }: { variante?: 'cabecalho
   return (
     <div className={classeContentor}>
       {isAdmin && (
-        <Link
-          href="/admin"
-          className={`${classeLink} text-orange-500 dark:text-orange-400`}
-        >
+        <Link href="/admin" className={`${classeLink} text-orange-500 dark:text-orange-400`}>
           Admin
         </Link>
       )}
+      <Link href="/empresa/painel" className={classeLink}>
+        Painel da Empresa
+      </Link>
       <Link href="/profissional/painel" className={classeLink}>
         Painel
       </Link>
