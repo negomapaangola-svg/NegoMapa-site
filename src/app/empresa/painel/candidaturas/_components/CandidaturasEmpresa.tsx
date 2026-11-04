@@ -15,24 +15,26 @@ type Props = {
   candidaturas: CandidaturaEmpresa[]
 }
 
-const ESTADOS: { valor: Exclude<EstadoCandidatura, 'enviada'>; rotulo: string }[] = [
+const ESTADOS: { valor: EstadoCandidatura; rotulo: string }[] = [
+  { valor: 'enviada', rotulo: 'Enviada' },
+  { valor: 'vista', rotulo: 'Vista' },
   { valor: 'em_analise', rotulo: 'Em análise' },
   { valor: 'aceite', rotulo: 'Aceite' },
   { valor: 'rejeitada', rotulo: 'Rejeitada' },
+  { valor: 'arquivada', rotulo: 'Arquivada' },
 ]
 
-const ESTADO_ROTULO: Record<string, string> = {
-  enviada: 'Enviada',
-  em_analise: 'Em análise',
-  aceite: 'Aceite',
-  rejeitada: 'Rejeitada',
-}
+const ESTADO_ROTULO: Record<string, string> = Object.fromEntries(
+  ESTADOS.map((opcao) => [opcao.valor, opcao.rotulo])
+)
 
 const ESTADO_ESTILO: Record<string, string> = {
   enviada: 'bg-neutral-100 text-neutral-700 dark:bg-neutral-700 dark:text-neutral-200',
+  vista: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
   em_analise: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
   aceite: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
   rejeitada: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+  arquivada: 'bg-neutral-200 text-neutral-600 dark:bg-neutral-600 dark:text-neutral-300',
 }
 
 export function CandidaturasEmpresa({ candidaturas }: Props) {
@@ -111,7 +113,7 @@ export function CandidaturasEmpresa({ candidaturas }: Props) {
             )}
           </div>
 
-          <div className="flex flex-wrap gap-2 pt-1">
+          <div className="flex flex-wrap gap-2 pt-1" role="group" aria-label="Alterar estado da candidatura">
             {ESTADOS.map((opcao) => (
               <Button
                 key={opcao.valor}

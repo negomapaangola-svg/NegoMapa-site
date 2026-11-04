@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 
-export type EstadoCandidatura = 'enviada' | 'em_analise' | 'aceite' | 'rejeitada'
+export type EstadoCandidatura = 'enviada' | 'vista' | 'em_analise' | 'aceite' | 'rejeitada' | 'arquivada'
 
 export type CandidaturaCandidato = {
   id: string
@@ -34,7 +34,15 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 
 type Resultado<T> = { success: true; data: T } | { success: false; error: string }
 
-const ESTADOS_DEFINIVEIS: readonly EstadoCandidatura[] = ['em_analise', 'aceite', 'rejeitada']
+/** Estados que a empresa pode atribuir. Espelha o CHECK e a política de update da base de dados. */
+export const ESTADOS_CANDIDATURA: readonly EstadoCandidatura[] = [
+  'enviada',
+  'vista',
+  'em_analise',
+  'aceite',
+  'rejeitada',
+  'arquivada',
+]
 
 export async function listarMinhasCandidaturas(): Promise<Resultado<CandidaturaCandidato[]>> {
   const supabase = await createSupabaseServerClient()
@@ -171,7 +179,7 @@ export async function atualizarEstadoCandidatura(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Sessão expirada. Inicie sessão novamente.' }
 
-  if (!ESTADOS_DEFINIVEIS.includes(estado)) {
+  if (!ESTADOS_CANDIDATURA.includes(estado)) {
     return { success: false, error: 'Estado inválido.' }
   }
 
