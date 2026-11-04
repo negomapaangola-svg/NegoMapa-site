@@ -75,6 +75,9 @@ export function CandidaturasEmpresa({ candidaturas }: Props) {
             <div>
               <p className="font-medium text-ink dark:text-cream">{candidatura.vaga?.titulo ?? 'Vaga indisponível'}</p>
               <p className="text-sm text-neutral-700 dark:text-cream-text">Candidato: <span className="font-medium">{candidatura.nome_candidato}</span></p>
+              <p className="text-sm text-neutral-700 dark:text-cream-text">
+                Contacto: <span className="font-medium break-all">{candidatura.contacto || 'Não indicado'}</span>
+              </p>
               <p className="text-xs text-neutral-500 dark:text-cream-text/70">Recebida em {formatDate(candidatura.criada_em)}</p>
             </div>
             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium self-start sm:self-auto ${ESTADO_ESTILO[candidatura.estado] ?? ''}`}>

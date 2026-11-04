@@ -19,6 +19,8 @@ export type CandidaturaEmpresa = {
   nome_candidato: string
   mensagem: string
   cv_url: string | null
+  /** Telefone, WhatsApp ou email indicado pelo candidato. Null em candidaturas anteriores. */
+  contacto: string | null
   estado: EstadoCandidatura | string
   criada_em: string
   vaga: { titulo: string; slug: string } | null
@@ -63,9 +65,16 @@ export async function criarCandidatura(vagaId: string, formData: FormData): Prom
   const nome = String(formData.get('nome_candidato') ?? '').trim()
   const mensagem = String(formData.get('mensagem') ?? '').trim()
   const cvUrl = String(formData.get('cv_url') ?? '').trim()
+  const contacto = String(formData.get('contacto') ?? '').trim()
 
   if (nome.length < 3 || nome.length > 120) {
     return { success: false, error: 'O nome deve ter entre 3 e 120 caracteres.' }
+  }
+  if (contacto.length === 0) {
+    return { success: false, error: 'Indique um contacto: telefone, WhatsApp ou email.' }
+  }
+  if (contacto.length < 5 || contacto.length > 120) {
+    return { success: false, error: 'O contacto deve ter entre 5 e 120 caracteres.' }
   }
   if (mensagem.length < 10 || mensagem.length > 2000) {
     return { success: false, error: 'A mensagem deve ter entre 10 e 2000 caracteres.' }
@@ -81,6 +90,7 @@ export async function criarCandidatura(vagaId: string, formData: FormData): Prom
     nome_candidato: nome,
     mensagem,
     cv_url: cvUrl || null,
+    contacto,
     estado: 'enviada',
   })
 
@@ -112,7 +122,7 @@ export async function listarCandidaturasDaEmpresa(): Promise<Resultado<Candidatu
   // user_id é lido só no servidor, para ligar à conversa, e não segue para a interface.
   const { data, error } = await supabase
     .from('candidaturas')
-    .select('id, vaga_id, nome_candidato, mensagem, cv_url, estado, criada_em, user_id, vaga:vagas!vaga_id(titulo, slug)')
+    .select('id, vaga_id, nome_candidato, mensagem, cv_url, contacto, estado, criada_em, user_id, vaga:vagas!vaga_id(titulo, slug)')
     .order('criada_em', { ascending: false })
 
   if (error) {
