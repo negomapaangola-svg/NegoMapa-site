@@ -4,6 +4,7 @@ import { forwardRef, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { AuthUserMenu } from './AuthUserMenu';
+import { NotificacoesBotao } from './NotificacoesBotao';
 
 interface HeaderProps {
   className?: string;
@@ -100,14 +101,7 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(
             </div>
 
             <div className="flex items-center gap-3">
-              <Link
-                href="/notificacoes"
-                aria-label="Ver notificações"
-                className="inline-flex min-h-11 items-center gap-2 rounded-md border border-card-border bg-white px-3 text-sm font-semibold text-navy hover:border-orange-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:bg-navy-dark dark:text-cream"
-              >
-                <IconeSino />
-                <span className="hidden sm:inline">Notificações</span>
-              </Link>
+              <NotificacoesBotao />
 
               <div className="hidden lg:block">
                 <AuthUserMenu />
