@@ -58,6 +58,16 @@ async function criarNotificacao(
   corpo: string,
   referenciaId: string | null
 ): Promise<void> {
+  const { data: preferencias } = await supabase
+    .from('preferencias_notificacao')
+    .select('plataforma')
+    .eq('user_id', userId)
+    .maybeSingle()
+
+  if (preferencias && !preferencias.plataforma) {
+    return
+  }
+
   await supabase.from('notificacoes').insert({
     user_id: userId,
     tipo,
