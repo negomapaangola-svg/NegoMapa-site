@@ -13,13 +13,18 @@ export const metadata: Metadata = {
   description: 'Escolha como quer receber os avisos da NegóMapa.',
 }
 
-export default async function PreferenciasNotificacoesPage() {
+type PageProps = {
+  searchParams: Promise<{ salvo?: string; erro?: string }>
+}
+
+export default async function PreferenciasNotificacoesPage({ searchParams }: PageProps) {
   const user = await getUser()
 
   if (!user) {
     redirect('/login?redirectTo=/preferencias-notificacoes')
   }
 
+  const { salvo, erro } = await searchParams
   const resultado = await obterPreferenciasNotificacao()
   const preferencias = resultado.success
     ? resultado.data
@@ -40,9 +45,15 @@ export default async function PreferenciasNotificacoesPage() {
             </CardHeader>
 
             <CardContent className="mt-6">
-              {!resultado.success && (
+              {salvo === '1' && (
+                <p role="status" className="mb-4 rounded-[4px] border border-green-300 bg-green-50 px-4 py-3 text-green-800 dark:border-green-800 dark:bg-green-900/20 dark:text-green-300">
+                  Preferências guardadas com sucesso.
+                </p>
+              )}
+
+              {(erro === '1' || !resultado.success) && (
                 <p role="alert" className="mb-4 text-red-700 dark:text-red-300">
-                  {resultado.error}
+                  {erro === '1' ? 'Não foi possível guardar as preferências.' : resultado.error}
                 </p>
               )}
 
