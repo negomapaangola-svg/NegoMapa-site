@@ -74,7 +74,7 @@ export default async function ProfissionalPainelPage() {
   ]
 
   const atalhos = [
-    { href: `/profissional/${perfil.slug}`, label: 'Ver perfil público' },
+    { href: '/profissionais', label: 'Ver profissionais' },
     { href: '/editar-perfil', label: 'Perfil e portfólio' },
     { href: '/profissional/painel/pedidos', label: 'Pedidos' },
     { href: '/profissional/painel/mensagens', label: 'Mensagens' },
