@@ -35,6 +35,19 @@ export function NotificacoesLista({ notificacoes }: Props) {
     })
   }
 
+  function aoClicarCartao(notificacao: Notificacao) {
+    if (!notificacao.lida) {
+      marcarUma(notificacao.id)
+    }
+  }
+
+  function aoTeclarCartao(evento: React.KeyboardEvent, notificacao: Notificacao) {
+    if (!notificacao.lida && (evento.key === 'Enter' || evento.key === ' ')) {
+      evento.preventDefault()
+      marcarUma(notificacao.id)
+    }
+  }
+
   if (notificacoes.length === 0) {
     return <p className="text-neutral-500 dark:text-cream-text/70">Não tem notificações.</p>
   }
@@ -59,8 +72,14 @@ export function NotificacoesLista({ notificacoes }: Props) {
       {notificacoes.map((notificacao) => (
         <div
           key={notificacao.id}
+          role={notificacao.lida ? undefined : 'button'}
+          tabIndex={notificacao.lida ? undefined : 0}
+          onClick={() => aoClicarCartao(notificacao)}
+          onKeyDown={(evento) => aoTeclarCartao(evento, notificacao)}
           className={`p-4 rounded-[4px] border border-card-border space-y-2 ${
-            notificacao.lida ? 'bg-white/30 dark:bg-neutral-800/30' : 'bg-orange-50 dark:bg-orange-900/20'
+            notificacao.lida
+              ? 'bg-white/30 dark:bg-neutral-800/30'
+              : 'bg-orange-50 dark:bg-orange-900/20 cursor-pointer hover:border-orange-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500'
           }`}
         >
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -74,7 +93,10 @@ export function NotificacoesLista({ notificacoes }: Props) {
           <p className="text-sm text-neutral-600 dark:text-cream-text/80 whitespace-pre-wrap">{notificacao.corpo}</p>
           {!notificacao.lida && (
             <div className="pt-1">
-              <Button variant="ghost" size="sm" disabled={pending} onClick={() => marcarUma(notificacao.id)}>
+              <Button variant="ghost" size="sm" disabled={pending} onClick={(evento) => {
+                evento.stopPropagation()
+                marcarUma(notificacao.id)
+              }}>
                 Marcar como lida
               </Button>
             </div>
