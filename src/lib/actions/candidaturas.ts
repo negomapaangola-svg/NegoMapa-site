@@ -12,19 +12,16 @@ export type CandidaturaCandidato = {
   vaga: { titulo: string; slug: string; company_id: string } | null
 }
 
-/** Dados da candidatura visíveis à empresa. Sem user_id, e-mail nem telefone. */
 export type CandidaturaEmpresa = {
   id: string
   vaga_id: string
   nome_candidato: string
   mensagem: string
   cv_url: string | null
-  /** Telefone, WhatsApp ou email indicado pelo candidato. Null em candidaturas anteriores. */
   contacto: string | null
   estado: EstadoCandidatura | string
   criada_em: string
   vaga: { titulo: string; slug: string } | null
-  /** Conversa existente entre o candidato e a empresa, ou null se o candidato ainda não a iniciou. */
   conversa_id: string | null
 }
 
@@ -34,7 +31,6 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 
 type Resultado<T> = { success: true; data: T } | { success: false; error: string }
 
-/** Estados que a empresa pode atribuir. Espelha o CHECK e a política de update da base de dados. */
 const ESTADOS_CANDIDATURA: readonly EstadoCandidatura[] = [
   'enviada',
   'vista',
@@ -43,6 +39,33 @@ const ESTADOS_CANDIDATURA: readonly EstadoCandidatura[] = [
   'rejeitada',
   'arquivada',
 ]
+
+const ROTULOS_ESTADO: Record<EstadoCandidatura, string> = {
+  enviada: 'Enviada',
+  vista: 'Vista',
+  em_analise: 'Em análise',
+  aceite: 'Aceite',
+  rejeitada: 'Rejeitada',
+  arquivada: 'Arquivada',
+}
+
+async function criarNotificacao(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  userId: string,
+  tipo: string,
+  titulo: string,
+  corpo: string,
+  referenciaId: string | null
+): Promise<void> {
+  await supabase.from('notificacoes').insert({
+    user_id: userId,
+    tipo,
+    titulo,
+    corpo,
+    canal: 'plataforma',
+    referencia_id: referenciaId,
+  })
+}
 
 export async function listarMinhasCandidaturas(): Promise<Resultado<CandidaturaCandidato[]>> {
   const supabase = await createSupabaseServerClient()
@@ -91,22 +114,40 @@ export async function criarCandidatura(vagaId: string, formData: FormData): Prom
     return { success: false, error: 'O link do CV deve começar por https:// e ter até 500 caracteres.' }
   }
 
-  // A RLS exige vaga aprovada, empresa aprovada, user_id = utilizador e estado 'enviada'.
-  const { error } = await supabase.from('candidaturas').insert({
-    vaga_id: vagaId,
-    user_id: user.id,
-    nome_candidato: nome,
-    mensagem,
-    cv_url: cvUrl || null,
-    contacto,
-    estado: 'enviada',
-  })
+  const { data: vaga, error: vagaError } = await supabase
+    .from('vagas')
+    .select('id, titulo, company_id')
+    .eq('id', vagaId)
+    .maybeSingle()
+
+  if (vagaError || !vaga) {
+    return { success: false, error: 'Vaga não encontrada.' }
+  }
+
+  const { data: empresa, error: empresaError } = await supabase
+    .from('companies')
+    .select('user_id')
+    .eq('id', vaga.company_id)
+    .maybeSingle()
+
+  const { data: candidatura, error } = await supabase
+    .from('candidaturas')
+    .insert({
+      vaga_id: vagaId,
+      user_id: user.id,
+      nome_candidato: nome,
+      mensagem,
+      cv_url: cvUrl || null,
+      contacto,
+      estado: 'enviada',
+    })
+    .select('id')
+    .single()
 
   if (error) {
     if (error.code === '23505') {
       return { success: false, error: 'Já se candidatou a esta vaga.' }
     }
-    // 42501: a RLS recusou. A mensagem não indica a causa concreta.
     if (error.code === '42501') {
       return {
         success: false,
@@ -117,7 +158,19 @@ export async function criarCandidatura(vagaId: string, formData: FormData): Prom
     return { success: false, error: 'Não foi possível enviar a candidatura. Verifique se a vaga ainda está aberta.' }
   }
 
+  if (empresa?.user_id) {
+    await criarNotificacao(
+      supabase,
+      empresa.user_id,
+      'candidatura_nova',
+      'Nova candidatura recebida',
+      `${nome} candidatou-se à vaga “${vaga.titulo}”.`,
+      candidatura.id
+    )
+  }
+
   revalidatePath('/candidaturas')
+  revalidatePath('/empresa/painel/candidaturas')
   return { success: true }
 }
 
@@ -126,8 +179,6 @@ export async function listarCandidaturasDaEmpresa(): Promise<Resultado<Candidatu
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Sessão expirada. Inicie sessão novamente.' }
 
-  // A RLS devolve apenas as candidaturas das vagas da empresa autenticada.
-  // user_id é lido só no servidor, para ligar à conversa, e não segue para a interface.
   const { data, error } = await supabase
     .from('candidaturas')
     .select('id, vaga_id, nome_candidato, mensagem, cv_url, contacto, estado, criada_em, user_id, vaga:vagas!vaga_id(titulo, slug)')
@@ -140,7 +191,6 @@ export async function listarCandidaturasDaEmpresa(): Promise<Resultado<Candidatu
 
   const linhas = (data ?? []) as Array<Record<string, unknown> & { user_id: string }>
 
-  // Conversas da empresa (a RLS devolve só as da empresa do utilizador) para associar cada candidato.
   const { data: empresa } = await supabase
     .from('companies')
     .select('id')
@@ -183,7 +233,16 @@ export async function atualizarEstadoCandidatura(
     return { success: false, error: 'Estado inválido.' }
   }
 
-  // A RLS limita a empresa dona da vaga e o administrador. Se nada for alterado, não há permissão.
+  const { data: candidatura, error: leituraError } = await supabase
+    .from('candidaturas')
+    .select('id, user_id, estado')
+    .eq('id', candidaturaId)
+    .maybeSingle()
+
+  if (leituraError || !candidatura) {
+    return { success: false, error: 'Candidatura não encontrada.' }
+  }
+
   const { data, error } = await supabase
     .from('candidaturas')
     .update({ estado })
@@ -198,6 +257,18 @@ export async function atualizarEstadoCandidatura(
     return { success: false, error: 'Não tem permissão para alterar esta candidatura.' }
   }
 
+  if (candidatura.user_id && candidatura.estado !== estado) {
+    await criarNotificacao(
+      supabase,
+      candidatura.user_id,
+      'candidatura_estado',
+      'Estado da candidatura atualizado',
+      `A sua candidatura passou para “${ROTULOS_ESTADO[estado]}”.`,
+      candidatura.id
+    )
+  }
+
   revalidatePath('/empresa/painel/candidaturas')
+  revalidatePath('/candidaturas')
   return { success: true }
 }
