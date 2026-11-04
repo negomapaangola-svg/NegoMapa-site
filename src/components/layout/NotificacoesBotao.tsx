@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { contarNotificacoesNaoLidas } from '@/lib/actions/notificacoes';
 
+const INTERVALO_ATUALIZACAO_MS = 30000;
+
 function IconeSino() {
   return (
     <svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -28,8 +30,15 @@ export function NotificacoesBotao() {
 
     atualizarContador();
 
+    const intervalo = setInterval(() => {
+      if (ativo) {
+        atualizarContador();
+      }
+    }, INTERVALO_ATUALIZACAO_MS);
+
     return () => {
       ativo = false;
+      clearInterval(intervalo);
     };
   }, [atualizarContador]);
 
