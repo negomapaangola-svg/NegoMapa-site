@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 
 export type PreferenciasNotificacao = {
@@ -50,12 +51,12 @@ export async function obterPreferenciasNotificacao(): Promise<Resultado<Preferen
   }
 }
 
-export async function guardarPreferenciasNotificacao(formData: FormData): Promise<{ success: boolean; error?: string }> {
+export async function guardarPreferenciasNotificacao(formData: FormData): Promise<void> {
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    return { success: false, error: 'Sessão expirada. Inicie sessão novamente.' }
+    redirect('/login?redirectTo=/preferencias-notificacoes')
   }
 
   const preferencias = {
@@ -72,9 +73,9 @@ export async function guardarPreferenciasNotificacao(formData: FormData): Promis
 
   if (error) {
     console.error('Erro ao guardar preferências de notificação. Código:', error.code)
-    return { success: false, error: 'Não foi possível guardar as preferências.' }
+    redirect('/preferencias-notificacoes?erro=1')
   }
 
   revalidatePath('/preferencias-notificacoes')
-  return { success: true }
+  redirect('/preferencias-notificacoes?salvo=1')
 }
