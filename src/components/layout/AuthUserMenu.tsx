@@ -93,16 +93,43 @@ export function AuthUserMenu({ variante = 'cabecalho' }: { variante?: 'cabecalho
           Painel da Empresa
         </Link>
       )}
+      {!temEmpresa && (
+        <Link href="/cadastrar-empresa" className={classeLink}>
+          Cadastrar empresa
+        </Link>
+      )}
       {temProfissional && (
         <Link href="/profissional/painel" className={classeLink}>
           Painel do Profissional
         </Link>
       )}
+      {!temProfissional && (
+        <Link href="/cadastrar-profissional" className={classeLink}>
+          Cadastrar profissional
+        </Link>
+      )}
+      {temProfissional && (
+        <Link href="/cadastrar-servico" className={classeLink}>
+          Cadastrar serviço
+        </Link>
+      )}
+      <Link href="/candidaturas" className={classeLink}>
+        Minhas candidaturas
+      </Link>
+      <Link href="/mensagens" className={classeLink}>
+        Mensagens
+      </Link>
+      <Link href="/pedidos" className={classeLink}>
+        Pedidos
+      </Link>
+      <Link href="/notificacoes" className={classeLink}>
+        Notificações
+      </Link>
+      <Link href="/preferencias-notificacoes" className={classeLink}>
+        Preferências de notificação
+      </Link>
       <Link href="/editar-perfil" className={classeLink}>
         Editar perfil
-      </Link>
-      <Link href="/cadastrar-servico" className={classeLink}>
-        Cadastro de Profissional
       </Link>
       <form action={logoutAction} className={lista ? 'w-full' : undefined}>
         <Button

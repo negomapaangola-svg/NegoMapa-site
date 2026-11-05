@@ -14,6 +14,8 @@ const footerLinks = {
     { label: 'Profissionais', href: '/profissionais' },
     { label: 'Empresas', href: '/empresas' },
     { label: 'Vagas', href: '/vagas' },
+    { label: 'Cadastrar Empresa', href: '/cadastrar-empresa' },
+    { label: 'Cadastrar Profissional', href: '/cadastrar-profissional' },
   ],
   informacao: [
     { label: 'Regras para Profissionais', href: '/regras-profissionais' },
