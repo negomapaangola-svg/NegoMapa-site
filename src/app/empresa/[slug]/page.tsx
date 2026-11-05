@@ -5,14 +5,17 @@ import { useParams } from "next/navigation"
 import Link from "next/link"
 import { supabase } from "@/lib/supabase"
 import { isHttpsUrl } from "@/lib/utils"
+import { Badge } from "@/components/ui/Badge"
+import { Button } from "@/components/ui/Button"
 import { Card, CardContent } from "@/components/ui/Card"
+import { SectionHeader } from "@/components/ui/SectionHeader"
+import { EmptyState } from "@/components/ui/EmptyState"
 import { MainLayout } from "@/components/layout/MainLayout"
 import { ReviewForm } from "@/components/avaliacoes/ReviewForm"
 import { ReportForm } from "@/components/denuncias/ReportForm"
 import { getMediaAvaliacoes, getAvaliacoesPorAlvo } from "@/lib/actions/avaliacoes"
 import { AlvoDenuncia } from "@/lib/actions/denuncias"
 import { createBrowserSupabaseClient } from "@/lib/supabase-browser"
-// Padrão partilhado com o perfil do profissional (avaliações e portfólio).
 import { AvaliacoesProfissional } from "@/app/profissional/[slug]/_components/AvaliacoesProfissional"
 import { PortfolioProfissional } from "@/app/profissional/[slug]/_components/PortfolioProfissional"
 import { ProfissionalWhatsApp } from "@/app/profissional/[slug]/_components/ProfissionalWhatsApp"
@@ -44,8 +47,6 @@ function EmpresaContent() {
         console.error("Empresa não encontrada:", error)
         setEmpresa(null)
       } else {
-        // whatsapp, logo_url e portfolio vêm da vista pública. Se a vista ainda não tiver estas colunas,
-        // a página continua a funcionar sem elas, em vez de mostrar "Empresa não encontrada".
         const { data: extras, error: erroExtras } = await supabase
           .from("empresas_publicas")
           .select("whatsapp, logo_url, portfolio")
@@ -101,8 +102,8 @@ function EmpresaContent() {
   if (carregando) {
     return (
       <MainLayout>
-        <div className="min-h-screen flex items-center justify-center p-4 bg-cream dark:bg-navy-dark">
-          <p className="text-ink dark:text-cream">Carregando empresa...</p>
+        <div className="flex min-h-screen items-center justify-center bg-white p-4">
+          <p className="text-neutral-600">Carregando empresa...</p>
         </div>
       </MainLayout>
     )
@@ -111,8 +112,8 @@ function EmpresaContent() {
   if (!empresa) {
     return (
       <MainLayout>
-        <div className="min-h-screen p-8 text-center bg-cream dark:bg-navy-dark">
-          <p className="text-lg text-red-600 dark:text-red-400">Empresa não encontrada</p>
+        <div className="min-h-screen bg-white p-8 text-center">
+          <p className="text-lg font-medium text-red-600">Empresa não encontrada</p>
         </div>
       </MainLayout>
     )
@@ -123,7 +124,6 @@ function EmpresaContent() {
   const alvo = { tipo: 'empresa' as const, id: empresa.id }
   const alvoDenuncia: AlvoDenuncia = { tipo: 'empresa', id: empresa.id }
 
-  // Helper para traduzir estado de legalização
   const traduzirEstadoLegalizacao = (estado: string): string => {
     switch (estado) {
       case 'legalizada':
@@ -137,210 +137,132 @@ function EmpresaContent() {
     }
   }
 
-  // Verifica se há dados de legalização para exibir
   const temDadosLegalizacao = !!empresa.estado_legalizacao
-
-  // Verifica se há endereço detalhado
   const temEnderecoDetalhado = empresa.rua || empresa.bairro || empresa.referencia_localizacao
+  const localizacao = [empresa.city, empresa.province].filter(Boolean).join(', ')
 
   return (
     <MainLayout>
-      <div className="max-w-3xl mx-auto p-6 md:p-8 bg-cream dark:bg-navy-dark">
-        <Card variant="default" padding="lg" className="border-card-border">
-          <div className="mb-6">
-            {isHttpsUrl(empresa.logo_url) && (
-              <img
-                src={empresa.logo_url}
-                alt={`Logótipo de ${empresa.name}`}
-                className="mb-4 h-20 w-20 rounded-md object-contain"
-              />
-            )}
-            <h1 className="text-3xl md:text-4xl font-bold text-ink dark:text-cream">
+      <div className="mx-auto max-w-4xl bg-white px-4 py-12 sm:px-6 lg:px-8">
+        <nav aria-label="Navegação" className="mb-8">
+          <Link href="/empresas" className="text-sm font-medium text-neutral-600 hover:text-orange-600">
+            ← Voltar a empresas
+          </Link>
+        </nav>
+
+        <header className="flex flex-col gap-6 sm:flex-row sm:items-center">
+          {isHttpsUrl(empresa.logo_url) ? (
+            <img
+              src={empresa.logo_url}
+              alt={`Logótipo de ${empresa.name}`}
+              className="h-24 w-24 rounded-2xl border border-neutral-100 bg-white object-contain p-2"
+            />
+          ) : (
+            <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-neutral-100 text-3xl font-semibold text-neutral-600">
+              {empresa.name?.charAt(0)?.toUpperCase() || 'E'}
+            </div>
+          )}
+
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-neutral-900 sm:text-4xl">
               {empresa.name}
             </h1>
-            <p className="text-neutral-500 dark:text-cream-text/70 mt-1">
-              {empresa.province || ""}
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-neutral-600">
+              {empresa.sector && <Badge variant="neutral">{empresa.sector}</Badge>}
+              {localizacao && <span className="text-sm">{localizacao}</span>}
+            </div>
+          </div>
+        </header>
+
+        <div className="mt-8 max-w-md">
+          <ProfissionalWhatsApp whatsapp={empresa.whatsapp} />
+        </div>
+
+        {empresa.description && (
+          <section className="mt-14">
+            <SectionHeader title="Sobre a empresa" />
+            <p className="whitespace-pre-line text-neutral-700 leading-relaxed">
+              {empresa.description}
             </p>
-          </div>
+          </section>
+        )}
 
-          <div className="grid grid-cols-2 gap-4 mb-8">
-            <CardContent className="space-y-1">
-              <p className="text-sm text-neutral-500 dark:text-cream-text/70">Setor</p>
-              <p className="font-medium text-ink dark:text-cream">{empresa.sector || "Não informado"}</p>
-            </CardContent>
-            <CardContent className="space-y-1">
-              <p className="text-sm text-neutral-500 dark:text-cream-text/70">Contacto</p>
-              <p className="font-medium text-ink dark:text-cream">{empresa.phone || "Não informado"}</p>
-            </CardContent>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4 mb-8">
-            <CardContent className="space-y-1">
-              <p className="text-sm text-neutral-500 dark:text-cream-text/70">Email</p>
-              <p className="font-medium text-ink dark:text-cream">{empresa.email || "Não informado"}</p>
-            </CardContent>
-            <CardContent className="space-y-1">
-              <p className="text-sm text-neutral-500 dark:text-cream-text/70">Endereço</p>
-              <div className="font-medium text-ink dark:text-cream space-y-1">
-                {temEnderecoDetalhado ? (
-                  <>
-                    {empresa.rua && <p>{empresa.rua}</p>}
-                    {empresa.bairro && <p>Bairro: {empresa.bairro}</p>}
-                    {empresa.referencia_localizacao && <p>Ref.: {empresa.referencia_localizacao}</p>}
-                    {empresa.city && <p>{empresa.city}</p>}
-                    {empresa.province && <p>{empresa.province}</p>}
-                  </>
-                ) : (
-                  <p>{empresa.address || empresa.city || empresa.province || "Não informado"}</p>
-                )}
+        <section className="mt-14">
+          <SectionHeader title="Contactos e localização" />
+          <Card variant="muted" padding="md">
+            <CardContent className="grid gap-6 sm:grid-cols-2">
+              <div>
+                <p className="text-sm font-medium text-neutral-500">Telefone</p>
+                <p className="mt-1 text-neutral-900">{empresa.phone || 'Não informado'}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-neutral-500">Email</p>
+                <p className="mt-1 break-all text-neutral-900">{empresa.email || 'Não informado'}</p>
+              </div>
+              <div className="sm:col-span-2">
+                <p className="text-sm font-medium text-neutral-500">Endereço</p>
+                <div className="mt-1 space-y-1 text-neutral-900">
+                  {temEnderecoDetalhado ? (
+                    <>
+                      {empresa.rua && <p>{empresa.rua}</p>}
+                      {empresa.bairro && <p>Bairro: {empresa.bairro}</p>}
+                      {empresa.referencia_localizacao && <p>Ref.: {empresa.referencia_localizacao}</p>}
+                      {localizacao && <p>{localizacao}</p>}
+                    </>
+                  ) : (
+                    <p>{empresa.address || localizacao || 'Não informado'}</p>
+                  )}
+                </div>
               </div>
             </CardContent>
-          </div>
+          </Card>
+        </section>
 
-          {empresa.description && (
-            <div className="mb-8">
-              <p className="text-sm text-neutral-500 dark:text-cream-text/70">Descrição</p>
-              <p className="mt-2 text-ink dark:text-cream leading-relaxed">
-                {empresa.description}
-              </p>
-            </div>
+        {empresa.horario_atendimento && (
+          <section className="mt-14">
+            <SectionHeader title="Horário de atendimento" />
+            <p className="whitespace-pre-wrap text-neutral-700">
+              {empresa.horario_atendimento}
+            </p>
+          </section>
+        )}
+
+        {temDadosLegalizacao && (
+          <section className="mt-14">
+            <SectionHeader title="Legalização" />
+            <Badge variant="neutral">{traduzirEstadoLegalizacao(empresa.estado_legalizacao)}</Badge>
+          </section>
+        )}
+
+        <section className="mt-14">
+          <PortfolioProfissional itens={empresa.portfolio} />
+        </section>
+
+        <section className="mt-14">
+          {avaliacoesCarregando ? (
+            <p className="py-8 text-center text-neutral-500">Carregando avaliações...</p>
+          ) : (
+            <AvaliacoesProfissional avaliacoes={avaliacoes} resumo={media} />
           )}
 
-          {/* Secção Legalização */}
-          {temDadosLegalizacao && (
-            <div className="mb-8 pt-8 border-t border-card-border">
-              <h2 className="text-lg font-semibold text-ink dark:text-cream mb-4">Legalização</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <CardContent className="space-y-1">
-                  <p className="text-sm text-neutral-500 dark:text-cream-text/70">Estado de legalização</p>
-                  <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-secondary-100 dark:bg-secondary-800 text-secondary-700 dark:text-secondary-300 text-sm font-medium">
-                      {traduzirEstadoLegalizacao(empresa.estado_legalizacao)}
-                    </span>
-                  </div>
-                </CardContent>
-              </div>
+          {userId && (
+            <div className="mt-8">
+              <ReviewForm alvo={alvo} userId={userId} />
             </div>
           )}
+        </section>
 
-          {/* Secção Horário de atendimento */}
-          {empresa.horario_atendimento && (
-            <div className="mb-8 pt-8 border-t border-card-border">
-              <h2 className="text-lg font-semibold text-ink dark:text-cream mb-4">Horário de atendimento</h2>
-              <div className="prose prose-neutral dark:prose-invert max-w-none whitespace-pre-wrap text-neutral-700 dark:text-cream-text">
-                {empresa.horario_atendimento}
-              </div>
-            </div>
+        <section className="mt-14">
+          <SectionHeader title="Segurança" />
+          {userId ? (
+            <ReportForm alvo={alvoDenuncia} userId={userId} triggerLabel="Denunciar esta empresa" />
+          ) : (
+            <EmptyState
+              title="Denúncia indisponível"
+              description="Crie uma conta para denunciar informações desta empresa."
+            />
           )}
-
-          {/* Contacto principal: WhatsApp quando existir; senão, telefone ou email. */}
-          <div className="mt-8 pt-8 border-t border-card-border">
-            <div className="flex flex-wrap gap-3">
-
-              <ProfissionalWhatsApp whatsapp={empresa.whatsapp} />
-
-              {!empresa.whatsapp && hasPhone && (
-                <a
-                  href={`tel:${empresa.phone}`}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-[4px] hover:bg-blue-700 transition-colors"
-                >
-                  <svg
-                    className="h-5 w-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M3 5a1 1 0 011-1h3a1 1 0 011 1v4a1 1 0 01-1 1h-3a1 1 0 01-1-1V5zM6 8v8h8v-8H6zm5 1v2H9v-2h5zm-5 4v2H4v-2h5zm5-8l-5 2H16l-5 2v-5zM11 16l-2-5h5l2 5h-5z"
-                    />
-                  </svg>
-                  Telefone
-                </a>
-              )}
-
-              {!empresa.whatsapp && hasEmail && (
-                <Link
-                  href={`mailto:${empresa.email}`}
-                  className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-[4px] hover:bg-red-700 transition-colors"
-                >
-                  <svg
-                    className="h-5 w-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-3a1 1 0 01-1-1H4a1 1 0 01-1-1V5a2 2 0 012-2h3a1 1 0 011 1v4a2 2 0 002 2h7a2 2 0 002 2v4a2 2 0 01-2 2h-3a1 1 0 01-1-1h-9a1 1 0 01-1-1v-4z"
-                    />
-                  </svg>
-                  Email
-                </Link>
-              )}
-
-              {!empresa.whatsapp && !hasPhone && !hasEmail && (
-                <p className="text-neutral-500 dark:text-cream-text/70">Sem contactos publicados.</p>
-              )}
-
-            </div>
-          </div>
-
-          <div className="mt-4 pt-4 border-t border-card-border">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-ink dark:text-cream">Segurança</h2>
-              {userId && <ReportForm alvo={alvoDenuncia} userId={userId} triggerLabel="Denunciar esta empresa" />}
-            </div>
-          </div>
-
-          {/* Portfólio: lido da vista pública; sem trabalhos, mostra o estado vazio. */}
-          <div className="mt-8 pt-8 border-t border-card-border">
-            <PortfolioProfissional itens={empresa.portfolio} />
-          </div>
-
-          <div className="mt-8 pt-8 border-t border-card-border">
-            {avaliacoesCarregando ? (
-              <p className="text-neutral-500 dark:text-cream-text/70 text-center py-8">Carregando avaliações...</p>
-            ) : (
-              <AvaliacoesProfissional avaliacoes={avaliacoes} resumo={media} />
-            )}
-
-            {userId && (
-              <div className="mt-8">
-                <ReviewForm alvo={alvo} userId={userId} />
-              </div>
-            )}
-          </div>
-
-          <div className="mt-6 text-right">
-            <Link
-              href="/empresas"
-              className="inline-flex items-center px-4 py-2 border border-card-border rounded-[4px] bg-white text-ink dark:text-cream hover:bg-cream dark:hover:bg-navy-dark transition-colors"
-            >
-              <svg
-                className="-ml-1 mr-2 h-5 w-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
-                />
-              </svg>
-              Voltar para Empresas
-            </Link>
-          </div>
-        </Card>
+        </section>
       </div>
     </MainLayout>
   )
