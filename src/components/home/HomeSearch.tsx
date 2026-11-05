@@ -1,6 +1,5 @@
 import { PROVINCIAS } from './constants';
 
-/** Pesquisa sem JavaScript: envia para /servicos com os parâmetros q e provincia. */
 export function HomeSearch() {
   return (
     <section aria-labelledby="pesquisa-titulo">
@@ -26,7 +25,9 @@ export function HomeSearch() {
             <option key={p} value={p}>{p}</option>
           ))}
         </select>
-        <button type="submit" className="nm-btn nm-btn-p">Pesquisar</button>
+        <button type="submit" className="nm-btn nm-btn-p nm-btn-lg">
+          Procurar agora
+        </button>
       </form>
     </section>
   );
