@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { AuthUserMenu } from './AuthUserMenu';
 import { NotificacoesBotao } from './NotificacoesBotao';
+import { PesquisaGlobal } from './PesquisaGlobal';
 
 interface HeaderProps {
   className?: string;
@@ -47,7 +48,6 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(
 
       const handler = (e: MediaQueryListEvent) => setIsDark(e.matches);
       mediaQuery.addEventListener('change', handler);
-
       return () => mediaQuery.removeEventListener('change', handler);
     }, []);
 
@@ -71,8 +71,8 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(
         role="banner"
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
-            <div className="flex items-center gap-8">
+          <div className="flex h-16 items-center justify-between gap-4">
+            <div className="flex items-center gap-6">
               <Link
                 href="/"
                 className="flex items-center gap-2 text-xl font-bold text-navy dark:text-cream"
@@ -87,7 +87,7 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(
                 />
               </Link>
 
-              <nav className="hidden lg:flex items-center gap-6" role="navigation" aria-label="Navegação principal">
+              <nav className="hidden xl:flex items-center gap-6" role="navigation" aria-label="Navegação principal">
                 {NAV_LINKS.map((link) => (
                   <Link
                     key={link.href}
@@ -98,6 +98,10 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(
                   </Link>
                 ))}
               </nav>
+            </div>
+
+            <div className="hidden flex-1 justify-center lg:flex">
+              <PesquisaGlobal />
             </div>
 
             <div className="flex items-center gap-3">
@@ -118,6 +122,10 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(
                 <span>{menuAberto ? 'Fechar' : 'Menu'}</span>
               </button>
             </div>
+          </div>
+
+          <div className="pb-3 lg:hidden">
+            <PesquisaGlobal />
           </div>
         </div>
 
