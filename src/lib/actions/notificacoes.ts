@@ -21,7 +21,6 @@ export async function listarNotificacoes(): Promise<Resultado<Notificacao[]>> {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Sessão expirada. Inicie sessão novamente.' }
 
-  // A RLS devolve apenas as notificações do próprio utilizador.
   const { data, error } = await supabase
     .from('notificacoes')
     .select('id, tipo, titulo, corpo, canal, referencia_id, lida, criada_em')
@@ -36,12 +35,29 @@ export async function listarNotificacoes(): Promise<Resultado<Notificacao[]>> {
   return { success: true, data: (data ?? []) as Notificacao[] }
 }
 
+export async function contarNotificacoesNaoLidas(): Promise<number> {
+  const supabase = await createSupabaseServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return 0
+
+  const { count, error } = await supabase
+    .from('notificacoes')
+    .select('id', { count: 'exact', head: true })
+    .eq('lida', false)
+
+  if (error) {
+    console.error('Erro ao contar notificações não lidas. Código:', error.code)
+    return 0
+  }
+
+  return count ?? 0
+}
+
 export async function marcarNotificacaoLida(notificacaoId: string): Promise<{ success: boolean; error?: string }> {
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Sessão expirada. Inicie sessão novamente.' }
 
-  // Só a coluna lida tem GRANT de UPDATE; a RLS limita à própria notificação.
   const { error } = await supabase
     .from('notificacoes')
     .update({ lida: true })

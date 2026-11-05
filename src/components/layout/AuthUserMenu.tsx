@@ -7,19 +7,25 @@ import { Button } from '@/components/ui/Button'
 import { logoutAction } from '@/lib/actions/logout'
 import { checkIsAdmin } from '@/lib/actions/admin'
 
-/**
- * Ações de conta.
- * - 'cabecalho': linha horizontal (desktop).
- * - 'lista': coluna de botões grandes (menu do telemóvel).
- */
 export function AuthUserMenu({ variante = 'cabecalho' }: { variante?: 'cabecalho' | 'lista' }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [temEmpresa, setTemEmpresa] = useState(false)
+  const [temProfissional, setTemProfissional] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const lista = variante === 'lista'
 
   useEffect(() => {
     const supabase = createBrowserSupabaseClient()
+
+    const verificarPaineis = async () => {
+      const [empresa, profissional] = await Promise.all([
+        supabase.from('companies').select('id').maybeSingle(),
+        supabase.from('profissionais').select('id').maybeSingle(),
+      ])
+      setTemEmpresa(Boolean(empresa.data))
+      setTemProfissional(Boolean(profissional.data))
+    }
 
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession()
@@ -27,6 +33,11 @@ export function AuthUserMenu({ variante = 'cabecalho' }: { variante?: 'cabecalho
       if (session) {
         const adminResult = await checkIsAdmin()
         setIsAdmin(adminResult)
+        await verificarPaineis()
+      } else {
+        setIsAdmin(false)
+        setTemEmpresa(false)
+        setTemProfissional(false)
       }
       setIsLoading(false)
     }
@@ -37,8 +48,11 @@ export function AuthUserMenu({ variante = 'cabecalho' }: { variante?: 'cabecalho
       setIsAuthenticated(!!session)
       if (session) {
         checkIsAdmin().then(setIsAdmin)
+        verificarPaineis()
       } else {
         setIsAdmin(false)
+        setTemEmpresa(false)
+        setTemProfissional(false)
       }
     })
 
@@ -70,11 +84,18 @@ export function AuthUserMenu({ variante = 'cabecalho' }: { variante?: 'cabecalho
   return (
     <div className={classeContentor}>
       {isAdmin && (
-        <Link
-          href="/admin"
-          className={`${classeLink} text-orange-500 dark:text-orange-400`}
-        >
+        <Link href="/admin" className={`${classeLink} text-orange-500 dark:text-orange-400`}>
           Admin
+        </Link>
+      )}
+      {temEmpresa && (
+        <Link href="/empresa/painel" className={classeLink}>
+          Painel da Empresa
+        </Link>
+      )}
+      {temProfissional && (
+        <Link href="/profissional/painel" className={classeLink}>
+          Painel do Profissional
         </Link>
       )}
       <Link href="/editar-perfil" className={classeLink}>

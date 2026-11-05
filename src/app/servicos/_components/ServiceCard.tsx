@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
 import { formatCurrency } from '@/lib/utils';
 
 interface Service {
@@ -34,20 +33,19 @@ function WhatsAppButton({ telefone }: { telefone: string | null | undefined }) {
   const cleanNumber = telefone.replace(/\D/g, '');
   const url = `https://wa.me/244${cleanNumber}`;
 
+  // Link próprio, acima da camada que cobre o cartão.
   return (
-    <Button variant="primary" size="sm" asChild>
-      <a
-        href={url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex items-center gap-1.5"
-      >
-        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 16v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h10a2 2 0 012 2v1m-3.678-1.636A16.039 16.039 0 016 12.353 16.083 16.083 0 0112.05 3s10.03 8.347 10.323 9.378a7.97 7.97 0 00-1.677 2.043 7.926 7.926 0 01-3.062.094A11.956 11.956 0 0018 16z" />
-        </svg>
-        <span>WhatsApp</span>
-      </a>
-    </Button>
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="relative z-10 inline-flex items-center justify-center gap-1.5 rounded-[4px] bg-orange-500 px-3 py-1.5 text-sm font-heading font-bold text-ink shadow-sm hover:bg-orange-600 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2"
+    >
+      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 16v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h10a2 2 0 012 2v1m-3.678-1.636A16.039 16.039 0 016 12.353 16.083 16.083 0 0112.05 3s10.03 8.347 10.323 9.378a7.97 7.97 0 00-1.677 2.043 7.926 7.926 0 01-3.062.094A11.956 11.956 0 0018 16z" />
+      </svg>
+      <span>WhatsApp</span>
+    </a>
   );
 }
 
@@ -55,9 +53,17 @@ export function ServiceCard({ service }: { service: Service }) {
   const whatsappNumber = service.whatsapp || service.profissional?.whatsapp;
 
   return (
-    <Card variant="liquid" padding="md" hover className="h-full flex flex-col border-card-border">
+    <Card variant="liquid" padding="md" hover className="relative h-full flex flex-col border-card-border">
       <CardHeader>
-        <CardTitle className="text-lg line-clamp-2">{service.titulo}</CardTitle>
+        <CardTitle className="text-lg line-clamp-2">
+          {/* Link principal: cobre o cartão inteiro (camada sobreposta). */}
+          <Link
+            href={`/servico/${service.slug}`}
+            className="after:absolute after:inset-0 after:content-[''] focus-visible:outline-none"
+          >
+            {service.titulo}
+          </Link>
+        </CardTitle>
         <CardDescription className="text-sm">
           {service.categoria?.nome && (
             <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 text-xs font-medium">

@@ -14,6 +14,7 @@ import { ReviewForm } from '@/components/avaliacoes/ReviewForm';
 import { ReportForm } from '@/components/denuncias/ReportForm';
 import { AlvoDenuncia } from '@/lib/actions/denuncias';
 import { obterPerfilProfissionalDoUtilizador } from '@/lib/actions/profissional-painel';
+import { MENSAGEM_BLOQUEIO_PROFISSIONAL } from '@/lib/mensagens-bloqueio';
 import {
   obterProfissionalContactoPorId,
   type DisponibilidadeHorarios,
@@ -161,6 +162,8 @@ export default async function ServicoPage({ params }: { params: Promise<{ slug: 
   // O próprio profissional não pede orçamento nem se contacta a si mesmo.
   const perfilProprio = user ? await obterPerfilProfissionalDoUtilizador() : null;
   const ehProprio = !!perfilProprio && perfilProprio.id === profissional.id;
+  // Contas de profissional não iniciam conversas nem pedidos (também barrado na RLS).
+  const ehProfissional = !!perfilProprio;
 
   // WhatsApp público: o do serviço, ou o do profissional (contacto público por decisão de produto).
   const serviceWhatsApp = service.whatsapp || profissional.whatsapp;
@@ -361,7 +364,11 @@ export default async function ServicoPage({ params }: { params: Promise<{ slug: 
             {!ehProprio && (
               <div className="pt-6 border-t border-card-border">
                 <h2 className="text-lg font-semibold text-ink dark:text-cream mb-4">Pedir orçamento ou contactar</h2>
-                {user ? (
+                {user && ehProfissional ? (
+                  <p role="status" className="text-neutral-600 dark:text-cream-text/80">
+                    {MENSAGEM_BLOQUEIO_PROFISSIONAL}
+                  </p>
+                ) : user ? (
                   <BotoesContactoServico servicoId={service.id} profissionalId={profissional.id} />
                 ) : (
                   <div className="space-y-3">

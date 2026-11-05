@@ -50,6 +50,34 @@ function validateVaga(data: VagaFormData): Record<string, string> {
   return errors
 }
 
+async function criarNotificacao(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  userId: string,
+  tipo: string,
+  titulo: string,
+  corpo: string,
+  referenciaId: string | null
+): Promise<void> {
+  const { data: preferencias } = await supabase
+    .from('preferencias_notificacao')
+    .select('plataforma')
+    .eq('user_id', userId)
+    .maybeSingle()
+
+  if (preferencias && !preferencias.plataforma) {
+    return
+  }
+
+  await supabase.from('notificacoes').insert({
+    user_id: userId,
+    tipo,
+    titulo,
+    corpo,
+    canal: 'plataforma',
+    referencia_id: referenciaId,
+  })
+}
+
 export async function createVaga(formData: VagaFormData): Promise<ActionResult> {
   const supabase = await createSupabaseServerClient()
 
@@ -231,6 +259,16 @@ export async function aprovarVaga(vagaId: string): Promise<ActionResult> {
     return { success: false, error: 'Acesso negado. Privilégios de administrador necessários.' }
   }
 
+  const { data: vaga, error: leituraError } = await supabase
+    .from('vagas')
+    .select('id, titulo, company_id')
+    .eq('id', vagaId)
+    .maybeSingle()
+
+  if (leituraError || !vaga) {
+    return { success: false, error: 'Vaga não encontrada.' }
+  }
+
   const { error } = await supabase
     .from('vagas')
     .update({ estado: 'aprovado' })
@@ -239,6 +277,23 @@ export async function aprovarVaga(vagaId: string): Promise<ActionResult> {
   if (error) {
     console.error('Erro ao aprovar vaga:', error)
     return { success: false, error: 'Erro ao aprovar vaga. Tente novamente.' }
+  }
+
+  const { data: empresa } = await supabase
+    .from('companies')
+    .select('user_id')
+    .eq('id', vaga.company_id)
+    .maybeSingle()
+
+  if (empresa?.user_id) {
+    await criarNotificacao(
+      supabase,
+      empresa.user_id,
+      'vaga_aprovada',
+      'Vaga aprovada',
+      `A vaga “${vaga.titulo}” foi aprovada e já está visível na plataforma.`,
+      vaga.id
+    )
   }
 
   revalidatePath('/admin/vagas')
@@ -259,6 +314,16 @@ export async function rejeitarVaga(vagaId: string): Promise<ActionResult> {
     return { success: false, error: 'Acesso negado. Privilégios de administrador necessários.' }
   }
 
+  const { data: vaga, error: leituraError } = await supabase
+    .from('vagas')
+    .select('id, titulo, company_id')
+    .eq('id', vagaId)
+    .maybeSingle()
+
+  if (leituraError || !vaga) {
+    return { success: false, error: 'Vaga não encontrada.' }
+  }
+
   const { error } = await supabase
     .from('vagas')
     .update({ estado: 'rejeitado' })
@@ -267,6 +332,23 @@ export async function rejeitarVaga(vagaId: string): Promise<ActionResult> {
   if (error) {
     console.error('Erro ao rejeitar vaga:', error)
     return { success: false, error: 'Erro ao rejeitar vaga. Tente novamente.' }
+  }
+
+  const { data: empresa } = await supabase
+    .from('companies')
+    .select('user_id')
+    .eq('id', vaga.company_id)
+    .maybeSingle()
+
+  if (empresa?.user_id) {
+    await criarNotificacao(
+      supabase,
+      empresa.user_id,
+      'vaga_rejeitada',
+      'Vaga rejeitada',
+      `A vaga “${vaga.titulo}” foi rejeitada. Reveja os dados e torne a submeter, se necessário.`,
+      vaga.id
+    )
   }
 
   revalidatePath('/admin/vagas')

@@ -1,11 +1,11 @@
 import { Metadata } from 'next';
-import Link from 'next/link';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card';
 import { formatCurrency } from '@/lib/utils';
 import {
   obterIdsProfissionaisPublicos,
+  obterIdsProfissionaisPublicosPorNome,
   obterProfissionaisContactoPorIds,
 } from '@/lib/actions/profissionais-publicos';
 import { FiltersForm } from './_components/FiltersForm';
@@ -83,9 +83,19 @@ async function getServices(params: {
     return { services: [], total: 0 };
   }
 
+  // Categorias ativas: só estas aparecem, e o filtro de categoria resolve o slug para id.
+  const categoriasAtivas = await getCategories();
+  const idsCategoriasAtivas = categoriasAtivas.map((c) => c.id);
+  if (idsCategoriasAtivas.length === 0) {
+    return { services: [], total: 0 };
+  }
+
   const page = parseInt(params.page || '1', 10);
   const from = (page - 1) * SERVICES_PER_PAGE;
   const to = from + SERVICES_PER_PAGE - 1;
+
+  // Texto de pesquisa sem caracteres que quebram a sintaxe do filtro .or().
+  const termo = (params.q || '').replace(/[,()*"\\%_]/g, ' ').trim().slice(0, 100);
 
   let query = supabase
     .from('servicos')
@@ -105,16 +115,26 @@ async function getServices(params: {
     `, { count: 'exact' })
     .eq('estado', 'aprovado')
     .in('profissional_id', idsProfissionais)
-    .eq('categoria_id.ativo', true)
+    .in('categoria_id', idsCategoriasAtivas)
     .order('created_at', { ascending: false })
     .range(from, to);
 
-  if (params.q) {
-    query = query.ilike('titulo', `%${params.q}%`);
+  if (termo) {
+    // Título do serviço OU nome do profissional aprovado.
+    const idsPorNome = await obterIdsProfissionaisPublicosPorNome(termo);
+    const condicoes = [`titulo.ilike.*${termo}*`];
+    if (idsPorNome.length > 0) {
+      condicoes.push(`profissional_id.in.(${idsPorNome.join(',')})`);
+    }
+    query = query.or(condicoes.join(','));
   }
 
   if (params.categoria) {
-    query = query.eq('categoria_id.slug', params.categoria);
+    const categoria = categoriasAtivas.find((c) => c.slug === params.categoria);
+    if (!categoria) {
+      return { services: [], total: 0 };
+    }
+    query = query.eq('categoria_id', categoria.id);
   }
 
   if (params.provincia) {
@@ -278,9 +298,7 @@ export default async function ServicosPage({
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" role="list" aria-label="Lista de serviços">
                 {services.map((service) => (
                   <article key={service.id} role="listitem">
-                    <Link href={`/servico/${service.slug}`} className="block">
-                      <ServiceCard service={service} />
-                    </Link>
+                    <ServiceCard service={service} />
                   </article>
                 ))}
               </div>

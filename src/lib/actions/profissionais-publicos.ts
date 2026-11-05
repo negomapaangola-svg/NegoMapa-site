@@ -117,6 +117,26 @@ export async function obterIdsProfissionaisPublicos(): Promise<string[]> {
   return (data ?? []).map((linha) => linha.id as string)
 }
 
+/** Ids dos profissionais aprovados cujo nome contém o termo (pesquisa em /servicos). */
+export async function obterIdsProfissionaisPublicosPorNome(termo: string): Promise<string[]> {
+  const termoLimpo = termo.trim().slice(0, 100)
+  if (!termoLimpo) return []
+
+  const supabase = await createSupabaseServerClient()
+
+  const { data, error } = await supabase
+    .from('profissionais_publicos')
+    .select('id')
+    .ilike('nome', `%${termoLimpo}%`)
+
+  if (error) {
+    console.error('Erro ao pesquisar profissionais por nome. Código:', error.code)
+    return []
+  }
+
+  return (data ?? []).map((linha) => linha.id as string)
+}
+
 /**
  * Dados de contacto de profissionais aprovados, por ids, pela vista.
  * Devolve um mapa id → profissional; ids não aprovados ficam de fora.

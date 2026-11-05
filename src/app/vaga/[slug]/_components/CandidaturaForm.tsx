@@ -20,6 +20,11 @@ export function CandidaturaForm({ vagaId }: Props) {
   function submeter(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const formData = new FormData(event.currentTarget)
+    const contacto = String(formData.get('contacto') ?? '').trim()
+    if (contacto.length === 0) {
+      setFeedback({ tipo: 'erro', texto: 'Indique um contacto: telefone, WhatsApp ou email.' })
+      return
+    }
     setFeedback(null)
     startTransition(async () => {
       const resultado = await criarCandidatura(vagaId, formData)
@@ -39,6 +44,25 @@ export function CandidaturaForm({ vagaId }: Props) {
           Nome do candidato <span aria-hidden="true">*</span>
         </label>
         <input id="candidatura-nome" name="nome_candidato" type="text" required minLength={3} maxLength={120} className={campo} />
+      </div>
+
+      <div>
+        <label htmlFor="candidatura-contacto" className="block text-sm font-medium text-ink dark:text-cream mb-1">
+          Contacto <span aria-hidden="true">*</span>
+        </label>
+        <input
+          id="candidatura-contacto"
+          name="contacto"
+          type="text"
+          required
+          minLength={5}
+          maxLength={120}
+          aria-describedby="candidatura-contacto-ajuda"
+          className={campo}
+        />
+        <p id="candidatura-contacto-ajuda" className="mt-1 text-xs text-neutral-500 dark:text-cream-text/70">
+          Telefone, WhatsApp ou email.
+        </p>
       </div>
 
       <div>

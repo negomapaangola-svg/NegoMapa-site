@@ -4,13 +4,13 @@ import { forwardRef, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { AuthUserMenu } from './AuthUserMenu';
+import { NotificacoesBotao } from './NotificacoesBotao';
 
 interface HeaderProps {
   className?: string;
   children?: React.ReactNode;
 }
 
-/** Destinos do cabeçalho. Todos têm página em src/app (verificado). */
 const NAV_LINKS = [
   { href: '/servicos', label: 'Serviços' },
   { href: '/profissionais', label: 'Profissionais' },
@@ -23,6 +23,15 @@ function IconeMenu({ aberto }: { aberto: boolean }) {
   return (
     <svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
       {aberto ? <path d="M6 6l12 12M18 6L6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
+    </svg>
+  );
+}
+
+function IconeSino() {
+  return (
+    <svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+      <path d="M13.7 21a2 2 0 0 1-3.4 0" />
     </svg>
   );
 }
@@ -42,7 +51,6 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(
       return () => mediaQuery.removeEventListener('change', handler);
     }, []);
 
-    // Fecha o menu do telemóvel com Escape.
     useEffect(() => {
       if (!menuAberto) return;
       function aoTeclar(e: KeyboardEvent) {
@@ -79,7 +87,6 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(
                 />
               </Link>
 
-              {/* Desktop: todas as opções visíveis. */}
               <nav className="hidden lg:flex items-center gap-6" role="navigation" aria-label="Navegação principal">
                 {NAV_LINKS.map((link) => (
                   <Link
@@ -94,11 +101,12 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(
             </div>
 
             <div className="flex items-center gap-3">
+              <NotificacoesBotao />
+
               <div className="hidden lg:block">
                 <AuthUserMenu />
               </div>
 
-              {/* Telemóvel e tablet: botão Menu com rótulo visível. */}
               <button
                 type="button"
                 onClick={() => setMenuAberto((aberto) => !aberto)}
@@ -113,7 +121,6 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(
           </div>
         </div>
 
-        {/* Telemóvel e tablet: lista completa de opções e conta. */}
         {menuAberto && (
           <div
             id="menu-principal"
@@ -132,6 +139,16 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(
                     </Link>
                   </li>
                 ))}
+                <li>
+                  <Link
+                    href="/notificacoes"
+                    onClick={() => setMenuAberto(false)}
+                    className="flex min-h-12 items-center gap-2 rounded-md px-3 text-base font-medium text-navy hover:bg-cream hover:text-orange-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:text-cream dark:hover:bg-white/5 dark:hover:text-orange-400"
+                  >
+                    <IconeSino />
+                    Notificações
+                  </Link>
+                </li>
               </ul>
               <div className="mt-3 border-t border-card-border pt-3">
                 <AuthUserMenu variante="lista" />
