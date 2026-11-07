@@ -4,7 +4,7 @@ import { forwardRef, HTMLAttributes } from 'react';
 import { cn } from '@/lib/utils';
 
 export interface CardProps extends HTMLAttributes<HTMLDivElement> {
-  variant?: 'default' | 'muted' | 'elevated' | 'outlined';
+  variant?: 'default' | 'muted' | 'elevated' | 'outlined' | 'liquid';
   padding?: 'none' | 'sm' | 'md' | 'lg';
   hover?: boolean;
 }
@@ -29,6 +29,11 @@ const variants = {
   outlined: `
     bg-white
     border border-neutral-200
+  `,
+  liquid: `
+    bg-white
+    border border-neutral-100
+    shadow-sm
   `,
 };
 
