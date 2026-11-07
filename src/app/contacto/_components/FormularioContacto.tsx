@@ -84,7 +84,7 @@ export function FormularioContacto() {
         </div>
       )}
 
-      <Button type="submit" variant="liquid" size="lg" disabled={pending}>
+      <Button type="submit" variant="primary" size="lg" disabled={pending}>
         {pending ? 'A enviar…' : 'Enviar mensagem'}
       </Button>
     </form>

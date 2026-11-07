@@ -67,7 +67,7 @@ export function PedidosCliente({ pedidos, prefill = null }: Props) {
         setLista((atuais) => atuais.map((p) => (p.id === pedido.id ? { ...p, estado: 'cancelado' } : p)))
         setFeedback({ tipo: 'sucesso', texto: 'Pedido cancelado.' })
       } else {
-        setFeedback({ tipo: 'erro', texto: resultado.error ?? 'Não foi possível cancelar o pedido.' })
+        setFeedback({ tipo: 'erro', texto: 'Não foi possível cancelar o pedido.' })
       }
     })
   }
@@ -130,7 +130,7 @@ export function PedidosCliente({ pedidos, prefill = null }: Props) {
           </div>
         )}
 
-        <Button type="submit" variant="liquid" size="lg" disabled={pending}>
+        <Button type="submit" variant="primary" size="lg" disabled={pending}>
           {pending ? 'A enviar…' : 'Enviar pedido'}
         </Button>
       </form>
