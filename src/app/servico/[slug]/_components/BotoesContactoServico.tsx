@@ -34,7 +34,7 @@ export function BotoesContactoServico({ servicoId, profissionalId }: Props) {
   return (
     <div className="space-y-3">
       <div className="flex flex-col sm:flex-row gap-3">
-        <Button type="button" variant="liquid" onClick={pedirOrcamento} disabled={pending}>
+        <Button type="button" variant="primary" onClick={pedirOrcamento} disabled={pending}>
           Pedir orçamento
         </Button>
         <Button type="button" variant="outline" onClick={enviarMensagem} disabled={pending}>
