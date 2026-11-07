@@ -1,10 +1,11 @@
+import type { ReactNode } from 'react';
 import { HTMLAttributes } from 'react';
 import { cn } from '@/lib/utils';
 
 export interface SectionHeaderProps extends HTMLAttributes<HTMLDivElement> {
   title: string;
   description?: string;
-  action?: React.ReactNode;
+  action?: ReactNode;
 }
 
 export function SectionHeader({ title, description, action, className, ...props }: SectionHeaderProps) {
