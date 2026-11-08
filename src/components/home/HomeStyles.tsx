@@ -7,7 +7,6 @@ const css = `
 .nm-home{--shadow-soft:0 10px 30px -18px rgb(0 0 0/.14);--bg:#ffffff;--text:#111111;--muted:#6b6b6b;--line:#e8e8e8;--card:#ffffff;--soft:#fff4ec;--accent:#ff6a00;--accent-d:#e65c00;--ok:#15803d;--bad:#dc2626;--warn:#b45309;background:var(--bg);color:var(--text);font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color-scheme:light}
 @media (prefers-color-scheme:dark){.nm-home{--shadow-soft:0 10px 30px -18px rgb(0 0 0/.7);--bg:#0c0c0c;--text:#f2f2f2;--muted:#9a9a9a;--line:#262626;--card:#151515;--soft:#2a1606;color-scheme:dark}}
 .nm-home *{box-sizing:border-box}
-@media (prefers-color-scheme:dark){.nm-home img{filter:brightness(.92)}}
 .nm-home a{color:inherit}
 .nm-home h1,.nm-home h2,.nm-home h3{margin:0 0 .4em;line-height:1.2;text-wrap:balance}
 .nm-home h1{font-size:clamp(1.9rem,4.5vw,2.9rem);letter-spacing:-.02em;font-weight:800}
@@ -17,10 +16,10 @@ const css = `
 .nm-wrap{max-width:1280px;margin:0 auto;padding:8px 16px 48px}
 @media (min-width:640px){.nm-wrap{padding-inline:24px}}
 @media (min-width:1024px){.nm-wrap{padding-inline:32px}}
-.nm-hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:stretch;min-height:520px;padding:40px 0 0;overflow-x:hidden}
-.nm-hero>div:first-child{align-self:center;padding-bottom:24px}
-.nm-hero-art{position:relative;justify-self:center;align-self:end;width:100%;height:100%;max-width:none;line-height:0;background:transparent;display:flex;align-items:flex-end;justify-content:center}
-.nm-hero-art img{display:block;height:100%;width:auto;max-width:100%;object-fit:contain;object-position:bottom;border:0;border-radius:0;box-shadow:none;filter:none}
+.nm-hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(20px,2.2vw,36px);align-items:stretch;min-height:clamp(460px,62svh,600px);padding:12px 0 0;overflow-x:clip}
+.nm-hero-content{align-self:center;min-width:0;padding:0 0 12px;position:relative;z-index:1}
+.nm-hero-art{position:relative;justify-self:stretch;align-self:stretch;width:100%;height:100%;min-width:0;max-width:none;line-height:0;background:transparent;display:flex;align-items:flex-end;justify-content:flex-end;overflow:visible}
+.nm-hero-art img{display:block;width:100%;height:100%;max-width:100%;object-fit:contain;object-position:right bottom;border:0;border-radius:0;box-shadow:none;filter:none}
 .nm-eyebrow{display:inline-block;font-size:.78rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
 .nm-lead{color:var(--muted);font-size:1.05rem;max-width:32em}
 .nm-art{position:relative;aspect-ratio:4/3;border-radius:16px;border:1px solid var(--line);background:var(--soft);display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:16px;align-content:center}
@@ -73,8 +72,8 @@ a.nm-card:hover,a.nm-card:focus-visible{border-color:var(--accent);transform:tra
 /* Responsivo (breakpoints do protótipo: 1000px, 820px, 560px) */
 @media (max-width:1000px){.nm-grid3{grid-template-columns:repeat(2,minmax(0,1fr))}.nm-grid3>:last-child:nth-child(odd){grid-column:1/-1}}
 @media (max-width:820px){
-  .nm-hero{grid-template-columns:minmax(0,2fr) minmax(0,3fr);gap:12px;padding-top:28px;min-height:0}
-  .nm-hero h1{font-size:1.15rem}
+  .nm-hero{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;padding-top:16px;min-height:420px}
+  .nm-hero h1{font-size:clamp(1.6rem,3.4vw,2.2rem)}
   .nm-lead{font-size:.95rem}
   .nm-art{aspect-ratio:3/4;grid-template-columns:1fr;align-content:center}
   .nm-search{padding:4px}
@@ -85,10 +84,10 @@ a.nm-card:hover,a.nm-card:focus-visible{border-color:var(--accent);transform:tra
   .nm-caminhos .nm-btn{padding:9px 10px;font-size:.85rem}
 }
 @media (max-width:560px){
-  .nm-hero{grid-template-columns:minmax(0,1fr);gap:16px;padding-top:24px;min-height:0}
-  .nm-hero>div:first-child{padding-bottom:0}
-  .nm-hero-art{order:-1;max-width:100%;height:auto;justify-self:center}
-  .nm-hero-art img{display:block;width:100%;height:auto;max-height:340px;object-fit:contain;object-position:top}
+  .nm-hero{grid-template-columns:minmax(0,1fr);gap:18px;padding-top:8px;min-height:0}
+  .nm-hero-content{order:0;align-self:auto;min-width:0;padding:0}
+  .nm-hero-art{order:-1;justify-self:stretch;align-self:auto;width:100%;height:auto;min-width:0;max-width:none}
+  .nm-hero-art img{display:block;width:100%;height:auto;max-width:100%;max-height:none;object-fit:contain;object-position:center bottom}
   .nm-hero h1{font-size:clamp(1.6rem,7.5vw,2rem)}
   .nm-lead{font-size:1rem}
   .nm-art{aspect-ratio:4/3;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
