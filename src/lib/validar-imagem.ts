@@ -3,7 +3,7 @@
  * - Aceita apenas JPG, PNG ou WebP.
  * - Limite padrão: 2 MB por imagem.
  */
-export const TIPOS_IMAGEM Aceites = ['image/jpeg', 'image/png', 'image/webp'] as const;
+export const TIPOS_IMAGEM_ACEITES = ['image/jpeg', 'image/png', 'image/webp'] as const;
 
 export const TAMANHO_MAXIMO_IMAGEM = 2 * 1024 * 1024; // 2 MB
 
