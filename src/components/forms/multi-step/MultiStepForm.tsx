@@ -132,12 +132,12 @@ export function MultiStepForm<T extends object>({
           {step.render({ data, errors, setField, goTo })}
         </div>
 
-        {/* Botões grandes: Voltar e Continuar */}
-        <div className="mt-2 flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
+        {/* Barra de ações sempre visível no fundo do cartão */}
+        <div className="sticky bottom-0 z-10 -mx-8 -mb-8 mt-2 flex flex-col-reverse gap-3 border-t border-neutral-100 bg-white p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
           <Button
             type="button"
             variant="secondary"
-            size="xl"
+            size="lg"
             onClick={handleBack}
             disabled={isFirst || submitting}
             className="w-full sm:w-auto"
@@ -147,7 +147,7 @@ export function MultiStepForm<T extends object>({
           <Button
             type="submit"
             variant="primary"
-            size="xl"
+            size="lg"
             loading={submitting}
             className="w-full sm:w-auto"
           >
