@@ -1,5 +1,15 @@
 @import "tailwindcss";
 @import '../styles/liquid-glass.css';
+@custom-variant dark {
+  &:where(.dark, .dark *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not(.light) *) {
+      @slot;
+    }
+  }
+}
 
 @theme {
   --font-sans: Inter, system-ui, sans-serif;
@@ -107,10 +117,17 @@
   --foreground: #10222E;
 }
 
+:root.dark {
+  --background: #0B1F2E;
+  --foreground: #FAF7F2;
+}
+
+/* Sem escolha guardada (classe light ausente), segue o sistema. Sem JavaScript, é só este bloco. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not(.light) {
     --background: #0B1F2E;
     --foreground: #FAF7F2;
+    color-scheme: dark;
   }
 }
 
@@ -139,8 +156,12 @@ body {
   ring-offset-color: white;
 }
 
+.dark :focus-visible {
+  ring-offset-color: var(--color-neutral-950);
+}
+
 @media (prefers-color-scheme: dark) {
-  :focus-visible {
+  :root:not(.light) :focus-visible {
     ring-offset-color: var(--color-neutral-950);
   }
 }
@@ -150,8 +171,12 @@ body {
   color: var(--color-primary-900);
 }
 
+.dark ::selection {
+  color: var(--color-primary-100);
+}
+
 @media (prefers-color-scheme: dark) {
-  ::selection {
+  :root:not(.light) ::selection {
     color: var(--color-primary-100);
   }
 }

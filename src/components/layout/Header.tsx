@@ -7,6 +7,8 @@ import { cn } from '@/lib/utils';
 import { AuthUserMenu } from './AuthUserMenu';
 import { NotificacoesBotao } from './NotificacoesBotao';
 import { PesquisaGlobal } from './PesquisaGlobal';
+import { ThemeToggle } from './ThemeToggle';
+import { useTemaEscuro } from '@/hooks/useTemaEscuro';
 
 interface HeaderProps {
   className?: string;
@@ -41,17 +43,8 @@ function IconeSino() {
 export const Header = forwardRef<HTMLElement, HeaderProps>(
   ({ className }, ref) => {
     const router = useRouter();
-    const [isDark, setIsDark] = useState(false);
+    const isDark = useTemaEscuro();
     const [menuAberto, setMenuAberto] = useState(false);
-
-    useEffect(() => {
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      setIsDark(mediaQuery.matches);
-
-      const handler = (e: MediaQueryListEvent) => setIsDark(e.matches);
-      mediaQuery.addEventListener('change', handler);
-      return () => mediaQuery.removeEventListener('change', handler);
-    }, []);
 
     useEffect(() => {
       if (!menuAberto) return;
@@ -119,6 +112,7 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(
 
             {/* Lado direito: notificações + menu */}
             <div className="flex items-center gap-1 sm:gap-3">
+              <ThemeToggle />
               <NotificacoesBotao />
 
               <div className="hidden lg:block">

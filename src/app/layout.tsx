@@ -3,6 +3,7 @@ import { Inter, Space_Grotesk } from 'next/font/google';
 import './globals.css';
 import { AdminBottomBar } from '@/components/layout/AdminBottomBar';
 import { OG_IMAGE_PATH, OG_IMAGE_WIDTH, OG_IMAGE_HEIGHT } from '@/lib/og';
+import { TEMA_SCRIPT } from '@/lib/tema';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -85,10 +86,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-AO" className={`${inter.variable} ${spaceGrotesk.variable} h-full`}>
+    <html lang="pt-AO" suppressHydrationWarning className={`${inter.variable} ${spaceGrotesk.variable} h-full`}>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <script dangerouslySetInnerHTML={{ __html: TEMA_SCRIPT }} />
       </head>
       <body className="min-h-full flex flex-col antialiased">
         <a href="#main-content" className="skip-link">
