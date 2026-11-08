@@ -17,9 +17,9 @@ const css = `
 .nm-wrap{max-width:1280px;margin:0 auto;padding:8px 16px 48px}
 @media (min-width:640px){.nm-wrap{padding-inline:24px}}
 @media (min-width:1024px){.nm-wrap{padding-inline:32px}}
-.nm-hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:end;padding:40px 0 0}
-.nm-hero>div:first-child{align-self:center;padding-bottom:32px}
-.nm-hero-art{position:relative;justify-self:end;align-self:end;width:100%;max-width:640px;line-height:0;background:transparent}
+.nm-hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:end;padding:40px 0 0;overflow-x:hidden}
+.nm-hero>div:first-child{align-self:center;padding-bottom:24px}
+.nm-hero-art{position:relative;justify-self:end;align-self:end;width:100%;max-width:680px;line-height:0;background:transparent}
 .nm-hero-art img{display:block;width:100%;height:auto;border:0;border-radius:0;box-shadow:none;filter:none}
 .nm-eyebrow{display:inline-block;font-size:.78rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
 .nm-lead{color:var(--muted);font-size:1.05rem;max-width:32em}
