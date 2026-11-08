@@ -24,8 +24,6 @@ interface EstadoVazioProps {
   titulo: string;
   texto: string;
   erro?: boolean;
-  /** Ilustração opcional do estado vazio (caminho em public/images). */
-  imagem?: string;
   children?: ReactNode;
   imagem?: string;
   acao?: ReactNode;
