@@ -29,11 +29,11 @@ export default async function ProfissionalPainelPage() {
             <Card variant="liquid" padding="lg">
               <CardHeader className="space-y-2">
                 <CardTitle as="h1" className="text-3xl md:text-4xl">Painel do Profissional</CardTitle>
-                <p className="text-neutral-600 dark:text-cream-text/80">Ainda não tem um perfil de profissional.</p>
+                <p className="text-neutral-600 dark:text-cream-text/80">Ainda não tem um perfil de profissional. Conclua o registo para apresentar os seus serviços na NegóMapa.</p>
               </CardHeader>
               <CardContent className="mt-6">
                 <Link href="/cadastrar-profissional" className="text-orange-500 dark:text-orange-400 underline">
-                  Fazer o cadastro de profissional
+                  Concluir registo do perfil
                 </Link>
               </CardContent>
             </Card>

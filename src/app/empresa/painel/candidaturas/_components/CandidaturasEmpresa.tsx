@@ -58,7 +58,7 @@ export function CandidaturasEmpresa({ candidaturas }: Props) {
   }
 
   if (candidaturas.length === 0) {
-    return <p className="text-neutral-500 dark:text-cream-text/70">Ainda não recebeu candidaturas.</p>
+    return <div className="space-y-2"><p className="text-neutral-500 dark:text-cream-text/70">Ainda não recebeu candidaturas.</p><p className="text-sm text-neutral-500 dark:text-cream-text/70">As candidaturas aparecerão aqui quando alguém se candidatar às vagas que publicar.</p></div>
   }
 
   return (
