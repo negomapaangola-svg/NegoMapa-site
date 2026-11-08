@@ -21,6 +21,9 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    'https://nego-mapa-site-negomapaangola-svg.vercel.app'
+  ),
   title: {
     default: 'NegóMapa - Serviços e Empregos em Angola',
     template: '%s | NegóMapa',
