@@ -7,6 +7,8 @@ const css = `
 .nm-home{--shadow-soft:0 10px 30px -18px rgb(0 0 0/.14);--bg:#ffffff;--text:#111111;--muted:#6b6b6b;--line:#e8e8e8;--card:#ffffff;--soft:#fff4ec;--accent:#ff6a00;--accent-d:#e65c00;--ok:#15803d;--bad:#dc2626;--warn:#b45309;background:var(--bg);color:var(--text);font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color-scheme:light}
 .dark .nm-home{--shadow-soft:0 10px 30px -18px rgb(0 0 0/.7);--bg:#0c0c0c;--text:#f2f2f2;--muted:#9a9a9a;--line:#262626;--card:#151515;--soft:#2a1606;color-scheme:dark}
 @media (prefers-color-scheme:dark){:root:not(.light) .nm-home{--shadow-soft:0 10px 30px -18px rgb(0 0 0/.7);--bg:#0c0c0c;--text:#f2f2f2;--muted:#9a9a9a;--line:#262626;--card:#151515;--soft:#2a1606;color-scheme:dark}}
+.dark .nm-home .nm-pill.warn{border-color:#854d0e}.dark .nm-home .nm-notice{border-color:#9a3412}
+@media (prefers-color-scheme:dark){:root:not(.light) .nm-home .nm-pill.warn{border-color:#854d0e}:root:not(.light) .nm-home .nm-notice{border-color:#9a3412}}
 .nm-home *{box-sizing:border-box}
 .nm-home a{color:inherit}
 .nm-home h1,.nm-home h2,.nm-home h3{margin:0 0 .4em;line-height:1.2;text-wrap:balance}

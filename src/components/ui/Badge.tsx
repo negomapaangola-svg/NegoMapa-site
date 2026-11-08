@@ -6,10 +6,10 @@ export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
 }
 
 const variants = {
-  neutral: 'bg-neutral-100 text-neutral-700',
-  pending: 'bg-orange-100 text-orange-700',
-  approved: 'bg-green-100 text-green-700',
-  rejected: 'bg-red-100 text-red-700',
+  neutral: 'bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200',
+  pending: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
+  approved: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
+  rejected: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
   whatsapp: 'bg-green-600 text-white',
   primary: 'bg-orange-500 text-white',
 };

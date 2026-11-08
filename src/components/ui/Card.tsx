@@ -13,26 +13,26 @@ const baseStyles = 'rounded-2xl transition-all duration-200 ease-out';
 
 const variants = {
   default: `
-    bg-white
-    border border-neutral-100
+    bg-white dark:bg-neutral-900
+    border border-neutral-100 dark:border-neutral-700
     shadow-sm
   `,
   muted: `
-    bg-neutral-50
-    border border-neutral-100
+    bg-neutral-50 dark:bg-neutral-800
+    border border-neutral-100 dark:border-neutral-700
   `,
   elevated: `
-    bg-white
+    bg-white dark:bg-neutral-900
     shadow-lg
     border-none
   `,
   outlined: `
-    bg-white
-    border border-neutral-200
+    bg-white dark:bg-neutral-900
+    border border-neutral-200 dark:border-neutral-700
   `,
   liquid: `
-    bg-white
-    border border-neutral-100
+    bg-white dark:bg-neutral-900
+    border border-neutral-100 dark:border-neutral-700
     shadow-sm
   `,
 };
@@ -100,7 +100,7 @@ export const CardTitle = forwardRef<HTMLHeadingElement, CardTitleProps>(
   ({ className, as: Component = 'h3', children, ...props }, ref) => (
     <Component
       ref={ref}
-      className={cn('text-lg font-semibold text-neutral-900', className)}
+      className={cn('text-lg font-semibold text-neutral-900 dark:text-neutral-100', className)}
       {...props}
     >
       {children}
@@ -116,7 +116,7 @@ export const CardDescription = forwardRef<HTMLParagraphElement, CardDescriptionP
   ({ className, children, ...props }, ref) => (
     <p
       ref={ref}
-      className={cn('mt-1 text-sm text-neutral-500', className)}
+      className={cn('mt-1 text-sm text-neutral-500 dark:text-neutral-400', className)}
       {...props}
     >
       {children}
@@ -148,7 +148,7 @@ export const CardFooter = forwardRef<HTMLDivElement, CardFooterProps>(
   ({ className, children, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn('mt-6 pt-4 border-t border-neutral-100 flex items-center gap-3', className)}
+      className={cn('mt-6 pt-4 border-t border-neutral-100 dark:border-neutral-700 flex items-center gap-3', className)}
       {...props}
     >
       {children}

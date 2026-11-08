@@ -12,13 +12,13 @@ export function EmptyState({ title, description, action, className, ...props }: 
   return (
     <div
       className={cn(
-        'rounded-2xl border border-dashed border-neutral-200 bg-neutral-50 p-10 text-center',
+        'rounded-2xl border border-dashed border-neutral-200 bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 p-10 text-center',
         className
       )}
       {...props}
     >
-      <h3 className="text-base font-semibold text-neutral-900">{title}</h3>
-      {description && <p className="mx-auto mt-2 max-w-md text-sm text-neutral-500">{description}</p>}
+      <h3 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">{title}</h3>
+      {description && <p className="mx-auto mt-2 max-w-md text-sm text-neutral-500 dark:text-neutral-400">{description}</p>}
       {action && <div className="mt-6 flex justify-center">{action}</div>}
     </div>
   );

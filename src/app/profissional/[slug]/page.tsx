@@ -82,7 +82,7 @@ function Avatar({ nome, avatarUrl }: { nome: string; avatarUrl: string | null })
   const mostrarImagem = isHttpsUrl(avatarUrl);
 
   return (
-    <div className="flex h-24 w-24 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-neutral-100 text-3xl font-semibold text-neutral-600">
+    <div className="flex h-24 w-24 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-neutral-100 text-3xl font-semibold text-neutral-600 dark:bg-neutral-800 dark:text-cream-text">
       {mostrarImagem && avatarUrl ? (
         <img src={avatarUrl} alt={nome} className="h-full w-full object-cover" />
       ) : (
@@ -130,10 +130,10 @@ export default async function ProfissionalPublicoPage({ params }: { params: Para
 
   return (
     <MainLayout>
-      <section className="bg-white py-12 lg:py-16" aria-labelledby="profissional-nome">
+      <section className="bg-white py-12 lg:py-16 dark:bg-navy-dark" aria-labelledby="profissional-nome">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
           <nav aria-label="Navegação" className="mb-8">
-            <Link href="/profissionais" className="text-sm font-medium text-neutral-600 hover:text-orange-600">
+            <Link href="/profissionais" className="text-sm font-medium text-neutral-600 hover:text-orange-600 dark:text-cream-text dark:hover:text-orange-400">
               ← Voltar a profissionais
             </Link>
           </nav>
@@ -150,10 +150,10 @@ export default async function ProfissionalPublicoPage({ params }: { params: Para
           <header className="flex flex-col gap-6 sm:flex-row sm:items-center">
             <Avatar nome={dados.nome} avatarUrl={dados.avatar_url} />
             <div>
-              <h1 id="profissional-nome" className="text-3xl font-bold tracking-tight text-neutral-900 sm:text-4xl">
+              <h1 id="profissional-nome" className="text-3xl font-bold tracking-tight text-neutral-900 dark:text-cream sm:text-4xl">
                 {dados.nome}
               </h1>
-              <div className="mt-3 flex flex-wrap items-center gap-2 text-neutral-600">
+              <div className="mt-3 flex flex-wrap items-center gap-2 text-neutral-600 dark:text-cream-text">
                 {dados.categoria && <Badge variant="neutral">{dados.categoria}</Badge>}
                 {localizacao && <span className="text-sm">{localizacao}</span>}
                 {dados.anos_experiencia != null && (
@@ -182,14 +182,14 @@ export default async function ProfissionalPublicoPage({ params }: { params: Para
           )}
 
           {user && !eDono && ehProfissional && (
-            <p role="status" className="mt-4 text-sm text-neutral-600">
+            <p role="status" className="mt-4 text-sm text-neutral-600 dark:text-cream-text">
               {MENSAGEM_BLOQUEIO_PROFISSIONAL}
             </p>
           )}
 
           {!user && (
-            <div className="mt-6 rounded-2xl bg-neutral-50 p-6">
-              <p className="text-sm text-neutral-600">
+            <div className="mt-6 rounded-2xl bg-neutral-50 p-6 dark:bg-neutral-800">
+              <p className="text-sm text-neutral-600 dark:text-cream-text">
                 Crie uma conta gratuita para enviar mensagens a este profissional.
               </p>
               <div className="mt-4">
@@ -202,7 +202,7 @@ export default async function ProfissionalPublicoPage({ params }: { params: Para
 
           <section aria-labelledby="sobre-titulo" className="mt-14">
             <SectionHeader title="Sobre" />
-            <p className="whitespace-pre-line text-neutral-700 leading-relaxed">
+            <p className="whitespace-pre-line text-neutral-700 dark:text-cream-text leading-relaxed">
               {dados.bio?.trim() || 'Este profissional ainda não adicionou uma descrição.'}
             </p>
           </section>
@@ -234,7 +234,7 @@ export default async function ProfissionalPublicoPage({ params }: { params: Para
                         )}
                       </CardHeader>
                       <CardContent className="mt-auto">
-                        <p className="text-sm font-semibold text-neutral-900">
+                        <p className="text-sm font-semibold text-neutral-900 dark:text-cream">
                           {servico.preco != null
                             ? `${formatCurrency(servico.preco)}${servico.preco_tipo ? ` ${servico.preco_tipo}` : ''}`
                             : 'Preço sob consulta'}

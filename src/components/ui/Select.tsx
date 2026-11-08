@@ -18,7 +18,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
     return (
       <div className="space-y-2">
         {label && (
-          <label htmlFor={selectId} className="block text-sm font-medium text-neutral-900">
+          <label htmlFor={selectId} className="block text-sm font-medium text-neutral-900 dark:text-neutral-100">
             {label}
           </label>
         )}
@@ -26,9 +26,9 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           ref={ref}
           id={selectId}
           className={cn(
-            'w-full appearance-none rounded-xl border bg-white px-4 py-3 text-neutral-900',
+            'w-full appearance-none rounded-xl border bg-white px-4 py-3 text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100 dark:[color-scheme:dark]',
             'focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500',
-            error ? 'border-red-500' : 'border-neutral-200',
+            error ? 'border-red-500 dark:border-red-400' : 'border-neutral-200 dark:border-neutral-700',
             className
           )}
           aria-invalid={Boolean(error)}
@@ -41,8 +41,8 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             </option>
           ))}
         </select>
-        {hint && !error && <p className="text-xs text-neutral-500">{hint}</p>}
-        {error && <p className="text-xs font-medium text-red-600">{error}</p>}
+        {hint && !error && <p className="text-xs text-neutral-500 dark:text-neutral-400">{hint}</p>}
+        {error && <p className="text-xs font-medium text-red-600 dark:text-red-400">{error}</p>}
       </div>
     );
   }

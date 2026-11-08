@@ -16,8 +16,8 @@ const baseStyles = `
   inline-flex items-center justify-center gap-2
   font-heading font-bold rounded-xl
   transition-all duration-200 ease-out
-  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2
-  disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none
+  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-950
+  disabled:opacity-70 disabled:cursor-not-allowed disabled:pointer-events-none
   active:scale-[0.98]
 `;
 
@@ -31,15 +31,18 @@ const variants = {
     bg-neutral-100 text-neutral-900
     hover:bg-neutral-200
     border border-neutral-200
+    dark:bg-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-700 dark:border-neutral-700
   `,
   outline: `
     bg-white text-orange-600
     border border-orange-500
     hover:bg-orange-50
+    dark:bg-transparent dark:text-orange-300 dark:border-orange-400 dark:hover:bg-orange-950/40
   `,
   ghost: `
     bg-transparent text-neutral-700
     hover:bg-neutral-100
+    dark:text-neutral-200 dark:hover:bg-neutral-800
   `,
   whatsapp: `
     bg-green-600 text-white
