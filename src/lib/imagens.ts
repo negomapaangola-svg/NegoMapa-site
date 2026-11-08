@@ -3,7 +3,7 @@
  * Usar sempre estas constantes; não escrever caminhos à mão nos componentes.
  */
 export const IMAGENS = {
-  hero: '/images/hero/hero-negomapa.png',
+  hero: '/images/hero/hero-profissional-transparente.png',
   og: '/images/og/og-negomapa.png',
   avatarPadrao: '/images/avatares/avatar-padrao.png',
   servicoPadrao: '/images/servicos/servico-padrao.png',
