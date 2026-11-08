@@ -57,22 +57,17 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(
     return (
       <header
         ref={ref}
-        className={cn(
-          'liquid-glass-navbar sticky top-0 z-200 w-full',
-          'dark:liquid-glass-navbar-dark',
-          className
-        )}
+        className={cn('liquid-glass-navbar sticky top-0 z-200 w-full', className)}
         role="banner"
       >
         <div className="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8">
           <div className="relative flex h-16 items-center justify-between gap-1 sm:gap-4">
-            {/* Lado esquerdo: Voltar + Início */}
             <div className="flex items-center gap-1 sm:gap-2">
               <button
                 type="button"
                 onClick={() => router.back()}
                 aria-label="Voltar"
-                className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md border border-card-border bg-white px-2 text-sm font-semibold text-navy hover:border-orange-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:bg-navy-dark dark:text-cream"
+                className="inline-flex min-h-11 min-w-11 items-center justify-center gap-1 rounded-md border border-card-border bg-white px-2 text-sm font-semibold text-navy hover:border-orange-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:bg-navy-dark dark:text-cream dark:hover:bg-neutral-800"
               >
                 <svg aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M19 12H5" />
@@ -84,7 +79,7 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(
               <Link
                 href="/"
                 aria-label="Início"
-                className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md border border-card-border bg-white px-2 text-sm font-semibold text-navy hover:border-orange-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:bg-navy-dark dark:text-cream"
+                className="inline-flex min-h-11 min-w-11 items-center justify-center gap-1 rounded-md border border-card-border bg-white px-2 text-sm font-semibold text-navy hover:border-orange-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:bg-navy-dark dark:text-cream dark:hover:bg-neutral-800"
               >
                 <svg aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M3 10.5L12 3l9 7.5" />
@@ -94,7 +89,6 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(
               </Link>
             </div>
 
-            {/* Centro: logótipo sempre centrado */}
             <Link
               href="/"
               className="absolute left-1/2 -translate-x-1/2 flex items-center text-navy dark:text-cream"
@@ -109,21 +103,18 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(
               />
             </Link>
 
-            {/* Lado direito: notificações + menu */}
             <div className="flex items-center gap-1 sm:gap-3">
               <ThemeToggle />
               <NotificacoesBotao />
-
               <div className="hidden lg:block">
                 <AuthUserMenu />
               </div>
-
               <button
                 type="button"
                 onClick={() => setMenuAberto((aberto) => !aberto)}
                 aria-expanded={menuAberto}
                 aria-controls="menu-principal"
-                className="inline-flex min-h-11 items-center gap-2 rounded-md border border-card-border bg-white px-2 sm:px-3 text-sm font-semibold text-navy hover:border-orange-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:bg-navy-dark dark:text-cream lg:hidden"
+                className="inline-flex min-h-11 items-center gap-2 rounded-md border border-card-border bg-white px-2 sm:px-3 text-sm font-semibold text-navy hover:border-orange-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:bg-navy-dark dark:text-cream dark:hover:bg-neutral-800 lg:hidden"
               >
                 <IconeMenu aberto={menuAberto} />
                 <span className="hidden sm:inline">{menuAberto ? 'Fechar' : 'Menu'}</span>
@@ -131,13 +122,12 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(
             </div>
           </div>
 
-          {/* Navegação principal em desktop */}
           <div className="hidden xl:flex items-center justify-center gap-6 pb-2">
             {NAV_LINKS.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="whitespace-nowrap text-sm font-medium text-neutral-700 dark:text-cream-text hover:text-orange-500 dark:hover:text-orange-400 transition-colors"
+                className="whitespace-nowrap text-sm font-medium text-neutral-700 dark:text-cream-text hover:text-orange-500 dark:hover:text-orange-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 rounded-sm"
               >
                 {link.label}
               </Link>
@@ -152,7 +142,7 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(
         {menuAberto && (
           <div
             id="menu-principal"
-            className="absolute inset-x-0 top-full border-t border-card-border bg-white shadow-lg dark:bg-navy-dark lg:hidden"
+            className="absolute inset-x-0 top-full border-t border-card-border bg-white text-navy shadow-lg dark:bg-navy-dark dark:text-cream lg:hidden"
           >
             <nav aria-label="Navegação principal (menu)" className="mx-auto max-w-7xl px-4 py-3">
               <ul className="flex flex-col">
@@ -161,7 +151,7 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(
                     <Link
                       href={link.href}
                       onClick={() => setMenuAberto(false)}
-                      className="flex min-h-12 items-center rounded-md px-3 text-base font-medium text-navy hover:bg-cream hover:text-orange-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:text-cream dark:hover:bg-white/5 dark:hover:text-orange-400"
+                      className="flex min-h-12 items-center rounded-md px-3 text-base font-medium text-navy hover:bg-cream hover:text-orange-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:text-cream dark:hover:bg-white/10 dark:hover:text-orange-400"
                     >
                       {link.label}
                     </Link>
@@ -171,7 +161,7 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(
                   <Link
                     href="/notificacoes"
                     onClick={() => setMenuAberto(false)}
-                    className="flex min-h-12 items-center gap-2 rounded-md px-3 text-base font-medium text-navy hover:bg-cream hover:text-orange-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:text-cream dark:hover:bg-white/5 dark:hover:text-orange-400"
+                    className="flex min-h-12 items-center gap-2 rounded-md px-3 text-base font-medium text-navy hover:bg-cream hover:text-orange-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:text-cream dark:hover:bg-white/10 dark:hover:text-orange-400"
                   >
                     <IconeSino />
                     Notificações
