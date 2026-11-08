@@ -24,10 +24,18 @@
   }
 
   .liquid-glass-navbar {
-    background: rgba(255, 255, 255, 0.85);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    background: rgba(255, 255, 255, 0.92);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    color: #0f172a;
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
+  }
+
+  /* O tema é aplicado em html.dark pelo provider; não é uma utility Tailwind. */
+  .dark .liquid-glass-navbar {
+    background: rgba(15, 23, 42, 0.96);
+    border-bottom-color: rgba(148, 163, 184, 0.24);
+    color: #f8fafc;
   }
 
   .liquid-glass-navbar-dark {
@@ -91,7 +99,8 @@
     }
 
     .liquid-glass-dark,
-    .liquid-glass-navbar-dark {
+    .liquid-glass-navbar-dark,
+    .dark .liquid-glass-navbar {
       background: black;
       border: 2px solid white;
       backdrop-filter: none;
