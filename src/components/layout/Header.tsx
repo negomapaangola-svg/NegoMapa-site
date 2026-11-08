@@ -2,6 +2,7 @@
 
 import { forwardRef, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { AuthUserMenu } from './AuthUserMenu';
 import { NotificacoesBotao } from './NotificacoesBotao';
@@ -39,6 +40,7 @@ function IconeSino() {
 
 export const Header = forwardRef<HTMLElement, HeaderProps>(
   ({ className }, ref) => {
+    const router = useRouter();
     const [isDark, setIsDark] = useState(false);
     const [menuAberto, setMenuAberto] = useState(false);
 
@@ -72,7 +74,30 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between gap-4">
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => router.back()}
+                className="inline-flex min-h-11 items-center gap-2 rounded-md border border-card-border bg-white px-3 text-sm font-semibold text-navy hover:border-orange-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:bg-navy-dark dark:text-cream"
+              >
+                <svg aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M19 12H5" />
+                  <path d="M12 19l-7-7 7-7" />
+                </svg>
+                <span className="hidden sm:inline">Voltar</span>
+              </button>
+
+              <Link
+                href="/"
+                className="inline-flex min-h-11 items-center gap-2 rounded-md border border-card-border bg-white px-3 text-sm font-semibold text-navy hover:border-orange-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:bg-navy-dark dark:text-cream"
+              >
+                <svg aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 10.5L12 3l9 7.5" />
+                  <path d="M5 10v10h14V10" />
+                </svg>
+                <span className="hidden sm:inline">Início</span>
+              </Link>
+
               <Link
                 href="/"
                 className="flex items-center gap-2 text-xl font-bold text-navy dark:text-cream"
@@ -86,19 +111,19 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(
                   height="120"
                 />
               </Link>
-
-              <nav className="hidden xl:flex items-center gap-6" role="navigation" aria-label="Navegação principal">
-                {NAV_LINKS.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className="whitespace-nowrap text-sm font-medium text-neutral-700 dark:text-cream-text hover:text-orange-500 dark:hover:text-orange-400 transition-colors"
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-              </nav>
             </div>
+
+            <nav className="hidden xl:flex items-center gap-6" role="navigation" aria-label="Navegação principal">
+              {NAV_LINKS.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="whitespace-nowrap text-sm font-medium text-neutral-700 dark:text-cream-text hover:text-orange-500 dark:hover:text-orange-400 transition-colors"
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
 
             <div className="hidden flex-1 justify-center lg:flex">
               <PesquisaGlobal />
