@@ -17,9 +17,9 @@ const css = `
 .nm-wrap{max-width:1280px;margin:0 auto;padding:8px 16px 48px}
 @media (min-width:640px){.nm-wrap{padding-inline:24px}}
 @media (min-width:1024px){.nm-wrap{padding-inline:32px}}
-.nm-hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:24px;align-items:end;padding:40px 0 0}
+.nm-hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:end;padding:40px 0 0}
 .nm-hero>div:first-child{align-self:center;padding-bottom:32px}
-.nm-hero-art{position:relative;justify-self:end;align-self:end;width:100%;max-width:600px;line-height:0}
+.nm-hero-art{position:relative;justify-self:end;align-self:end;width:100%;max-width:640px;line-height:0;background:transparent}
 .nm-hero-art img{display:block;width:100%;height:auto;border:0;border-radius:0;box-shadow:none;filter:none}
 .nm-eyebrow{display:inline-block;font-size:.78rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
 .nm-lead{color:var(--muted);font-size:1.05rem;max-width:32em}
@@ -85,9 +85,9 @@ a.nm-card:hover,a.nm-card:focus-visible{border-color:var(--accent);transform:tra
   .nm-caminhos .nm-btn{padding:9px 10px;font-size:.85rem}
 }
 @media (max-width:560px){
-  .nm-hero{grid-template-columns:minmax(0,1fr);gap:20px;padding-top:24px}
+  .nm-hero{grid-template-columns:minmax(0,1fr);gap:16px;padding-top:24px}
   .nm-hero>div:first-child{padding-bottom:0}
-  .nm-hero-art{order:-1;max-width:360px;justify-self:center}
+  .nm-hero-art{order:-1;max-width:100%;justify-self:center}
   .nm-hero-art img{display:block}
   .nm-hero h1{font-size:clamp(1.6rem,7.5vw,2rem)}
   .nm-lead{font-size:1rem}
