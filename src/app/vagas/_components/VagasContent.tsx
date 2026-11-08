@@ -106,9 +106,9 @@ export function VagasContent({
           ))
         ) : temFiltros ? (
           <div className="col-span-full text-center py-12" role="status">
-            <h2 className="text-xl font-semibold text-ink dark:text-cream">Nenhuma vaga encontrada</h2>
+            <h2 className="text-xl font-semibold text-ink dark:text-cream">Nenhuma vaga encontrada com estes filtros.</h2>
             <p className="mt-2 text-neutral-600 dark:text-cream-text">
-              Tente outro título, categoria ou província.
+              Experimente alterar os critérios de pesquisa ou limpar os filtros.
             </p>
             <Link
               href="/vagas"

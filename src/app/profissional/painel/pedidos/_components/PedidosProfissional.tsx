@@ -60,7 +60,7 @@ export function PedidosProfissional({ pedidos }: Props) {
   }
 
   if (pedidos.length === 0) {
-    return <p className="text-neutral-500 dark:text-cream-text/70">Ainda não recebeu pedidos.</p>
+    return <div className="space-y-2"><p className="text-neutral-500 dark:text-cream-text/70">Ainda não recebeu pedidos.</p><p className="text-sm text-neutral-500 dark:text-cream-text/70">Os pedidos aparecerão aqui quando os clientes enviarem pedidos de serviço ao seu perfil.</p></div>
   }
 
   return (

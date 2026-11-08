@@ -95,7 +95,7 @@ export function MensagensPainel({ conversas, userId, basePath, conversaInicial }
   if (conversas.length === 0) {
     return (
       <Card variant="liquid" padding="lg" className="text-center">
-        <p className="text-neutral-600 dark:text-cream-text/80">Ainda não tem conversas.</p>
+        <div className="space-y-2"><p className="text-neutral-600 dark:text-cream-text/80">Ainda não tem conversas.</p><p className="text-sm text-neutral-500 dark:text-cream-text/70">Procure profissionais, empresas ou serviços na plataforma para iniciar uma conversa.</p></div>
       </Card>
     )
   }

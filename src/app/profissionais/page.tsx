@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import Image from 'next/image';
+import Link from 'next/link';
 import { IMAGENS } from '@/lib/imagens';
 import { MainLayout } from '@/components/layout/MainLayout';
 import {
@@ -99,10 +100,11 @@ export default async function ProfissionaisPage({ searchParams }: { searchParams
                 </div>
               ) : (
                 <div className="text-center py-16" role="status">
-                  <h2 className="text-xl font-semibold text-ink dark:text-cream">Nenhum profissional encontrado</h2>
+                  <h2 className="text-xl font-semibold text-ink dark:text-cream">{temFiltros ? 'Nenhum profissional encontrado com estes filtros.' : 'Ainda não há profissionais disponíveis nesta área.'}</h2>
                   <p className="mt-2 text-neutral-600 dark:text-cream-text max-w-md mx-auto">
-                    {temFiltros ? 'Tente outro nome, categoria ou província.' : 'Volte mais tarde para ver novos profissionais.'}
+                    Experimente alterar os critérios de pesquisa ou limpar os filtros.
                   </p>
+                  <Link href="/profissionais" className="mt-4 inline-block text-sm font-medium text-orange-500 dark:text-orange-400 hover:underline">Limpar filtros</Link>
                 </div>
               )}
             </>
@@ -116,9 +118,9 @@ export default async function ProfissionaisPage({ searchParams }: { searchParams
                 sizes="200px"
                 className="mx-auto mb-5 h-auto w-32 opacity-90"
               />
-              <h2 className="text-xl font-semibold text-ink dark:text-cream">Nenhum profissional disponível</h2>
+              <h2 className="text-xl font-semibold text-ink dark:text-cream">Ainda não há profissionais disponíveis nesta área.</h2>
               <p className="mt-2 text-neutral-600 dark:text-cream-text max-w-md mx-auto">
-                Volte mais tarde para ver novos profissionais.
+                Explore as categorias disponíveis para encontrar um profissional.
               </p>
             </div>
           )}

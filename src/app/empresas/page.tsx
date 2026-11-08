@@ -116,7 +116,7 @@ function EmpresasContent() {
                   type="text"
                   value={nomeBusca}
                   onChange={(e) => setNomeBusca(e.target.value)}
-                  placeholder="Buscar por nome..."
+                  placeholder="Pesquisar por nome..."
                   className="w-full px-3 py-2 border border-card-border rounded-[4px] shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-neutral-700 dark:text-cream"
                 />
                 <Button variant="outline" size="sm" onClick={() => {
@@ -183,7 +183,7 @@ function EmpresasContent() {
                     className="mx-auto mb-5 h-auto w-32 opacity-90"
                   />
                   <p className="text-lg text-neutral-500 dark:text-cream-text">
-                    Nenhuma empresa cadastrada ainda.
+                    Ainda não há empresas registadas nesta área.
                   </p>
                 </div>
               ) : (

@@ -75,7 +75,7 @@ export function RegistarForm({ destino }: Props) {
   if (emailPendente) {
     return (
       <div className="max-w-md w-full bg-white rounded-[4px] p-8 shadow dark:bg-neutral-800 border border-card-border space-y-4">
-        <h1 className="text-2xl font-bold text-center text-ink dark:text-cream">Verifique o seu email</h1>
+        <h1 className="text-2xl font-bold text-center text-ink dark:text-cream">Confirme o seu endereço de email</h1>
         <p className="text-neutral-600 dark:text-cream-text">
           Enviámos um link de confirmação para <strong>{emailPendente}</strong>.
         </p>

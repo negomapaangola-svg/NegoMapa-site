@@ -330,11 +330,11 @@ export default async function ServicosPage({
                 sizes="200px"
                 className="mx-auto mb-5 h-auto w-32 opacity-90"
               />
-              <h2 className="mt-4 text-xl font-semibold text-ink dark:text-cream">Nenhum serviço encontrado</h2>
+              <h2 className="mt-4 text-xl font-semibold text-ink dark:text-cream">{searchParams.q || searchParams.categoria || searchParams.provincia || searchParams.municipio ? 'Nenhum serviço encontrado com estes filtros.' : 'Ainda não há serviços disponíveis nesta área.'}</h2>
               <p className="mt-2 text-neutral-600 dark:text-cream-text max-w-md mx-auto">
                 {searchParams.q || searchParams.categoria || searchParams.provincia || searchParams.municipio
-                  ? 'Tente ajustar os filtros ou buscar por outro termo.'
-                  : 'Ainda não há serviços cadastrados.'}
+                  ? 'Experimente alterar os critérios de pesquisa ou limpar os filtros.'
+                  : 'Explore as categorias disponíveis para encontrar o serviço de que precisa.'}
               </p>
               {(searchParams.q || searchParams.categoria || searchParams.provincia || searchParams.municipio) && (
                 <a href="/servicos" className="mt-4 inline-block px-4 py-2 border border-card-border rounded-[4px] bg-white text-ink dark:text-cream hover:bg-cream dark:hover:bg-navy-dark transition-colors">
