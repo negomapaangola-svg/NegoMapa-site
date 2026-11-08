@@ -1,5 +1,7 @@
+import Link from 'next/link';
 import { HomeSection, EstadoVazio } from './HomeSection';
 import { Avatar } from '@/components/ui/Avatar';
+import { IMAGENS_ESTADO_VAZIO } from '@/lib/imagens-estados-vazios';
 
 export type ProfissionalHome = {
   id: string;
@@ -27,8 +29,14 @@ export function HomeProfissionais({ profissionais, erro }: Props) {
         <EstadoVazio titulo="" texto="" erro />
       ) : profissionais.length === 0 ? (
         <EstadoVazio
-          titulo="Ainda não há profissionais em destaque"
+          titulo="Ainda não há profissionais disponíveis nesta província"
           texto="Os perfis aprovados aparecerão aqui."
+          imagem={IMAGENS_ESTADO_VAZIO.profissionais}
+          acao={
+            <Link href="/profissionais" className="nm-btn nm-btn-g">
+              Procurar noutra província
+            </Link>
+          }
         />
       ) : (
         <ul className="nm-grid3" aria-label="Profissionais em destaque" style={{ listStyle: 'none', padding: 0, margin: 0 }}>

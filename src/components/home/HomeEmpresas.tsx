@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { HomeSection, EstadoVazio } from './HomeSection';
 import { CompanyLogo } from '@/components/ui/CompanyLogo';
+import { IMAGENS_ESTADO_VAZIO } from '@/lib/imagens-estados-vazios';
 
 export type EmpresaHome = {
   id: string;
@@ -28,8 +29,14 @@ export function HomeEmpresas({ empresas, erro }: Props) {
         <EstadoVazio titulo="" texto="" erro />
       ) : empresas.length === 0 ? (
         <EstadoVazio
-          titulo="Ainda não há empresas em destaque"
+          titulo="Ainda não há empresas aprovadas nesta área"
           texto="As empresas aprovadas aparecerão aqui."
+          imagem={IMAGENS_ESTADO_VAZIO.empresas}
+          acao={
+            <Link href="/empresas" className="nm-btn nm-btn-g">
+              Ver todas as empresas
+            </Link>
+          }
         />
       ) : (
         <ul className="nm-grid3" aria-label="Empresas em destaque" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
