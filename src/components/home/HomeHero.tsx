@@ -30,8 +30,8 @@ export function HomeHero({ children }: HomeHeroProps) {
         <Image
           src={IMAGENS.hero}
           alt=""
-          width={1295}
-          height={1214}
+          width={1672}
+          height={941}
           priority
           sizes="(max-width: 768px) 100vw, 50vw"
           className="h-auto w-full"
