@@ -100,7 +100,7 @@ export default async function ProfissionaisPage({ searchParams }: { searchParams
                 </div>
               ) : (
                 <div className="text-center py-16" role="status">
-                  <h2 className="text-xl font-semibold text-ink dark:text-cream">Nenhum profissional encontrado com estes filtros.</h2>
+                  <h2 className="text-xl font-semibold text-ink dark:text-cream">{temFiltros ? 'Nenhum profissional encontrado com estes filtros.' : 'Ainda não há profissionais disponíveis nesta área.'}</h2>
                   <p className="mt-2 text-neutral-600 dark:text-cream-text max-w-md mx-auto">
                     Experimente alterar os critérios de pesquisa ou limpar os filtros.
                   </p>
