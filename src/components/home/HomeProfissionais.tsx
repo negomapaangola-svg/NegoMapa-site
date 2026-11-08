@@ -42,7 +42,11 @@ export function HomeProfissionais({ profissionais, erro }: Props) {
         <ul className="nm-grid3" aria-label="Profissionais em destaque" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
           {profissionais.map((p) => (
             <li key={p.id}>
-              <div className="nm-card">
+              <Link
+                href={`/profissional/${p.slug}`}
+                aria-label={`Ver perfil de ${p.nome}`}
+                className="nm-card block rounded-[4px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2"
+              >
                 <div className="nm-head">
                   <Avatar
                     src={p.avatar_url}
@@ -52,9 +56,9 @@ export function HomeProfissionais({ profissionais, erro }: Props) {
                     height={56}
                     className="nm-avatar"
                   />
-                  <div>
-                    <h3>{p.nome}</h3>
-                    <p>{[p.municipio, p.provincia].filter(Boolean).join(', ') || 'Angola'}</p>
+                  <div className="min-w-0">
+                    <h3 className="break-words">{p.nome}</h3>
+                    <p className="break-words">{[p.municipio, p.provincia].filter(Boolean).join(', ') || 'Angola'}</p>
                   </div>
                 </div>
                 {p.anos_experiencia != null && (
@@ -62,7 +66,7 @@ export function HomeProfissionais({ profissionais, erro }: Props) {
                     {p.anos_experiencia} {p.anos_experiencia === 1 ? 'ano' : 'anos'} de experiência
                   </p>
                 )}
-              </div>
+              </Link>
             </li>
           ))}
         </ul>
