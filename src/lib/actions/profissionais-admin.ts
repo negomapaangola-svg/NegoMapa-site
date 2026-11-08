@@ -20,8 +20,17 @@ export type ProfissionalAdmin = {
   categoria?: string | null
 }
 
+export type ProfissionalAdminDetalhe = ProfissionalAdmin & {
+  whatsapp: string | null
+  descricao: string | null
+}
+
 export type ProfissionaisAdminResult =
   | { success: true; data: ProfissionalAdmin[] }
+  | { success: false; error: string }
+
+export type ProfissionalAdminDetalheResult =
+  | { success: true; data: ProfissionalAdminDetalhe }
   | { success: false; error: string }
 
 export type AvaliacaoProfissionalResult = {
@@ -46,6 +55,68 @@ export async function getProfissionaisAdmin(): Promise<ProfissionaisAdminResult>
   }
 
   return { success: true, data: (data ?? []) as ProfissionalAdmin[] }
+}
+
+/**
+ * Lê apenas os campos adicionais necessários à página de detalhe.
+ * A leitura directa respeita as políticas RLS existentes; não usa service role
+ * nem tenta contornar uma eventual recusa de acesso.
+ */
+export async function getProfissionalAdminDetalhe(
+  profissionalId: string
+): Promise<ProfissionalAdminDetalheResult> {
+  if (!(await isAdmin())) {
+    return { success: false, error: 'Acesso negado. Privilégios de administrador necessários.' }
+  }
+
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(profissionalId)) {
+    return { success: false, error: 'Identificador de profissional inválido.' }
+  }
+
+  const supabase = await createSupabaseServerClient()
+  const { data: lista, error: erroLista } = await supabase.rpc('admin_listar_profissionais')
+
+  if (erroLista) {
+    console.error('Erro ao localizar profissional para detalhe. Código:', erroLista.code)
+    return { success: false, error: 'Não foi possível carregar os dados administrativos do profissional.' }
+  }
+
+  const profissional = ((lista ?? []) as ProfissionalAdmin[]).find((item) => item.id === profissionalId)
+  if (!profissional) {
+    return { success: false, error: 'Profissional não encontrado ou sem acesso de leitura pela política RLS.' }
+  }
+
+  const { data: detalhe, error: erroDetalhe } = await supabase
+    .from('profissionais')
+    .select('whatsapp, bio')
+    .eq('id', profissionalId)
+    .maybeSingle()
+
+  if (erroDetalhe) {
+    console.error('Erro ao ler detalhe do profissional (admin). Código:', erroDetalhe.code)
+    return {
+      success: false,
+      error: erroDetalhe.code === '42501'
+        ? 'A política RLS não permite a leitura dos dados adicionais deste profissional. Nenhuma protecção foi contornada.'
+        : 'Não foi possível ler os dados adicionais do profissional. Verifique as permissões RLS.',
+    }
+  }
+
+  if (!detalhe) {
+    return {
+      success: false,
+      error: 'Não foi possível obter os dados adicionais do profissional. O registo pode estar indisponível ou a política RLS pode impedir a leitura.',
+    }
+  }
+
+  return {
+    success: true,
+    data: {
+      ...profissional,
+      whatsapp: detalhe.whatsapp ?? null,
+      descricao: detalhe.bio ?? null,
+    },
+  }
 }
 
 export async function avaliarProfissional(
@@ -83,6 +154,7 @@ export async function avaliarProfissional(
     }
 
     revalidatePath('/admin/profissionais')
+    revalidatePath(`/admin/profissionais/${profissionalId}`)
     revalidatePath('/profissionais')
     return { success: true }
   } catch (error) {
