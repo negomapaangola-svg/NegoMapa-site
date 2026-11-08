@@ -38,7 +38,7 @@ export function HomeVagas({ perfil, vagas, erro }: Props) {
           imagem={IMAGENS.estadoVazio.vagas}
         >
           <Link href="/login?redirectTo=/" className="nm-btn nm-btn-p">Entrar</Link>
-          <Link href="/cadastrar-servico" className="nm-btn nm-btn-g">Cadastro de Profissional</Link>
+          <Link href="/cadastrar-profissional" className="nm-btn nm-btn-g">Cadastro de Profissional</Link>
         </EstadoVazio>
       </HomeSection>
     );

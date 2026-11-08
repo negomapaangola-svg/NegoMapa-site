@@ -25,8 +25,8 @@ export default function ContactoPage() {
               </p>
             </CardHeader>
             <CardContent className="mt-6 space-y-8">
-              <div className="p-4 rounded-[4px] border border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-900/20 text-sm text-yellow-800 dark:text-yellow-300">
-                Entidade responsável pela plataforma: a definir pelo responsável da NegóMapa antes da publicação.
+              <div className="p-4 rounded-[4px] border border-card-border bg-white dark:bg-neutral-800 text-sm text-neutral-700 dark:text-cream-text">
+                NegóMapa — Plataforma digital angolana de serviços, profissionais, empresas e oportunidades.
               </div>
               <FormularioContacto />
             </CardContent>

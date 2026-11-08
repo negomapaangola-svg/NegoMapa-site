@@ -20,7 +20,6 @@ const NAV_LINKS = [
   { href: '/profissionais', label: 'Profissionais' },
   { href: '/empresas', label: 'Empresas' },
   { href: '/vagas', label: 'Vagas' },
-  { href: '/investimentos', label: 'Investimentos' },
 ] as const;
 
 function IconeMenu({ aberto }: { aberto: boolean }) {
