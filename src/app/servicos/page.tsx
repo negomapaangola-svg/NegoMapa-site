@@ -1,4 +1,6 @@
 import { Metadata } from 'next';
+import Image from 'next/image';
+import { IMAGENS } from '@/lib/imagens';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card';
@@ -271,7 +273,10 @@ export default async function ServicosPage({
             </p>
           </div>
 
-          <div className="mb-8">
+          <div className="relative mb-8 overflow-hidden rounded-[16px] border border-card-border p-4 sm:p-6">
+            <Image src={IMAGENS.fundoPadrao} alt="" fill sizes="100vw" className="object-cover" />
+            <div className="absolute inset-0 bg-cream/85 dark:bg-navy-dark/90" aria-hidden="true" />
+            <div className="relative">
             <FiltersForm
               initialSearchParams={{
                 q: searchParams.q,
@@ -283,6 +288,7 @@ export default async function ServicosPage({
               provincias={provincias}
               municipios={municipios}
             />
+            </div>
           </div>
 
           <div className="mb-4 flex items-center justify-between">
@@ -316,9 +322,14 @@ export default async function ServicosPage({
             </>
           ) : (
             <div className="text-center py-16" role="alert">
-              <svg className="mx-auto h-16 w-16 text-neutral-300 dark:text-neutral-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+              <Image
+                src={IMAGENS.estadoVazio.servicos}
+                alt=""
+                width={800}
+                height={600}
+                sizes="200px"
+                className="mx-auto h-auto w-44"
+              />
               <h2 className="mt-4 text-xl font-semibold text-ink dark:text-cream">Nenhum serviço encontrado</h2>
               <p className="mt-2 text-neutral-600 dark:text-cream-text max-w-md mx-auto">
                 {searchParams.q || searchParams.categoria || searchParams.provincia || searchParams.municipio

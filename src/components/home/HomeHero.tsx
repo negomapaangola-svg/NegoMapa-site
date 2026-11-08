@@ -1,7 +1,9 @@
 import type { ReactNode } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
+import { IMAGENS } from '@/lib/imagens';
 
-/** Hero do protótipo: texto à esquerda, painel visual à direita (sem fotografias, ver relatório). */
+/** Hero: texto à esquerda, ilustração da marca à direita. Única imagem acima da dobra (priority). */
 interface HomeHeroProps {
   /** Pesquisa do protótipo: fica na coluna de texto, abaixo do lead. */
   children?: ReactNode;
@@ -24,12 +26,15 @@ export function HomeHero({ children }: HomeHeroProps) {
           <Link href="/investimentos" className="nm-btn nm-btn-g">Investidores</Link>
         </div>
       </div>
-      <div className="nm-art" aria-hidden="true">
-        <div className="nm-art-tile">Serviços<span>Perto de si</span></div>
-        <div className="nm-art-tile">Profissionais<span>Avaliações reais</span></div>
-        <div className="nm-art-tile">Vagas<span>Todas as províncias</span></div>
-        <div className="nm-art-tile">Investimento<span>Parceiros</span></div>
-      </div>
+      <Image
+        src={IMAGENS.hero}
+        alt=""
+        width={1672}
+        height={941}
+        priority
+        sizes="(max-width: 768px) 100vw, 50vw"
+        className="h-auto w-full rounded-[16px] border border-[var(--line)]"
+      />
     </section>
   );
 }

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" role="img" aria-label="construcao">
+  <style>
+    .o { stroke: #F97316; }
+    .g { stroke: #374151; }
+    path, circle, rect { stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  </style>
+  <path class="o" d="M3 20h18M5 20V9l7-5 7 5v11"/><path class="g" d="M8 20v-6h8v6M9 9h.01M15 9h.01"/>
+</svg>

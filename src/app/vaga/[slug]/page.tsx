@@ -1,6 +1,8 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
+import { IMAGENS } from "@/lib/imagens";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -168,6 +170,14 @@ export default async function VagaDetailPage({
           </Link>
 
           <Card variant="liquid" padding="lg" className="space-y-8">
+            <Image
+              src={IMAGENS.vagaPadrao}
+              alt=""
+              width={1200}
+              height={800}
+              sizes="(max-width: 768px) 100vw, 768px"
+              className="h-56 w-full rounded-[4px] object-cover"
+            />
             <CardHeader className="space-y-4">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center px-3 py-1 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 text-sm font-medium">

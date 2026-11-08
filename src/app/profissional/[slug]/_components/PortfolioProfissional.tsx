@@ -1,4 +1,6 @@
+import Image from 'next/image';
 import { isHttpsUrl } from '@/lib/utils';
+import { IMAGENS } from '@/lib/imagens';
 import type { PortfolioItem } from '@/lib/actions/profissionais-publicos';
 
 interface PortfolioProfissionalProps {
@@ -18,7 +20,17 @@ export function PortfolioProfissional({ itens }: PortfolioProfissionalProps) {
       </h2>
 
       {validos.length === 0 ? (
-        <p className="mt-4 text-neutral-600 dark:text-cream-text">Ainda não há trabalhos no portfólio.</p>
+        <div className="mt-4 space-y-4">
+          <Image
+            src={IMAGENS.portfolioPadrao}
+            alt=""
+            width={1200}
+            height={800}
+            sizes="(max-width: 768px) 100vw, 448px"
+            className="h-auto w-full max-w-md rounded-xl"
+          />
+          <p className="text-neutral-600 dark:text-cream-text">Ainda não há trabalhos no portfólio.</p>
+        </div>
       ) : (
         <ul role="list" className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
           {validos.map((item, indice) => (

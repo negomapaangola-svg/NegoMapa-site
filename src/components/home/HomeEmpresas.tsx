@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { HomeSection, EstadoVazio } from './HomeSection';
+import { IMAGENS } from '@/lib/imagens';
 
 export type EmpresaHome = {
   id: string;
@@ -28,6 +29,7 @@ export function HomeEmpresas({ empresas, erro }: Props) {
         <EstadoVazio
           titulo="Ainda não há empresas em destaque"
           texto="As empresas aprovadas aparecerão aqui."
+          imagem={IMAGENS.estadoVazio.empresas}
         />
       ) : (
         <ul className="nm-grid3" aria-label="Empresas em destaque" style={{ listStyle: 'none', padding: 0, margin: 0 }}>

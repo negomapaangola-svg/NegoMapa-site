@@ -1,8 +1,10 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card';
 import { formatCurrency } from '@/lib/utils';
+import { IMAGENS } from '@/lib/imagens';
 
 interface Service {
   id: string;
@@ -54,6 +56,14 @@ export function ServiceCard({ service }: { service: Service }) {
 
   return (
     <Card variant="liquid" padding="md" hover className="relative h-full flex flex-col border-card-border">
+      <Image
+        src={IMAGENS.servicoPadrao}
+        alt=""
+        width={1200}
+        height={800}
+        sizes="(max-width: 768px) 100vw, 33vw"
+        className="mb-4 h-36 w-full rounded-[4px] object-cover"
+      />
       <CardHeader>
         <CardTitle className="text-lg line-clamp-2">
           {/* Link principal: cobre o cartão inteiro (camada sobreposta). */}

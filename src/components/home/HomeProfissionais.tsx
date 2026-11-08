@@ -1,4 +1,6 @@
+import Image from 'next/image';
 import { HomeSection, EstadoVazio } from './HomeSection';
+import { IMAGENS } from '@/lib/imagens';
 
 export type ProfissionalHome = {
   id: string;
@@ -28,6 +30,7 @@ export function HomeProfissionais({ profissionais, erro }: Props) {
         <EstadoVazio
           titulo="Ainda não há profissionais em destaque"
           texto="Os perfis aprovados aparecerão aqui."
+          imagem={IMAGENS.estadoVazio.profissionais}
         />
       ) : (
         <ul className="nm-grid3" aria-label="Profissionais em destaque" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
@@ -40,7 +43,7 @@ export function HomeProfissionais({ profissionais, erro }: Props) {
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={p.avatar_url} alt="" width={56} height={56} />
                     ) : (
-                      <span aria-hidden="true">{p.nome.charAt(0).toUpperCase()}</span>
+                      <Image src={IMAGENS.avatarPadrao} alt="" width={56} height={56} sizes="56px" />
                     )}
                   </div>
                   <div>

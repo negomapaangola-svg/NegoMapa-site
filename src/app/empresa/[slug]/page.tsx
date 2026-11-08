@@ -3,6 +3,8 @@
 import * as React from "react"
 import { useParams } from "next/navigation"
 import Link from "next/link"
+import Image from "next/image"
+import { IMAGENS } from "@/lib/imagens"
 import { supabase } from "@/lib/supabase"
 import { isHttpsUrl } from "@/lib/utils"
 import { Card, CardContent } from "@/components/ui/Card"
@@ -147,12 +149,28 @@ function EmpresaContent() {
     <MainLayout>
       <div className="max-w-3xl mx-auto p-6 md:p-8 bg-cream dark:bg-navy-dark">
         <Card variant="default" padding="lg" className="border-card-border">
+          <Image
+            src={IMAGENS.empresaCapaPadrao}
+            alt=""
+            width={1672}
+            height={941}
+            sizes="(max-width: 768px) 100vw, 768px"
+            className="mb-6 h-auto w-full rounded-[4px] object-cover"
+          />
           <div className="mb-6">
-            {isHttpsUrl(empresa.logo_url) && (
+            {isHttpsUrl(empresa.logo_url) ? (
               <img
                 src={empresa.logo_url}
                 alt={`Logótipo de ${empresa.name}`}
                 className="mb-4 h-20 w-20 rounded-md object-contain"
+              />
+            ) : (
+              <Image
+                src={IMAGENS.logoSite}
+                alt="NegóMapa"
+                width={560}
+                height={120}
+                className="mb-4 h-16 w-auto object-contain"
               />
             )}
             <h1 className="text-3xl md:text-4xl font-bold text-ink dark:text-cream">

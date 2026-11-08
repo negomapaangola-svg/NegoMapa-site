@@ -1,7 +1,9 @@
 "use client"
 
 import * as React from "react"
+import Image from "next/image"
 import Link from "next/link"
+import { IMAGENS } from "@/lib/imagens"
 import { supabase } from "@/lib/supabase"
 import { Card, CardContent } from "@/components/ui/Card"
 import { Button } from "@/components/ui/Button"
@@ -172,6 +174,14 @@ function EmpresasContent() {
                 </div>
               ) : empresas.length === 0 ? (
                 <div className="col-span-full text-center py-12">
+                  <Image
+                    src={IMAGENS.estadoVazio.empresas}
+                    alt=""
+                    width={800}
+                    height={600}
+                    sizes="200px"
+                    className="mx-auto mb-4 h-auto w-44"
+                  />
                   <p className="text-lg text-neutral-500 dark:text-cream-text">
                     Nenhuma empresa cadastrada ainda.
                   </p>

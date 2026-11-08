@@ -1,6 +1,8 @@
 ﻿import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
+import { IMAGENS } from '@/lib/imagens';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card';
@@ -188,6 +190,14 @@ export default async function ServicoPage({ params }: { params: Promise<{ slug: 
           </div>
 
           <Card variant="liquid" padding="lg" className="border-card-border">
+            <Image
+              src={IMAGENS.servicoPadrao}
+              alt=""
+              width={1200}
+              height={800}
+              sizes="(max-width: 768px) 100vw, 768px"
+              className="mb-6 h-56 w-full rounded-[4px] object-cover"
+            />
             <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
               <div>
                 {service.categoria && (

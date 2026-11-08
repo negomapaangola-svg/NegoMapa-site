@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" role="img" aria-label="agricultura">
+  <style>
+    .o { stroke: #F97316; }
+    .g { stroke: #374151; }
+    path, circle, rect { stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  </style>
+  <path class="o" d="M12 21V9"/><path class="g" d="M12 13C5 13 4 8 4 5c5 0 8 2 8 8ZM12 16c0-6 3-9 8-9 0 5-2 9-8 9Z"/><path class="o" d="M5 21h14"/>
+</svg>

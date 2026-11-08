@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import Image from 'next/image';
 
 interface HomeSectionProps {
   id: string;
@@ -23,13 +24,25 @@ interface EstadoVazioProps {
   titulo: string;
   texto: string;
   erro?: boolean;
+  /** Ilustração opcional do estado vazio (caminho em public/images). */
+  imagem?: string;
   children?: ReactNode;
 }
 
 /** Estado vazio explícito: não substitui dados por exemplos. */
-export function EstadoVazio({ titulo, texto, erro, children }: EstadoVazioProps) {
+export function EstadoVazio({ titulo, texto, erro, imagem, children }: EstadoVazioProps) {
   return (
     <div role="status" className="nm-empty">
+      {imagem && !erro && (
+        <Image
+          src={imagem}
+          alt=""
+          width={800}
+          height={600}
+          sizes="200px"
+          className="mx-auto mb-4 h-auto w-44"
+        />
+      )}
       <strong>{erro ? 'Não foi possível carregar esta secção' : titulo}</strong>
       <p>{erro ? 'Tente novamente dentro de instantes.' : texto}</p>
       {children && <div className="nm-acoes">{children}</div>}

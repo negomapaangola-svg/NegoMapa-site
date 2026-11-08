@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" role="img" aria-label="juridico">
+  <style>
+    .o { stroke: #F97316; }
+    .g { stroke: #374151; }
+    path, circle, rect { stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  </style>
+  <path class="g" d="M12 3v17M5 7h14M8 20h8"/><path class="o" d="m5 7-3 6h6zM19 7l-3 6h6z"/>
+</svg>

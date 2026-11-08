@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { HomeSection, EstadoVazio } from './HomeSection';
 import type { Perfil } from './constants';
+import { IMAGENS } from '@/lib/imagens';
 
 export type VagaHome = {
   id: string;
@@ -62,7 +63,7 @@ export function HomeVagas({ perfil, vagas, erro }: Props) {
       {erro ? (
         <EstadoVazio titulo="" texto="" erro />
       ) : vagas.length === 0 ? (
-        <EstadoVazio titulo="Não há vagas publicadas de momento" texto="Volte mais tarde ou consulte todas as vagas.">
+        <EstadoVazio titulo="Não há vagas publicadas de momento" texto="Volte mais tarde ou consulte todas as vagas." imagem={IMAGENS.estadoVazio.vagas}>
           <Link href="/vagas" className="nm-btn nm-btn-g">Ver todas as vagas</Link>
         </EstadoVazio>
       ) : (

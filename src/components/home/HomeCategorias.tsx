@@ -1,6 +1,8 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import { HomeSection, EstadoVazio } from './HomeSection';
 import { formatCurrency } from '@/lib/utils';
+import { IMAGENS, iconeCategoria } from '@/lib/imagens';
 
 export type CategoriaHome = { id: string; nome: string; slug: string };
 export type ServicoHome = {
@@ -38,7 +40,8 @@ export function HomeCategorias({ categorias, servicos, erroCategorias, erroServi
         <ul className="nm-chips" aria-label="Categorias" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
           {categorias.map((c) => (
             <li key={c.id}>
-              <Link href={`/servicos?categoria=${encodeURIComponent(c.slug)}`} className="nm-chip">
+              <Link href={`/servicos?categoria=${encodeURIComponent(c.slug)}`} className="nm-chip" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                <Image src={iconeCategoria(c.slug)} alt="" width={18} height={18} unoptimized />
                 {c.nome}
               </Link>
             </li>
@@ -54,6 +57,7 @@ export function HomeCategorias({ categorias, servicos, erroCategorias, erroServi
           <EstadoVazio
             titulo="Ainda não há serviços publicados"
             texto="Os serviços aprovados pelos profissionais aparecerão aqui."
+            imagem={IMAGENS.estadoVazio.servicos}
           />
         ) : (
           <ul className="nm-grid3" style={{ listStyle: 'none', padding: 0, margin: 0 }}>

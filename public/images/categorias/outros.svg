@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" role="img" aria-label="outros">
+  <style>
+    .o { stroke: #F97316; }
+    .g { stroke: #374151; }
+    path, circle, rect { stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  </style>
+  <circle class="o" cx="12" cy="12" r="9"/><circle class="g" cx="7" cy="12" r="1"/><circle class="g" cx="12" cy="12" r="1"/><circle class="g" cx="17" cy="12" r="1"/>
+</svg>

@@ -1,4 +1,6 @@
 import { Metadata } from 'next';
+import Image from 'next/image';
+import { IMAGENS } from '@/lib/imagens';
 import { MainLayout } from '@/components/layout/MainLayout';
 import {
   listarProfissionaisPublicos,
@@ -106,6 +108,14 @@ export default async function ProfissionaisPage({ searchParams }: { searchParams
             </>
           ) : (
             <div className="text-center py-16" role="status">
+              <Image
+                src={IMAGENS.estadoVazio.profissionais}
+                alt=""
+                width={800}
+                height={600}
+                sizes="200px"
+                className="mx-auto mb-4 h-auto w-44"
+              />
               <h2 className="text-xl font-semibold text-ink dark:text-cream">Nenhum profissional disponível</h2>
               <p className="mt-2 text-neutral-600 dark:text-cream-text max-w-md mx-auto">
                 Volte mais tarde para ver novos profissionais.

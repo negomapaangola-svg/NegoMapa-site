@@ -1,6 +1,8 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
+import Image from 'next/image';
 import { notFound } from 'next/navigation';
+import { IMAGENS } from '@/lib/imagens';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -85,7 +87,7 @@ function Avatar({ nome, avatarUrl }: { nome: string; avatarUrl: string | null })
       {mostrarImagem && avatarUrl ? (
         <img src={avatarUrl} alt={nome} className="h-full w-full object-cover" />
       ) : (
-        nome.charAt(0).toUpperCase()
+        <Image src={IMAGENS.avatarPadrao} alt="" width={400} height={400} sizes="80px" className="h-full w-full object-cover" />
       )}
     </div>
   );
@@ -138,6 +140,15 @@ export default async function ProfissionalPublicoPage({ params }: { params: Para
               ← Voltar a profissionais
             </Link>
           </nav>
+
+          <Image
+            src={IMAGENS.profissionalCapaPadrao}
+            alt=""
+            width={1600}
+            height={900}
+            sizes="(max-width: 896px) 100vw, 896px"
+            className="mb-8 h-auto w-full rounded-[16px] object-cover"
+          />
 
           <header className="flex items-center gap-6">
             <Avatar nome={dados.nome} avatarUrl={dados.avatar_url} />

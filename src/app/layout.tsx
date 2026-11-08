@@ -47,7 +47,7 @@ export const metadata: Metadata = {
     description: 'A plataforma líder em Angola para encontrar serviços profissionais e oportunidades de emprego.',
     images: [
       {
-        url: '/og-image.png',
+        url: '/images/og/og-negomapa.png',
         width: 1200,
         height: 630,
         alt: 'NegóMapa',
@@ -58,7 +58,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'NegóMapa',
     description: 'A plataforma líder em Angola para encontrar serviços profissionais e oportunidades de emprego.',
-    images: ['/og-image.png'],
+    images: ['/images/og/og-negomapa.png'],
   },
   icons: {
     icon: '/favicon.ico',

@@ -1,5 +1,7 @@
+import Image from "next/image"
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/Card"
+import { IMAGENS } from "@/lib/imagens"
 import type { VagaPublic } from "@/lib/actions/vagas-public"
 
 export type { VagaPublic }
@@ -52,6 +54,14 @@ export function VagasContent({
               className="block"
             >
               <Card variant="default" padding="md" hover className="h-full border-card-border">
+                <Image
+                  src={IMAGENS.vagaPadrao}
+                  alt=""
+                  width={1200}
+                  height={800}
+                  sizes="(max-width: 768px) 100vw, 33vw"
+                  className="mb-4 h-36 w-full rounded-[4px] object-cover"
+                />
                 <CardContent className="space-y-3">
                   <div className="flex items-start justify-between gap-2">
                     <h3 className="text-lg font-bold text-ink dark:text-cream flex-1 min-w-0 truncate">
@@ -109,6 +119,14 @@ export function VagasContent({
           </div>
         ) : (
           <div className="col-span-full text-center py-12" role="status">
+            <Image
+              src={IMAGENS.estadoVazio.vagas}
+              alt=""
+              width={800}
+              height={600}
+              sizes="200px"
+              className="mx-auto mb-4 h-auto w-44"
+            />
             <h2 className="text-xl font-semibold text-ink dark:text-cream">Ainda não há vagas disponíveis</h2>
             <p className="mt-2 text-neutral-600 dark:text-cream-text">Volte mais tarde para ver novas oportunidades.</p>
           </div>
