@@ -72,13 +72,14 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(
         )}
         role="banner"
       >
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
+        <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8">
+          <div className="flex h-16 items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => router.back()}
-                className="inline-flex min-h-11 items-center gap-2 rounded-md border border-card-border bg-white px-3 text-sm font-semibold text-navy hover:border-orange-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:bg-navy-dark dark:text-cream"
+                aria-label="Voltar"
+                className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md border border-card-border bg-white px-2 text-sm font-semibold text-navy hover:border-orange-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:bg-navy-dark dark:text-cream"
               >
                 <svg aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M19 12H5" />
@@ -89,7 +90,8 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(
 
               <Link
                 href="/"
-                className="inline-flex min-h-11 items-center gap-2 rounded-md border border-card-border bg-white px-3 text-sm font-semibold text-navy hover:border-orange-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:bg-navy-dark dark:text-cream"
+                aria-label="Início"
+                className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md border border-card-border bg-white px-2 text-sm font-semibold text-navy hover:border-orange-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:bg-navy-dark dark:text-cream"
               >
                 <svg aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M3 10.5L12 3l9 7.5" />
@@ -100,7 +102,7 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(
 
               <Link
                 href="/"
-                className="flex items-center gap-2 text-xl font-bold text-navy dark:text-cream"
+                className="hidden sm:flex items-center gap-2 text-xl font-bold text-navy dark:text-cream"
                 aria-label="NegóMapa - Página inicial"
               >
                 <img
@@ -129,7 +131,7 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(
               <PesquisaGlobal />
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <NotificacoesBotao />
 
               <div className="hidden lg:block">
@@ -144,7 +146,7 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(
                 className="inline-flex min-h-11 items-center gap-2 rounded-md border border-card-border bg-white px-3 text-sm font-semibold text-navy hover:border-orange-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:bg-navy-dark dark:text-cream lg:hidden"
               >
                 <IconeMenu aberto={menuAberto} />
-                <span>{menuAberto ? 'Fechar' : 'Menu'}</span>
+                <span className="hidden xs:inline sm:inline">{menuAberto ? 'Fechar' : 'Menu'}</span>
               </button>
             </div>
           </div>
