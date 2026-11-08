@@ -4,7 +4,7 @@ import { forwardRef, ButtonHTMLAttributes, ElementType } from 'react';
 import { cn } from '@/lib/utils';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'liquid' | 'destructive';
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'whatsapp' | 'destructive';
   size?: 'sm' | 'md' | 'lg' | 'xl';
   loading?: boolean;
   fullWidth?: boolean;
@@ -14,7 +14,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const baseStyles = `
   inline-flex items-center justify-center gap-2
-  font-heading font-bold rounded-[4px]
+  font-heading font-bold rounded-xl
   transition-all duration-200 ease-out
   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2
   disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none
@@ -23,40 +23,41 @@ const baseStyles = `
 
 const variants = {
   primary: `
-    bg-orange-500 text-ink
+    bg-orange-500 text-white
     hover:bg-orange-600
     shadow-sm hover:shadow-md
   `,
   secondary: `
-    bg-secondary-100 text-secondary-900 dark:bg-secondary-800 dark:text-secondary-100
-    hover:bg-secondary-200 dark:hover:bg-secondary-700
-    border border-secondary-200 dark:border-secondary-700
+    bg-neutral-100 text-neutral-900
+    hover:bg-neutral-200
+    border border-neutral-200
   `,
   outline: `
-    bg-transparent text-orange-500 dark:text-orange-400
-    border-2 border-orange-500 dark:border-orange-400
-    hover:bg-orange-50 dark:hover:bg-orange-900/20
+    bg-white text-orange-600
+    border border-orange-500
+    hover:bg-orange-50
   `,
   ghost: `
-    bg-transparent text-secondary-700 dark:text-secondary-300
-    hover:bg-secondary-100 dark:hover:bg-secondary-800
+    bg-transparent text-neutral-700
+    hover:bg-neutral-100
+  `,
+  whatsapp: `
+    bg-green-600 text-white
+    hover:bg-green-700
+    shadow-sm hover:shadow-md
   `,
   destructive: `
     bg-red-600 text-white
     hover:bg-red-700
     shadow-sm hover:shadow-md
   `,
-  liquid: `
-    liquid-glass-button text-white
-    shadow-lg
-  `,
 };
 
 const sizes = {
-  sm: 'px-3 py-1.5 text-sm gap-1.5',
-  md: 'px-[26px] py-[12px] text-[14px] gap-2',
-  lg: 'px-6 py-3 text-lg gap-2.5',
-  xl: 'px-8 py-4 text-xl gap-3',
+  sm: 'px-3 py-2 text-sm gap-1.5',
+  md: 'px-5 py-3 text-sm gap-2',
+  lg: 'px-6 py-4 text-base gap-2.5',
+  xl: 'px-8 py-5 text-lg gap-3',
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(

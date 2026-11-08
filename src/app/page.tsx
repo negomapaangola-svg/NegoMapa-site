@@ -7,8 +7,6 @@ import { HomeCategorias, type CategoriaHome, type ServicoHome } from '@/componen
 import { HomeProfissionais, type ProfissionalHome } from '@/components/home/HomeProfissionais';
 import { HomeEmpresas, type EmpresaHome } from '@/components/home/HomeEmpresas';
 import { HomeVagas, type VagaHome } from '@/components/home/HomeVagas';
-import { HomeInvestimentos } from '@/components/home/HomeInvestimentos';
-import { HomeCtaFinal } from '@/components/home/HomeCtaFinal';
 import { HomeStyles } from '@/components/home/HomeStyles';
 import type { Perfil } from '@/components/home/constants';
 
@@ -16,11 +14,6 @@ export const dynamic = 'force-dynamic';
 
 type Erros = { categorias: boolean; servicos: boolean; profissionais: boolean; empresas: boolean; vagas: boolean };
 
-/**
- * Carrega apenas dados já existentes e permitidos por RLS para o perfil atual.
- * Colunas escolhidas respeitam os GRANTs de coluna de `anon`/`authenticated`
- * (ex.: `companies` não expõe `created_at` nem `logo_url` ao anon).
- */
 async function carregarHome() {
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -36,28 +29,27 @@ async function carregarHome() {
   }
 
   const [categorias, servicos, profissionais, empresas] = await Promise.all([
-    supabase.from('categorias').select('id, nome, slug').eq('ativo', true).order('nome').limit(12),
+    supabase.from('categorias').select('id, nome, slug').eq('ativo', true).order('nome').limit(4),
     supabase
       .from('servicos')
       .select('id, titulo, slug, preco, preco_tipo, provincia, municipio')
       .eq('estado', 'aprovado')
       .order('created_at', { ascending: false })
-      .limit(6),
+      .limit(4),
     supabase
       .from('profissionais')
       .select('id, nome, slug, provincia, municipio, anos_experiencia, avatar_url')
       .eq('estado', 'aprovado')
       .order('created_at', { ascending: false })
-      .limit(6),
+      .limit(4),
     supabase
       .from('companies')
       .select('id, name, slug, sector, province, city')
       .eq('is_approved', true)
       .order('name')
-      .limit(6),
+      .limit(4),
   ]);
 
-  // Vagas só são carregadas para profissionais autenticados (regra de acesso).
   const vagasResult = perfil === 'profissional' ? await getVagasPublicas() : null;
 
   const erros: Erros = {
@@ -74,7 +66,7 @@ async function carregarHome() {
     servicos: (servicos.data ?? []) as ServicoHome[],
     profissionais: (profissionais.data ?? []) as ProfissionalHome[],
     empresas: (empresas.data ?? []) as EmpresaHome[],
-    vagas: (vagasResult && vagasResult.success ? vagasResult.data.slice(0, 3) : []) as VagaHome[],
+    vagas: (vagasResult && vagasResult.success ? vagasResult.data.slice(0, 4) : []) as VagaHome[],
     erros,
   };
 }
@@ -99,8 +91,6 @@ export default async function Home() {
           <HomeProfissionais profissionais={dados.profissionais} erro={dados.erros.profissionais} />
           <HomeEmpresas empresas={dados.empresas} erro={dados.erros.empresas} />
           <HomeVagas perfil={dados.perfil} vagas={dados.vagas} erro={dados.erros.vagas} />
-          <HomeInvestimentos perfil={dados.perfil} />
-          <HomeCtaFinal perfil={dados.perfil} />
         </div>
       </div>
     </MainLayout>

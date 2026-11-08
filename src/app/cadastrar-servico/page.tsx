@@ -78,7 +78,7 @@ function ProfileSuspendedPage({ profile }: { profile: { estado: string; nome: st
   return (
     <div className="min-h-screen py-12 lg:py-16 bg-cream dark:bg-navy-dark">
       <div className="mx-auto max-w-2xl px-4 sm:px-6 lg:px-8">
-        <Card variant="liquid" padding="lg" className="border-card-border">
+        <Card variant="default" padding="lg" className="border-card-border">
           <CardHeader>
             <CardTitle className="text-2xl text-center">Perfil Suspenso</CardTitle>
             <CardDescription className="text-center">

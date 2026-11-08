@@ -167,7 +167,7 @@ export default async function VagaDetailPage({
             Voltar às vagas
           </Link>
 
-          <Card variant="liquid" padding="lg" className="space-y-8">
+          <Card variant="default" padding="lg" className="space-y-8">
             <CardHeader className="space-y-4">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center px-3 py-1 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 text-sm font-medium">
@@ -307,7 +307,7 @@ export default async function VagaDetailPage({
                       Entre na sua conta ou crie uma para se candidatar a esta vaga.
                     </p>
                     <Link href={`/registar?redirectTo=${encodeURIComponent(`/vaga/${vaga.slug}`)}`}>
-                      <Button variant="liquid" size="lg">
+                      <Button variant="primary" size="lg">
                         Entrar ou criar conta
                       </Button>
                     </Link>
