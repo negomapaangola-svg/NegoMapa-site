@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     default: 'NegóMapa - Serviços e Empregos em Angola',
     template: '%s | NegóMapa',
   },
-  description: 'A plataforma líder em Angola para encontrar serviços profissionais e oportunidades de emprego. Conectamos pessoas e empresas.',
+  description: 'Plataforma em Angola que liga clientes a profissionais e empresas e apresenta oportunidades de emprego.',
   keywords: ['serviços', 'empregos', 'Angola', 'trabalho', 'profissionais', 'vagas', 'freelance'],
   authors: [{ name: 'NegóMapa' }],
   creator: 'NegóMapa',
@@ -49,7 +49,7 @@ export const metadata: Metadata = {
     locale: 'pt_AO',
     siteName: 'NegóMapa',
     title: 'NegóMapa - Serviços e Empregos em Angola',
-    description: 'A plataforma líder em Angola para encontrar serviços profissionais e oportunidades de emprego.',
+    description: 'Encontre serviços profissionais, profissionais, empresas e oportunidades de emprego em Angola através da NegóMapa.',
     images: [
       {
         url: OG_IMAGE_PATH,
@@ -62,15 +62,12 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'NegóMapa',
-    description: 'A plataforma líder em Angola para encontrar serviços profissionais e oportunidades de emprego.',
+    description: 'Encontre serviços profissionais, profissionais, empresas e oportunidades de emprego em Angola através da NegóMapa.',
     images: [OG_IMAGE_PATH],
   },
   icons: {
     icon: '/favicon.ico',
-    shortcut: '/favicon-16x16.png',
-    apple: '/apple-touch-icon.png',
   },
-  manifest: '/site.webmanifest',
 };
 
 export const viewport: Viewport = {
