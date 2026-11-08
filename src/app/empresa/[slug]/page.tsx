@@ -206,11 +206,11 @@ function EmpresaContent() {
                 <p className="mt-1 text-neutral-900 dark:text-cream">{empresa.phone || 'Não informado'}</p>
               </div>
               <div>
-                <p className="text-sm font-medium text-neutral-500">Email</p>
-                <p className="mt-1 break-all text-neutral-900">{empresa.email || 'Não informado'}</p>
+                <p className="text-sm font-medium text-neutral-500 dark:text-cream-text/70">Email</p>
+                <p className="mt-1 break-all text-neutral-900 dark:text-cream">{empresa.email || 'Não informado'}</p>
               </div>
               <div className="sm:col-span-2">
-                <p className="text-sm font-medium text-neutral-500">Endereço</p>
+                <p className="text-sm font-medium text-neutral-500 dark:text-cream-text/70">Endereço</p>
                 <div className="mt-1 space-y-1 text-neutral-900 dark:text-cream">
                   {temEnderecoDetalhado ? (
                     <>
