@@ -72,9 +72,9 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(
         )}
         role="banner"
       >
-        <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
+        <div className="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8">
+          <div className="flex h-16 items-center justify-between gap-1 sm:gap-4">
+            <div className="flex items-center gap-1 sm:gap-2">
               <button
                 type="button"
                 onClick={() => router.back()}
@@ -102,13 +102,13 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(
 
               <Link
                 href="/"
-                className="hidden sm:flex items-center gap-2 text-xl font-bold text-navy dark:text-cream"
+                className="flex items-center text-navy dark:text-cream"
                 aria-label="NegóMapa - Página inicial"
               >
                 <img
                   src={isDark ? '/identidade/logo-negomapa-fundo-escuro.svg' : '/identidade/logo-negomapa-fundo-claro.svg'}
                   alt="NegóMapa"
-                  className="h-10 w-auto max-w-[180px] object-contain"
+                  className="h-8 w-auto max-w-[110px] object-contain sm:h-10 sm:max-w-[180px]"
                   width="560"
                   height="120"
                 />
@@ -131,7 +131,7 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(
               <PesquisaGlobal />
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-3">
               <NotificacoesBotao />
 
               <div className="hidden lg:block">
@@ -143,10 +143,10 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(
                 onClick={() => setMenuAberto((aberto) => !aberto)}
                 aria-expanded={menuAberto}
                 aria-controls="menu-principal"
-                className="inline-flex min-h-11 items-center gap-2 rounded-md border border-card-border bg-white px-3 text-sm font-semibold text-navy hover:border-orange-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:bg-navy-dark dark:text-cream lg:hidden"
+                className="inline-flex min-h-11 items-center gap-2 rounded-md border border-card-border bg-white px-2 sm:px-3 text-sm font-semibold text-navy hover:border-orange-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:bg-navy-dark dark:text-cream lg:hidden"
               >
                 <IconeMenu aberto={menuAberto} />
-                <span className="hidden xs:inline sm:inline">{menuAberto ? 'Fechar' : 'Menu'}</span>
+                <span className="hidden sm:inline">{menuAberto ? 'Fechar' : 'Menu'}</span>
               </button>
             </div>
           </div>
