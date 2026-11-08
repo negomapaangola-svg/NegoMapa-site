@@ -12,7 +12,7 @@ interface HomeHeroProps {
 export function HomeHero({ children }: HomeHeroProps) {
   return (
     <section className="nm-hero" aria-labelledby="hero-title">
-      <div>
+      <div className="nm-hero-content">
         <span className="nm-eyebrow">NegóMapa</span>
         <h1 id="hero-title">Tudo o que precisa para crescer em Angola</h1>
         <p className="nm-lead">
