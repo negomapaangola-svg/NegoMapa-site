@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
@@ -60,6 +61,14 @@ function formatarData(valor: string): string {
   )
 }
 
+function EstadoBadge({ estado }: { estado: string }) {
+  return (
+    <span className={`inline-flex max-w-full items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${ESTADO_ESTILO[estado] ?? ''}`}>
+      {ESTADO_ROTULO[estado] ?? estado}
+    </span>
+  )
+}
+
 export function ProfissionaisAdminList({ profissionais }: Props) {
   const router = useRouter()
   const [pending, startTransition] = React.useTransition()
@@ -115,8 +124,42 @@ export function ProfissionaisAdminList({ profissionais }: Props) {
 
   const pendentes = profissionais.filter((p) => p.estado === 'pendente').length
 
+  function AcoesProfissional({ profissional }: { profissional: ProfissionalAdmin }) {
+    return (
+      <div className="flex min-w-0 flex-wrap gap-2">
+        <Link
+          href={`/admin/profissionais/${profissional.id}`}
+          className="inline-flex min-h-9 items-center justify-center rounded-[4px] border border-card-border px-3 py-1.5 text-sm font-medium text-ink hover:border-orange-500 hover:text-orange-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:text-cream"
+        >
+          Ver detalhes
+        </Link>
+        {profissional.estado !== 'aprovado' && (
+          <Button variant="primary" size="sm" disabled={pending} onClick={() => abrirConfirmacao('aprovado', profissional)}>
+            Aprovar
+          </Button>
+        )}
+        {profissional.estado !== 'rejeitado' && (
+          <Button variant="destructive" size="sm" disabled={pending} onClick={() => abrirConfirmacao('rejeitado', profissional)}>
+            Rejeitar
+          </Button>
+        )}
+        {profissional.estado !== 'suspenso' && (
+          <Button
+            variant="secondary"
+            size="sm"
+            disabled={!SUSPENSAO_DISPONIVEL || pending}
+            title={SUSPENSAO_DISPONIVEL ? undefined : 'Indisponível até a migração de suspensão ser aplicada.'}
+            onClick={() => abrirConfirmacao('suspenso', profissional)}
+          >
+            Suspender
+          </Button>
+        )}
+      </div>
+    )
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6">
       <div className="flex flex-wrap gap-3 text-sm text-neutral-600 dark:text-cream-text/80">
         <span>Total: {profissionais.length}</span>
         <span>·</span>
@@ -135,8 +178,8 @@ export function ProfissionaisAdminList({ profissionais }: Props) {
           aria-live={feedback.tipo === 'erro' ? 'assertive' : 'polite'}
           className={
             feedback.tipo === 'sucesso'
-              ? 'px-4 py-3 rounded-[4px] border border-green-300 bg-green-50 text-green-800 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800'
-              : 'px-4 py-3 rounded-[4px] border border-red-300 bg-red-50 text-red-800 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800'
+              ? 'rounded-[4px] border border-green-300 bg-green-50 px-4 py-3 text-green-800 dark:border-green-800 dark:bg-green-900/20 dark:text-green-300'
+              : 'rounded-[4px] border border-red-300 bg-red-50 px-4 py-3 text-red-800 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300'
           }
         >
           {feedback.texto}
@@ -145,13 +188,8 @@ export function ProfissionaisAdminList({ profissionais }: Props) {
 
       {acao && (
         <Card variant="default" padding="lg" className="border-card-border space-y-4">
-          <h2 className="text-lg font-bold text-ink dark:text-cream">
-            {TITULO_CONFIRMACAO[acao.tipo]}
-          </h2>
-          <p className="text-neutral-700 dark:text-cream-text">
-            {TEXTO_CONFIRMACAO[acao.tipo](acao.profissional.nome)}
-          </p>
-
+          <h2 className="text-lg font-bold text-ink dark:text-cream">{TITULO_CONFIRMACAO[acao.tipo]}</h2>
+          <p className="text-neutral-700 dark:text-cream-text">{TEXTO_CONFIRMACAO[acao.tipo](acao.profissional.nome)}</p>
           {acao.tipo === 'rejeitado' && (
             <div className="space-y-1">
               <label htmlFor="motivo-rejeicao" className="block text-sm font-medium text-ink dark:text-cream">
@@ -162,25 +200,16 @@ export function ProfissionaisAdminList({ profissionais }: Props) {
                 value={motivo}
                 onChange={(e) => setMotivo(e.target.value)}
                 rows={3}
-                className="w-full px-3 py-2 border border-card-border rounded-[4px] shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white text-ink placeholder:text-neutral-400 dark:bg-neutral-800 dark:text-cream dark:placeholder:text-neutral-400"
+                className="w-full min-w-0 rounded-[4px] border border-card-border bg-white px-3 py-2 text-ink shadow-sm placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-neutral-800 dark:text-cream dark:placeholder:text-neutral-400"
                 placeholder="Descreva o motivo (mínimo 10 caracteres)"
               />
             </div>
           )}
-
-          <div className="flex flex-col sm:flex-row gap-2">
-            <Button
-              variant={acao.tipo === 'aprovado' ? 'primary' : 'destructive'}
-              aria-label={`${TITULO_CONFIRMACAO[acao.tipo]} de ${acao.profissional.nome}`}
-              size="sm"
-              disabled={pending}
-              onClick={confirmar}
-            >
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Button variant={acao.tipo === 'aprovado' ? 'primary' : 'destructive'} aria-label={`${TITULO_CONFIRMACAO[acao.tipo]} de ${acao.profissional.nome}`} size="sm" disabled={pending} onClick={confirmar}>
               {pending ? 'A guardar…' : 'Confirmar'}
             </Button>
-            <Button variant="outline" size="sm" disabled={pending} onClick={cancelar}>
-              Cancelar
-            </Button>
+            <Button variant="outline" size="sm" disabled={pending} onClick={cancelar}>Cancelar</Button>
           </div>
         </Card>
       )}
@@ -190,88 +219,73 @@ export function ProfissionaisAdminList({ profissionais }: Props) {
           <p className="text-neutral-500 dark:text-cream-text/70">Ainda não há profissionais registados.</p>
         </Card>
       ) : (
-        <div className="overflow-x-auto rounded-[4px] border border-card-border">
-          <table className="min-w-full text-sm">
-            <thead className="bg-navy dark:bg-navy-dark text-cream">
-              <tr>
-                <th scope="col" className="px-4 py-3 text-left font-semibold">Nome</th>
-                <th scope="col" className="px-4 py-3 text-left font-semibold">Categoria</th>
-                <th scope="col" className="px-4 py-3 text-left font-semibold">Província</th>
-                <th scope="col" className="px-4 py-3 text-left font-semibold">Estado</th>
-                <th scope="col" className="px-4 py-3 text-left font-semibold">Criado em</th>
-                <th scope="col" className="px-4 py-3 text-left font-semibold">Ações</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-card-border bg-white/50 dark:bg-neutral-800/50">
-              {profissionais.map((profissional) => (
-                <tr key={profissional.id}>
-                  <td className="px-4 py-3 font-medium text-ink dark:text-cream">{profissional.nome}</td>
-                  <td className="px-4 py-3 text-neutral-600 dark:text-cream-text/80">
-                    {profissional.categoria || '—'}
-                  </td>
-                  <td className="px-4 py-3 text-neutral-600 dark:text-cream-text/80">
-                    {profissional.provincia || '—'}
-                    {profissional.municipio && `, ${profissional.municipio}`}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${ESTADO_ESTILO[profissional.estado] ?? ''}`}
-                    >
-                      {ESTADO_ROTULO[profissional.estado] ?? profissional.estado}
-                    </span>
-                    {profissional.estado === 'rejeitado' && profissional.motivo_rejeicao && (
-                      <p className="mt-1 text-xs text-neutral-500 dark:text-cream-text/70">
-                        Motivo: {profissional.motivo_rejeicao}
-                      </p>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-neutral-600 dark:text-cream-text/80 whitespace-nowrap">
-                    {formatarData(profissional.created_at)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex flex-wrap gap-2">
-                      {profissional.estado !== 'aprovado' && (
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          disabled={pending}
-                          onClick={() => abrirConfirmacao('aprovado', profissional)}
-                        >
-                          Aprovar
-                        </Button>
-                      )}
-                      {profissional.estado !== 'rejeitado' && (
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          disabled={pending}
-                          onClick={() => abrirConfirmacao('rejeitado', profissional)}
-                        >
-                          Rejeitar
-                        </Button>
-                      )}
-                      {profissional.estado !== 'suspenso' && (
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          disabled={!SUSPENSAO_DISPONIVEL || pending}
-                          title={
-                            SUSPENSAO_DISPONIVEL
-                              ? undefined
-                              : 'Indisponível até a migração de suspensão ser aplicada.'
-                          }
-                          onClick={() => abrirConfirmacao('suspenso', profissional)}
-                        >
-                          Suspender
-                        </Button>
-                      )}
+        <>
+          <ul className="grid min-w-0 grid-cols-1 gap-4 md:hidden" aria-label="Lista de profissionais">
+            {profissionais.map((profissional) => (
+              <li key={profissional.id} className="min-w-0">
+                <Card variant="default" padding="md" className="min-w-0 space-y-3 border-card-border">
+                  <div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
+                    <h2 className="min-w-0 break-words text-base font-semibold text-ink dark:text-cream">{profissional.nome}</h2>
+                    <EstadoBadge estado={profissional.estado} />
+                  </div>
+                  <dl className="grid min-w-0 grid-cols-1 gap-2 text-sm sm:grid-cols-2">
+                    <div className="min-w-0">
+                      <dt className="text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-cream-text/70">Categoria</dt>
+                      <dd className="break-words text-neutral-700 dark:text-cream-text/90">{profissional.categoria || '—'}</dd>
                     </div>
-                  </td>
+                    <div className="min-w-0">
+                      <dt className="text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-cream-text/70">Província / Município</dt>
+                      <dd className="break-words text-neutral-700 dark:text-cream-text/90">{[profissional.provincia, profissional.municipio].filter(Boolean).join(', ') || '—'}</dd>
+                    </div>
+                    <div className="min-w-0">
+                      <dt className="text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-cream-text/70">Criado em</dt>
+                      <dd className="text-neutral-700 dark:text-cream-text/90">{formatarData(profissional.created_at)}</dd>
+                    </div>
+                    {profissional.estado === 'rejeitado' && profissional.motivo_rejeicao && (
+                      <div className="min-w-0 sm:col-span-2">
+                        <dt className="text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-cream-text/70">Motivo da rejeição</dt>
+                        <dd className="break-words text-neutral-700 dark:text-cream-text/90">{profissional.motivo_rejeicao}</dd>
+                      </div>
+                    )}
+                  </dl>
+                  <AcoesProfissional profissional={profissional} />
+                </Card>
+              </li>
+            ))}
+          </ul>
+
+          <div className="hidden min-w-0 overflow-x-auto rounded-[4px] border border-card-border md:block">
+            <table className="w-full table-auto text-sm">
+              <thead className="bg-navy text-cream dark:bg-navy-dark">
+                <tr>
+                  <th scope="col" className="px-4 py-3 text-left font-semibold">Nome</th>
+                  <th scope="col" className="px-4 py-3 text-left font-semibold">Categoria</th>
+                  <th scope="col" className="px-4 py-3 text-left font-semibold">Província</th>
+                  <th scope="col" className="px-4 py-3 text-left font-semibold">Estado</th>
+                  <th scope="col" className="px-4 py-3 text-left font-semibold">Criado em</th>
+                  <th scope="col" className="px-4 py-3 text-left font-semibold">Ações</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-card-border bg-white/50 dark:bg-neutral-800/50">
+                {profissionais.map((profissional) => (
+                  <tr key={profissional.id}>
+                    <td className="max-w-56 break-words px-4 py-3 font-medium text-ink dark:text-cream">{profissional.nome}</td>
+                    <td className="max-w-48 break-words px-4 py-3 text-neutral-600 dark:text-cream-text/80">{profissional.categoria || '—'}</td>
+                    <td className="max-w-48 break-words px-4 py-3 text-neutral-600 dark:text-cream-text/80">{[profissional.provincia, profissional.municipio].filter(Boolean).join(', ') || '—'}</td>
+                    <td className="px-4 py-3">
+                      <EstadoBadge estado={profissional.estado} />
+                      {profissional.estado === 'rejeitado' && profissional.motivo_rejeicao && (
+                        <p className="mt-1 max-w-56 break-words text-xs text-neutral-500 dark:text-cream-text/70">Motivo: {profissional.motivo_rejeicao}</p>
+                      )}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-neutral-600 dark:text-cream-text/80">{formatarData(profissional.created_at)}</td>
+                    <td className="min-w-64 px-4 py-3"><AcoesProfissional profissional={profissional} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </div>
   )
