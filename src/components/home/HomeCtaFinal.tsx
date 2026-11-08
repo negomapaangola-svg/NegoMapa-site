@@ -1,52 +1,22 @@
 import Link from 'next/link';
-import type { Perfil } from './constants';
 
-interface Props {
-  perfil: Perfil;
-}
-
-export function HomeCtaFinal({ perfil }: Props) {
-  const conteudo =
-    perfil === 'visitante'
-      ? {
-          titulo: 'Comece a usar a NegóMapa',
-          texto: 'Crie a sua conta grátis e encontre serviços, profissionais, vagas e oportunidades em Angola.',
-          acoes: [
-            { href: '/login', label: 'Entrar', primario: false },
-            { href: '/cadastrar-empresa', label: 'Criar conta grátis', primario: true },
-          ],
-        }
-      : perfil === 'profissional'
-        ? {
-            titulo: 'Mantenha o seu perfil atualizado',
-            texto: 'Um perfil completo recebe mais pedidos. Atualize os seus dados e a sua disponibilidade.',
-            acoes: [
-              { href: '/editar-perfil', label: 'Editar perfil', primario: false },
-              { href: '/vagas', label: 'Ver vagas', primario: true },
-            ],
-          }
-        : {
-            titulo: 'Encontre o talento de que precisa',
-            texto: 'Publique vagas e gerencie as suas candidaturas num só lugar.',
-            acoes: [
-              { href: '/empresa/painel/vagas/nova', label: 'Publicar vaga', primario: true },
-              { href: '/empresa/painel/vagas', label: 'Gerir vagas', primario: false },
-            ],
-          };
-
+export function HomeCtaFinal() {
   return (
-    <section className="nm-sec" aria-labelledby="cta-final-title">
-      <div className="nm-cta">
-        <div>
-          <h2 id="cta-final-title">{conteudo.titulo}</h2>
-          <p>{conteudo.texto}</p>
+    <section className="nm-sec" aria-label="Comece no NegóMapa">
+      <div className="nm-cta-grid">
+        <div className="nm-cta">
+          <h2>Precisa de um serviço?</h2>
+          <p>Encontre um profissional perto de si.</p>
+          <Link href="/profissionais" className="nm-btn nm-btn-p">
+            Encontrar um profissional <span aria-hidden="true">→</span>
+          </Link>
         </div>
-        <div className="nm-acoes">
-          {conteudo.acoes.map((a) => (
-            <Link key={a.href} href={a.href} className={`nm-btn ${a.primario ? 'nm-btn-p' : 'nm-btn-g'}`}>
-              {a.label}
-            </Link>
-          ))}
+        <div className="nm-cta">
+          <h2>Oferece um serviço?</h2>
+          <p>Crie o seu perfil profissional.</p>
+          <Link href="/cadastrar-profissional" className="nm-btn nm-btn-g">
+            Criar perfil profissional <span aria-hidden="true">→</span>
+          </Link>
         </div>
       </div>
     </section>
