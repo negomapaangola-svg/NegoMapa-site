@@ -29,6 +29,8 @@ const css = `
 .nm-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;border:1px solid transparent;border-radius:13px;padding:12px 22px;font:inherit;font-weight:700;cursor:pointer;text-decoration:none;transition:background .15s,border-color .15s,transform .15s;white-space:nowrap}
 .nm-home .nm-btn-p{background:var(--accent);color:#fff}
 .nm-home .nm-btn-p:hover{background:var(--accent-d);color:#fff;transform:translateY(-1px)}
+.nm-home .nm-btn-g{background:var(--card);color:var(--text);border-color:var(--line)}
+.nm-home .nm-btn-g:hover{border-color:var(--accent);background:var(--soft)}
 .nm-hero-secondary{display:inline-flex;align-items:center;gap:8px;margin-top:20px;color:var(--text)!important;font-weight:650;text-decoration:none}
 .nm-hero-secondary span{color:var(--accent);font-size:1.2rem}
 .nm-hero-secondary:hover{text-decoration:underline;text-underline-offset:4px}
