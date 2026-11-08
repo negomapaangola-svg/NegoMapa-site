@@ -179,7 +179,7 @@ export function ProfileForm({ initialData, categorias, defaultData }: ProfileFor
   }
 
   return (
-    <Card variant="liquid" padding="lg" className="border-card-border">
+    <Card variant="default" padding="lg" className="border-card-border">
       <CardHeader>
         <CardTitle className="text-2xl">{isEditing ? 'Editar Perfil Profissional' : 'Dados do Profissional'}</CardTitle>
         <CardDescription>

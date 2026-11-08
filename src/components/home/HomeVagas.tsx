@@ -35,6 +35,7 @@ export function HomeVagas({ perfil, vagas, erro }: Props) {
         <EstadoVazio
           titulo="As vagas são para profissionais registados"
           texto="Entre ou crie uma conta de profissional para ver as vagas disponíveis em Angola."
+          imagem={IMAGENS.estadoVazio.vagas}
         >
           <Link href="/login?redirectTo=/" className="nm-btn nm-btn-p">Entrar</Link>
           <Link href="/cadastrar-servico" className="nm-btn nm-btn-g">Cadastro de Profissional</Link>
@@ -49,6 +50,7 @@ export function HomeVagas({ perfil, vagas, erro }: Props) {
         <EstadoVazio
           titulo="Publique a sua primeira vaga"
           texto="As vagas só aparecem publicamente depois de aprovadas pela moderação."
+          imagem={IMAGENS.estadoVazio.vagas}
         >
           <Link href="/empresa/painel/vagas/nova" className="nm-btn nm-btn-p">Publicar vaga</Link>
           <Link href="/empresa/painel/vagas" className="nm-btn nm-btn-g">Gerir as minhas vagas</Link>
@@ -63,7 +65,11 @@ export function HomeVagas({ perfil, vagas, erro }: Props) {
       {erro ? (
         <EstadoVazio titulo="" texto="" erro />
       ) : vagas.length === 0 ? (
-        <EstadoVazio titulo="Não há vagas publicadas de momento" texto="Volte mais tarde ou consulte todas as vagas." imagem={IMAGENS.estadoVazio.vagas}>
+        <EstadoVazio
+          titulo="Ainda não há vagas publicadas"
+          texto="Volte mais tarde ou consulte todas as vagas."
+          imagem={IMAGENS.estadoVazio.vagas}
+        >
           <Link href="/vagas" className="nm-btn nm-btn-g">Ver todas as vagas</Link>
         </EstadoVazio>
       ) : (

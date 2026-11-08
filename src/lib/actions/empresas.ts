@@ -26,6 +26,34 @@ export type ActionResult = {
   error?: string
 }
 
+async function criarNotificacao(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  userId: string,
+  tipo: string,
+  titulo: string,
+  corpo: string,
+  referenciaId: string | null
+): Promise<void> {
+  const { data: preferencias } = await supabase
+    .from('preferencias_notificacao')
+    .select('plataforma')
+    .eq('user_id', userId)
+    .maybeSingle()
+
+  if (preferencias && !preferencias.plataforma) {
+    return
+  }
+
+  await supabase.from('notificacoes').insert({
+    user_id: userId,
+    tipo,
+    titulo,
+    corpo,
+    canal: 'plataforma',
+    referencia_id: referenciaId,
+  })
+}
+
 export async function getAllEmpresasAdmin(): Promise<EmpresasAdminResult> {
   const adminCheck = await isAdmin()
   if (!adminCheck) {
@@ -66,6 +94,16 @@ export async function aprovarEmpresa(empresaId: string): Promise<ActionResult> {
 
   const supabase = await createSupabaseServerClient()
 
+  const { data: empresa, error: leituraError } = await supabase
+    .from('companies')
+    .select('id, name, user_id')
+    .eq('id', empresaId)
+    .maybeSingle()
+
+  if (leituraError || !empresa) {
+    return { success: false, error: 'Empresa não encontrada.' }
+  }
+
   const { data, error } = await supabase
     .from('companies')
     .update({ is_approved: true })
@@ -81,6 +119,17 @@ export async function aprovarEmpresa(empresaId: string): Promise<ActionResult> {
     return { success: false, error: 'A aprovação falhou ou o utilizador não tem permissão.' }
   }
 
+  if (empresa.user_id) {
+    await criarNotificacao(
+      supabase,
+      empresa.user_id,
+      'empresa_aprovada',
+      'Empresa aprovada',
+      `A empresa “${empresa.name}” foi aprovada. Já pode publicar vagas e aparecer na plataforma.`,
+      empresa.id
+    )
+  }
+
   revalidatePath('/admin/empresas')
   return { success: true }
 }
@@ -93,6 +142,16 @@ export async function rejeitarEmpresa(empresaId: string): Promise<ActionResult> 
 
   const supabase = await createSupabaseServerClient()
 
+  const { data: empresa, error: leituraError } = await supabase
+    .from('companies')
+    .select('id, name, user_id')
+    .eq('id', empresaId)
+    .maybeSingle()
+
+  if (leituraError || !empresa) {
+    return { success: false, error: 'Empresa não encontrada.' }
+  }
+
   const { error } = await supabase
     .from('companies')
     .delete()
@@ -101,6 +160,17 @@ export async function rejeitarEmpresa(empresaId: string): Promise<ActionResult> 
   if (error) {
     console.error('Erro ao rejeitar empresa. Código:', error?.code)
     return { success: false, error: 'Erro ao rejeitar empresa. Tente novamente.' }
+  }
+
+  if (empresa.user_id) {
+    await criarNotificacao(
+      supabase,
+      empresa.user_id,
+      'empresa_rejeitada',
+      'Empresa rejeitada',
+      `O cadastro da empresa “${empresa.name}” foi rejeitado. Reveja os dados e torne a submeter, se necessário.`,
+      null
+    )
   }
 
   revalidatePath('/admin/empresas')
@@ -174,11 +244,6 @@ export type EmpresaAdminDetalheResult =
 const URL_ASSINADO_SEGUNDOS = 300
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-/**
- * Detalhe de uma empresa para o administrador.
- * Os ficheiros privados são devolvidos como URL assinado (válido 5 minutos).
- * O caminho do comprovativo é usado apenas no servidor e não é devolvido.
- */
 export async function getEmpresaAdminDetalhe(empresaId: string): Promise<EmpresaAdminDetalheResult> {
   const adminCheck = await isAdmin()
   if (!adminCheck) {
@@ -191,9 +256,6 @@ export async function getEmpresaAdminDetalhe(empresaId: string): Promise<Empresa
 
   const supabase = await createSupabaseServerClient()
 
-  // Função SECURITY DEFINER que verifica admin e devolve só a empresa pedida.
-  // Necessária porque authenticated não tem SELECT em nif, logo_url, whatsapp,
-  // website e documento_legalizacao_path (migração 20261028).
   const { data, error } = await supabase.rpc('admin_obter_empresa', { p_id: empresaId })
 
   if (error) {
@@ -260,13 +322,11 @@ async function assinarFicheiro(
 ): Promise<{ url: string | null; erro: string | null }> {
   if (!caminho) return { url: null, erro: null }
 
-  // O valor é sempre tratado como caminho de objeto no bucket.
   const { data, error } = await supabase.storage
     .from(bucket)
     .createSignedUrl(caminho, URL_ASSINADO_SEGUNDOS)
 
   if (error || !data?.signedUrl) {
-    // Sem a mensagem do storage: pode conter o caminho do ficheiro.
     console.error(`Erro ao gerar URL assinado (${bucket}).`)
     return { url: null, erro: 'Não foi possível abrir o ficheiro. Verifique as permissões de leitura do administrador no bucket.' }
   }

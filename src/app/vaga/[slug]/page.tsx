@@ -169,7 +169,7 @@ export default async function VagaDetailPage({
             Voltar às vagas
           </Link>
 
-          <Card variant="liquid" padding="lg" className="space-y-8">
+          <Card variant="default" padding="lg" className="space-y-8">
             <Image
               src={IMAGENS.vagaPadrao}
               alt=""
@@ -317,7 +317,7 @@ export default async function VagaDetailPage({
                       Entre na sua conta ou crie uma para se candidatar a esta vaga.
                     </p>
                     <Link href={`/registar?redirectTo=${encodeURIComponent(`/vaga/${vaga.slug}`)}`}>
-                      <Button variant="liquid" size="lg">
+                      <Button variant="primary" size="lg">
                         Entrar ou criar conta
                       </Button>
                     </Link>

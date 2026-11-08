@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card';
+import { ServiceImage } from '@/components/ui/ServiceImage';
 import { formatCurrency } from '@/lib/utils';
 import { IMAGENS } from '@/lib/imagens';
 
@@ -16,6 +17,7 @@ interface Service {
   whatsapp: string | null;
   provincia: string | null;
   municipio: string | null;
+  imagem_url?: string | null;
   categoria: {
     id: string;
     nome: string;
@@ -56,14 +58,24 @@ export function ServiceCard({ service }: { service: Service }) {
 
   return (
     <Card variant="liquid" padding="md" hover className="relative h-full flex flex-col border-card-border">
-      <Image
-        src={IMAGENS.servicoPadrao}
-        alt=""
-        width={1200}
-        height={800}
-        sizes="(max-width: 768px) 100vw, 33vw"
-        className="mb-5 h-40 w-full rounded-[16px] object-cover"
-      />
+      {service.imagem_url ? (
+        <ServiceImage
+          src={service.imagem_url}
+          alt={service.titulo}
+          width={400}
+          height={300}
+          className="mb-3 h-40 w-full rounded-lg object-cover"
+        />
+      ) : (
+        <Image
+          src={IMAGENS.servicoPadrao}
+          alt=""
+          width={1200}
+          height={800}
+          sizes="(max-width: 768px) 100vw, 33vw"
+          className="mb-3 h-40 w-full rounded-lg object-cover"
+        />
+      )}
       <CardHeader>
         <CardTitle className="text-lg line-clamp-2">
           {/* Link principal: cobre o cartão inteiro (camada sobreposta). */}

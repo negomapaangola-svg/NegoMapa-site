@@ -1,5 +1,6 @@
-import Image from 'next/image';
+import Link from 'next/link';
 import { HomeSection, EstadoVazio } from './HomeSection';
+import { Avatar } from '@/components/ui/Avatar';
 import { IMAGENS } from '@/lib/imagens';
 
 export type ProfissionalHome = {
@@ -28,9 +29,14 @@ export function HomeProfissionais({ profissionais, erro }: Props) {
         <EstadoVazio titulo="" texto="" erro />
       ) : profissionais.length === 0 ? (
         <EstadoVazio
-          titulo="Ainda não há profissionais em destaque"
+          titulo="Ainda não há profissionais disponíveis nesta província"
           texto="Os perfis aprovados aparecerão aqui."
           imagem={IMAGENS.estadoVazio.profissionais}
+          acao={
+            <Link href="/profissionais" className="nm-btn nm-btn-g">
+              Procurar noutra província
+            </Link>
+          }
         />
       ) : (
         <ul className="nm-grid3" aria-label="Profissionais em destaque" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
@@ -38,14 +44,14 @@ export function HomeProfissionais({ profissionais, erro }: Props) {
             <li key={p.id}>
               <div className="nm-card">
                 <div className="nm-head">
-                  <div className="nm-avatar">
-                    {p.avatar_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={p.avatar_url} alt="" width={56} height={56} />
-                    ) : (
-                      <Image src={IMAGENS.avatarPadrao} alt="" width={56} height={56} sizes="56px" />
-                    )}
-                  </div>
+                  <Avatar
+                    src={p.avatar_url}
+                    alt={`Foto de ${p.nome}`}
+                    name={p.nome}
+                    width={56}
+                    height={56}
+                    className="nm-avatar"
+                  />
                   <div>
                     <h3>{p.nome}</h3>
                     <p>{[p.municipio, p.provincia].filter(Boolean).join(', ') || 'Angola'}</p>

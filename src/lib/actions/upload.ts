@@ -7,6 +7,7 @@ type AllowedBucket =
   | 'empresas-logos'
   | 'profissionais-avatars'
   | 'servicos-imagens'
+  | 'vagas-capas'
   | 'documentos-privados'
 
 type UploadResult =
@@ -14,20 +15,27 @@ type UploadResult =
   | { path: string }
   | { error: string }
 
+const TAMANHO_MAXIMO_IMAGEM = 2 * 1024 * 1024 // 2 MB
+
 const bucketConfig: Record<AllowedBucket, { allowedTypes: string[]; maxSize: number; isPublic: boolean }> = {
   'empresas-logos': {
     allowedTypes: ['image/png', 'image/jpeg', 'image/webp'],
-    maxSize: 2 * 1024 * 1024,
+    maxSize: TAMANHO_MAXIMO_IMAGEM,
     isPublic: true,
   },
   'profissionais-avatars': {
     allowedTypes: ['image/png', 'image/jpeg', 'image/webp'],
-    maxSize: 1 * 1024 * 1024,
+    maxSize: TAMANHO_MAXIMO_IMAGEM,
     isPublic: true,
   },
   'servicos-imagens': {
     allowedTypes: ['image/png', 'image/jpeg', 'image/webp'],
-    maxSize: 5 * 1024 * 1024,
+    maxSize: TAMANHO_MAXIMO_IMAGEM,
+    isPublic: true,
+  },
+  'vagas-capas': {
+    allowedTypes: ['image/png', 'image/jpeg', 'image/webp'],
+    maxSize: TAMANHO_MAXIMO_IMAGEM,
     isPublic: true,
   },
   'documentos-privados': {

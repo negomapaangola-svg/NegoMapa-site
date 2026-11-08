@@ -88,7 +88,7 @@ export function ServiceForm({ categorias }: ServiceFormProps) {
   }
 
   return (
-    <Card variant="liquid" padding="lg" className="border-card-border">
+    <Card variant="default" padding="lg" className="border-card-border">
       <CardHeader>
         <CardTitle className="text-2xl">Detalhes do Serviço</CardTitle>
         <CardDescription>
@@ -269,7 +269,7 @@ export function ServiceForm({ categorias }: ServiceFormProps) {
                 value={formData.municipio}
                 onChange={handleChange}
                 placeholder="Ex: Luanda, Viana, Cacuaco..."
-                className={`w-full px-3 py-2 border border-card-border rounded-[4px] shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-neutral-700 dark:text-cream ${fieldErrors.municipio ? 'border-red-500' : ''}`}
+                className={`w-full mt-1 px-3 py-2 border border-card-border rounded-[4px] shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-neutral-700 dark:text-cream ${fieldErrors.municipio ? 'border-red-500' : ''}`}
                 disabled={status === 'submitting'}
                 required
               />

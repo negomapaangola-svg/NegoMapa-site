@@ -5,7 +5,10 @@ import { notFound } from 'next/navigation';
 import { IMAGENS } from '@/lib/imagens';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { SectionHeader } from '@/components/ui/SectionHeader';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { formatCurrency, isHttpsUrl } from '@/lib/utils';
 import { getUser } from '@/lib/auth';
 import {
@@ -54,7 +57,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   };
 }
 
-function DisponibilidadeLinha({
+function DisponibilidadeBadge({
   dias,
   horarios,
 }: {
@@ -72,22 +75,18 @@ function DisponibilidadeLinha({
   const texto = [diasTexto, horariosTexto].filter(Boolean).join(' · ');
   if (!texto) return null;
 
-  return (
-    <p className="mt-4 text-sm text-neutral-600 dark:text-cream-text">
-      <span className="font-medium text-ink dark:text-cream">Disponibilidade:</span> {texto}
-    </p>
-  );
+  return <Badge variant="neutral">Disponível: {texto}</Badge>;
 }
 
 function Avatar({ nome, avatarUrl }: { nome: string; avatarUrl: string | null }) {
   const mostrarImagem = isHttpsUrl(avatarUrl);
 
   return (
-    <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-neutral-100 dark:bg-white/10 text-2xl font-semibold text-neutral-600 dark:text-cream">
+    <div className="flex h-24 w-24 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-neutral-100 text-3xl font-semibold text-neutral-600">
       {mostrarImagem && avatarUrl ? (
         <img src={avatarUrl} alt={nome} className="h-full w-full object-cover" />
       ) : (
-        <Image src={IMAGENS.avatarPadrao} alt="" width={400} height={400} sizes="80px" className="h-full w-full object-cover" />
+        nome.charAt(0).toUpperCase()
       )}
     </div>
   );
@@ -106,7 +105,6 @@ export default async function ProfissionalPublicoPage({ params }: { params: Para
     getUser(),
   ]);
 
-  // Dados completos da vista pública (só aprovados). Se falhar, mostra-se o perfil básico.
   const dados: ProfissionalContactoPublico = contacto ?? {
     ...profissional,
     whatsapp: null,
@@ -119,7 +117,6 @@ export default async function ProfissionalPublicoPage({ params }: { params: Para
     faixa_preco_desde: null,
   };
 
-  // Não mostrar "Enviar mensagem" a quem é o próprio profissional, nem a outras contas de profissional.
   let eDono = false;
   let ehProfissional = false;
   if (user) {
@@ -133,10 +130,10 @@ export default async function ProfissionalPublicoPage({ params }: { params: Para
 
   return (
     <MainLayout>
-      <section className="py-16 lg:py-24 bg-cream dark:bg-navy-dark" aria-labelledby="profissional-nome">
+      <section className="bg-white py-12 lg:py-16" aria-labelledby="profissional-nome">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-          <nav aria-label="Navegação" className="mb-6">
-            <Link href="/profissionais" className="text-sm text-neutral-600 dark:text-cream-text hover:underline">
+          <nav aria-label="Navegação" className="mb-8">
+            <Link href="/profissionais" className="text-sm font-medium text-neutral-600 hover:text-orange-600">
               ← Voltar a profissionais
             </Link>
           </nav>
@@ -150,87 +147,108 @@ export default async function ProfissionalPublicoPage({ params }: { params: Para
             className="mb-10 h-auto w-full rounded-[24px] object-cover"
           />
 
-          <header className="flex items-center gap-6">
+          <header className="flex flex-col gap-6 sm:flex-row sm:items-center">
             <Avatar nome={dados.nome} avatarUrl={dados.avatar_url} />
             <div>
-              <h1 id="profissional-nome" className="text-4xl sm:text-5xl font-bold tracking-tight text-ink dark:text-cream">
+              <h1 id="profissional-nome" className="text-3xl font-bold tracking-tight text-neutral-900 sm:text-4xl">
                 {dados.nome}
               </h1>
-              <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-neutral-600 dark:text-cream-text">
-                {dados.categoria && <span>{dados.categoria}</span>}
-                {localizacao && <span>{localizacao}</span>}
+              <div className="mt-3 flex flex-wrap items-center gap-2 text-neutral-600">
+                {dados.categoria && <Badge variant="neutral">{dados.categoria}</Badge>}
+                {localizacao && <span className="text-sm">{localizacao}</span>}
                 {dados.anos_experiencia != null && (
-                  <span>
+                  <span className="text-sm">
                     {dados.anos_experiencia} {dados.anos_experiencia === 1 ? 'ano' : 'anos'} de experiência
                   </span>
                 )}
               </div>
+              <div className="mt-4">
+                <DisponibilidadeBadge
+                  dias={dados.disponibilidade_dias}
+                  horarios={dados.disponibilidade_horarios}
+                />
+              </div>
             </div>
           </header>
 
-          <DisponibilidadeLinha dias={dados.disponibilidade_dias} horarios={dados.disponibilidade_horarios} />
-
-          <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center">
+          <div className="mt-8 max-w-md">
             <ProfissionalWhatsApp whatsapp={dados.whatsapp} />
+          </div>
 
-            {user && !eDono && !ehProfissional && <EnviarMensagemButton profissionalId={dados.id} />}
-            {user && !eDono && ehProfissional && (
-              <p role="status" className="text-neutral-600 dark:text-cream-text">
-                {MENSAGEM_BLOQUEIO_PROFISSIONAL}
+          {user && !eDono && !ehProfissional && (
+            <div className="mt-4">
+              <EnviarMensagemButton profissionalId={dados.id} />
+            </div>
+          )}
+
+          {user && !eDono && ehProfissional && (
+            <p role="status" className="mt-4 text-sm text-neutral-600">
+              {MENSAGEM_BLOQUEIO_PROFISSIONAL}
+            </p>
+          )}
+
+          {!user && (
+            <div className="mt-6 rounded-2xl bg-neutral-50 p-6">
+              <p className="text-sm text-neutral-600">
+                Crie uma conta gratuita para enviar mensagens a este profissional.
               </p>
-            )}
-            {!user && (
-              <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                <p className="text-neutral-600 dark:text-cream-text">
-                  Crie uma conta gratuita para enviar mensagens a este profissional.
-                </p>
-                <Button size="lg" asChild>
+              <div className="mt-4">
+                <Button asChild>
                   <Link href={`/registar?redirectTo=${encodeURIComponent(caminho)}`}>Criar conta</Link>
                 </Button>
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
-          <section aria-labelledby="sobre-titulo" className="mt-12">
-            <h2 id="sobre-titulo" className="text-2xl font-semibold text-ink dark:text-cream">Sobre</h2>
-            <p className="mt-4 whitespace-pre-line text-neutral-700 dark:text-cream-text leading-relaxed">
+          <section aria-labelledby="sobre-titulo" className="mt-14">
+            <SectionHeader title="Sobre" />
+            <p className="whitespace-pre-line text-neutral-700 leading-relaxed">
               {dados.bio?.trim() || 'Este profissional ainda não adicionou uma descrição.'}
             </p>
           </section>
 
-          <PortfolioProfissional itens={dados.portfolio} />
+          <section className="mt-14">
+            <PortfolioProfissional itens={dados.portfolio} />
+          </section>
 
-          <AvaliacoesProfissional avaliacoes={avaliacoes} resumo={resumo} />
+          <section className="mt-14">
+            <AvaliacoesProfissional avaliacoes={avaliacoes} resumo={resumo} />
+          </section>
 
-          <section aria-labelledby="servicos-titulo" className="mt-12">
-            <h2 id="servicos-titulo" className="text-2xl font-semibold text-ink dark:text-cream">Serviços</h2>
+          <section aria-labelledby="servicos-titulo" className="mt-14">
+            <SectionHeader
+              id="servicos-titulo"
+              title="Serviços"
+              description="Serviços publicados por este profissional."
+            />
 
             {servicos.length > 0 ? (
-              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6" role="list" aria-label="Serviços do profissional">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 {servicos.map((servico) => (
-                  <div key={servico.id} role="listitem">
-                    <Link href={`/servico/${servico.slug}`} className="block h-full">
-                      <Card variant="liquid" padding="md" hover className="h-full flex flex-col border-card-border">
-                        <CardHeader>
-                          <CardTitle className="text-lg line-clamp-2">{servico.titulo}</CardTitle>
-                          {servico.categoria && (
-                            <CardDescription className="text-sm">{servico.categoria.nome}</CardDescription>
-                          )}
-                        </CardHeader>
-                        <CardContent className="mt-auto">
-                          <p className="text-sm font-medium text-ink dark:text-cream">
-                            {servico.preco != null
-                              ? `${formatCurrency(servico.preco)}${servico.preco_tipo ? ` ${servico.preco_tipo}` : ''}`
-                              : 'Preço sob consulta'}
-                          </p>
-                        </CardContent>
-                      </Card>
-                    </Link>
-                  </div>
+                  <Link key={servico.id} href={`/servico/${servico.slug}`} className="block h-full">
+                    <Card variant="default" padding="md" hover className="h-full">
+                      <CardHeader>
+                        <CardTitle className="line-clamp-2">{servico.titulo}</CardTitle>
+                        {servico.categoria && (
+                          <CardDescription>{servico.categoria.nome}</CardDescription>
+                        )}
+                      </CardHeader>
+                      <CardContent className="mt-auto">
+                        <p className="text-sm font-semibold text-neutral-900">
+                          {servico.preco != null
+                            ? `${formatCurrency(servico.preco)}${servico.preco_tipo ? ` ${servico.preco_tipo}` : ''}`
+                            : 'Preço sob consulta'}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </Link>
                 ))}
               </div>
             ) : (
-              <p className="mt-4 text-neutral-600 dark:text-cream-text">Não há serviços aprovados de momento.</p>
+              <EmptyState
+                title="Ainda não há serviços"
+                description="Os serviços aprovados deste profissional aparecerão aqui."
+              />
             )}
           </section>
         </div>
