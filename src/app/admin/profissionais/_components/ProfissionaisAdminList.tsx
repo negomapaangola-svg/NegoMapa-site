@@ -89,19 +89,26 @@ export function ProfissionaisAdminList({ profissionais }: Props) {
 
     const alvo = acao
     startTransition(async () => {
-      const resultado = await avaliarProfissional(
-        alvo.profissional.id,
-        alvo.tipo,
-        alvo.tipo === 'rejeitado' ? motivoLimpo : undefined
-      )
+      try {
+        const resultado = await avaliarProfissional(
+          alvo.profissional.id,
+          alvo.tipo,
+          alvo.tipo === 'rejeitado' ? motivoLimpo : undefined
+        )
 
-      if (resultado.success) {
-        setFeedback({ tipo: 'sucesso', texto: MENSAGEM_SUCESSO[alvo.tipo](alvo.profissional.nome) })
-        setAcao(null)
-        setMotivo('')
-        router.refresh()
-      } else {
-        setFeedback({ tipo: 'erro', texto: resultado.error ?? 'Ocorreu um erro.' })
+        if (resultado.success) {
+          setFeedback({ tipo: 'sucesso', texto: MENSAGEM_SUCESSO[alvo.tipo](alvo.profissional.nome) })
+          setAcao(null)
+          setMotivo('')
+          router.refresh()
+        } else {
+          setFeedback({ tipo: 'erro', texto: resultado.error ?? 'Não foi possível concluir a operação.' })
+        }
+      } catch {
+        setFeedback({
+          tipo: 'erro',
+          texto: 'Não foi possível comunicar com o servidor. Verifique a ligação e tente novamente.',
+        })
       }
     })
   }
@@ -124,8 +131,8 @@ export function ProfissionaisAdminList({ profissionais }: Props) {
 
       {feedback && (
         <div
-          role="status"
-          aria-live="polite"
+          role={feedback.tipo === 'erro' ? 'alert' : 'status'}
+          aria-live={feedback.tipo === 'erro' ? 'assertive' : 'polite'}
           className={
             feedback.tipo === 'sucesso'
               ? 'px-4 py-3 rounded-[4px] border border-green-300 bg-green-50 text-green-800 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800'
@@ -155,7 +162,7 @@ export function ProfissionaisAdminList({ profissionais }: Props) {
                 value={motivo}
                 onChange={(e) => setMotivo(e.target.value)}
                 rows={3}
-                className="w-full px-3 py-2 border border-card-border rounded-[4px] shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-neutral-700 dark:text-cream"
+                className="w-full px-3 py-2 border border-card-border rounded-[4px] shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white text-ink placeholder:text-neutral-400 dark:bg-neutral-800 dark:text-cream dark:placeholder:text-neutral-400"
                 placeholder="Descreva o motivo (mínimo 10 caracteres)"
               />
             </div>

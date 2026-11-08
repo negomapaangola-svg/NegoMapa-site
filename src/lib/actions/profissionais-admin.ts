@@ -53,34 +53,46 @@ export async function avaliarProfissional(
   estado: EstadoAvaliacao,
   motivo?: string
 ): Promise<AvaliacaoProfissionalResult> {
-  if (!(await isAdmin())) {
-    return { success: false, error: 'Acesso negado. Privilégios de administrador necessários.' }
+  try {
+    if (!(await isAdmin())) {
+      return { success: false, error: 'Acesso negado. Privilégios de administrador necessários.' }
+    }
+
+    if (!ESTADOS_AVALIACAO.includes(estado)) {
+      return { success: false, error: 'Estado inválido.' }
+    }
+
+    if (estado === 'suspenso' && !SUSPENSAO_DISPONIVEL) {
+      return { success: false, error: 'A suspensão ainda não está disponível.' }
+    }
+
+    if (estado === 'rejeitado' && (!motivo || motivo.trim().length < 10)) {
+      return { success: false, error: 'O motivo da rejeição é obrigatório (mínimo 10 caracteres).' }
+    }
+
+    const supabase = await createSupabaseServerClient()
+    const { error } = await supabase.rpc('admin_avaliar_profissional', {
+      p_id: profissionalId,
+      p_estado: estado,
+      p_motivo: estado === 'rejeitado' ? motivo!.trim() : null,
+    })
+
+    if (error) {
+      console.error('Erro ao avaliar profissional (admin). Código:', error.code)
+      return { success: false, error: 'Não foi possível alterar o estado do profissional. Tente novamente.' }
+    }
+
+    revalidatePath('/admin/profissionais')
+    revalidatePath('/profissionais')
+    return { success: true }
+  } catch (error) {
+    console.error(
+      'Erro inesperado ao avaliar profissional (admin):',
+      error instanceof Error ? error.message : 'Erro desconhecido'
+    )
+    return {
+      success: false,
+      error: 'Não foi possível comunicar com o servidor. Verifique a ligação e tente novamente.',
+    }
   }
-
-  if (!ESTADOS_AVALIACAO.includes(estado)) {
-    return { success: false, error: 'Estado inválido.' }
-  }
-
-  if (estado === 'suspenso' && !SUSPENSAO_DISPONIVEL) {
-    return { success: false, error: 'A suspensão ainda não está disponível.' }
-  }
-
-  if (estado === 'rejeitado' && (!motivo || motivo.trim().length < 10)) {
-    return { success: false, error: 'O motivo da rejeição é obrigatório (mínimo 10 caracteres).' }
-  }
-
-  const supabase = await createSupabaseServerClient()
-  const { error } = await supabase.rpc('admin_avaliar_profissional', {
-    p_id: profissionalId,
-    p_estado: estado,
-    p_motivo: estado === 'rejeitado' ? motivo!.trim() : null,
-  })
-
-  if (error) {
-    console.error('Erro ao avaliar profissional (admin). Código:', error.code)
-    return { success: false, error: 'Não foi possível alterar o estado do profissional. Tente novamente.' }
-  }
-
-  revalidatePath('/admin/profissionais')
-  return { success: true }
 }
