@@ -9,7 +9,7 @@ import { HomeStyles } from '@/components/home/HomeStyles';
 
 export default function Home() {
   return (
-    <MainLayout>
+    <MainLayout hideGlobalSearch>
       <div className="nm-home">
         <HomeStyles />
         <div className="nm-wrap">
