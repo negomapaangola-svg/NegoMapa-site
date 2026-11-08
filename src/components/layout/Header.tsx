@@ -73,7 +73,8 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(
         role="banner"
       >
         <div className="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between gap-1 sm:gap-4">
+          <div className="relative flex h-16 items-center justify-between gap-1 sm:gap-4">
+            {/* Lado esquerdo: Voltar + Início */}
             <div className="flex items-center gap-1 sm:gap-2">
               <button
                 type="button"
@@ -99,38 +100,24 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(
                 </svg>
                 <span className="hidden sm:inline">Início</span>
               </Link>
-
-              <Link
-                href="/"
-                className="flex items-center text-navy dark:text-cream"
-                aria-label="NegóMapa - Página inicial"
-              >
-                <img
-                  src={isDark ? '/identidade/logo-negomapa-fundo-escuro.svg' : '/identidade/logo-negomapa-fundo-claro.svg'}
-                  alt="NegóMapa"
-                  className="h-8 w-auto max-w-[110px] object-contain sm:h-10 sm:max-w-[180px]"
-                  width="560"
-                  height="120"
-                />
-              </Link>
             </div>
 
-            <nav className="hidden xl:flex items-center gap-6" role="navigation" aria-label="Navegação principal">
-              {NAV_LINKS.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="whitespace-nowrap text-sm font-medium text-neutral-700 dark:text-cream-text hover:text-orange-500 dark:hover:text-orange-400 transition-colors"
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </nav>
+            {/* Centro: logótipo sempre centrado */}
+            <Link
+              href="/"
+              className="absolute left-1/2 -translate-x-1/2 flex items-center text-navy dark:text-cream"
+              aria-label="NegóMapa - Página inicial"
+            >
+              <img
+                src={isDark ? '/identidade/logo-negomapa-fundo-escuro.svg' : '/identidade/logo-negomapa-fundo-claro.svg'}
+                alt="NegóMapa"
+                className="h-8 w-auto max-w-[110px] object-contain sm:h-10 sm:max-w-[180px]"
+                width="560"
+                height="120"
+              />
+            </Link>
 
-            <div className="hidden flex-1 justify-center lg:flex">
-              <PesquisaGlobal />
-            </div>
-
+            {/* Lado direito: notificações + menu */}
             <div className="flex items-center gap-1 sm:gap-3">
               <NotificacoesBotao />
 
@@ -149,6 +136,19 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(
                 <span className="hidden sm:inline">{menuAberto ? 'Fechar' : 'Menu'}</span>
               </button>
             </div>
+          </div>
+
+          {/* Navegação principal em desktop */}
+          <div className="hidden xl:flex items-center justify-center gap-6 pb-2">
+            {NAV_LINKS.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="whitespace-nowrap text-sm font-medium text-neutral-700 dark:text-cream-text hover:text-orange-500 dark:hover:text-orange-400 transition-colors"
+              >
+                {link.label}
+              </Link>
+            ))}
           </div>
 
           <div className="pb-3 lg:hidden">
