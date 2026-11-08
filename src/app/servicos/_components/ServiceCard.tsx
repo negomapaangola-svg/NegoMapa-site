@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card';nimport { ServiceImage } from '@/components/ui/ServiceImage';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card';
+import { ServiceImage } from '@/components/ui/ServiceImage';
 import { formatCurrency } from '@/lib/utils';
 
 interface Service {
