@@ -41,15 +41,15 @@ export const Footer = forwardRef<HTMLElement, FooterProps>(
       <footer
         ref={ref}
         className={cn(
-          'bg-navy-dark border-t border-card-border',
+          'min-w-0 overflow-x-clip bg-navy-dark border-t border-card-border',
           className
         )}
         role="contentinfo"
       >
-        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
-          <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
-            <div className="col-span-2 md:col-span-1">
-              <Link href="/" className="flex items-center gap-2 text-xl font-bold text-cream" aria-label="NegóMapa - Página inicial">
+        <div className="mx-auto min-w-0 max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
+          <div className="grid min-w-0 grid-cols-2 gap-8 md:grid-cols-4">
+            <div className="col-span-2 min-w-0 md:col-span-1">
+              <Link href="/" className="flex min-w-0 items-center gap-2 text-xl font-bold text-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:ring-offset-2 focus-visible:ring-offset-navy-dark" aria-label="NegóMapa - Página inicial">
                 <img
                   src="/identidade/logo-negomapa-fundo-escuro.svg"
                   alt="NegóMapa"
@@ -57,7 +57,6 @@ export const Footer = forwardRef<HTMLElement, FooterProps>(
                   width="560"
                   height="120"
                 />
-                <span>NegóMapa</span>
               </Link>
               <p className="mt-4 text-sm text-cream-text max-w-xs">
                 Uma plataforma para encontrar serviços profissionais e oportunidades de emprego em Angola.
@@ -65,12 +64,12 @@ export const Footer = forwardRef<HTMLElement, FooterProps>(
             </div>
 
             {Object.entries(footerLinks).map(([grupo, links]) => (
-              <nav key={grupo} aria-label={TITULOS_GRUPO[grupo]}>
+              <nav key={grupo} className="min-w-0" aria-label={TITULOS_GRUPO[grupo]}>
                 <h3 className="text-sm font-semibold text-cream uppercase tracking-wider">{TITULOS_GRUPO[grupo]}</h3>
                 <ul className="mt-4 space-y-3" role="list">
                   {links.map((link) => (
                     <li key={link.href}>
-                      <Link href={link.href} className="text-sm text-cream-text hover:text-orange-500 transition-colors">
+                      <Link href={link.href} className="break-words text-sm text-cream-text hover:text-orange-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:ring-offset-2 focus-visible:ring-offset-navy-dark rounded-sm">
                         {link.label}
                       </Link>
                     </li>
