@@ -1,10 +1,12 @@
 import type { ReactNode } from 'react';
+import { HeroImage } from '@/components/ui/HeroImage';
 
 interface HomeHeroProps {
   children?: ReactNode;
+  imagemUrl?: string | null;
 }
 
-export function HomeHero({ children }: HomeHeroProps) {
+export function HomeHero({ children, imagemUrl }: HomeHeroProps) {
   return (
     <section className="nm-hero" aria-labelledby="hero-title">
       <div>
@@ -16,10 +18,22 @@ export function HomeHero({ children }: HomeHeroProps) {
         {children}
       </div>
       <div className="nm-art" aria-hidden="true">
-        <div className="nm-art-tile">Serviços<span>Perto de si</span></div>
-        <div className="nm-art-tile">Profissionais<span>Avaliações reais</span></div>
-        <div className="nm-art-tile">Vagas<span>Todas as províncias</span></div>
-        <div className="nm-art-tile">Empresas<span>Verificadas</span></div>
+        {imagemUrl ? (
+          <HeroImage
+            src={imagemUrl}
+            alt="Ilustração do NegóMapa"
+            width={800}
+            height={600}
+            className="nm-hero-imagem"
+          />
+        ) : (
+          <>
+            <div className="nm-art-tile">Serviços<span>Perto de si</span></div>
+            <div className="nm-art-tile">Profissionais<span>Avaliações reais</span></div>
+            <div className="nm-art-tile">Vagas<span>Todas as províncias</span></div>
+            <div className="nm-art-tile">Empresas<span>Verificadas</span></div>
+          </>
+        )}
       </div>
     </section>
   );

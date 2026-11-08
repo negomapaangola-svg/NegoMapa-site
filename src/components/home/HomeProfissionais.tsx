@@ -1,4 +1,5 @@
 import { HomeSection, EstadoVazio } from './HomeSection';
+import { Avatar } from '@/components/ui/Avatar';
 
 export type ProfissionalHome = {
   id: string;
@@ -35,14 +36,14 @@ export function HomeProfissionais({ profissionais, erro }: Props) {
             <li key={p.id}>
               <div className="nm-card">
                 <div className="nm-head">
-                  <div className="nm-avatar">
-                    {p.avatar_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={p.avatar_url} alt="" width={56} height={56} />
-                    ) : (
-                      <span aria-hidden="true">{p.nome.charAt(0).toUpperCase()}</span>
-                    )}
-                  </div>
+                  <Avatar
+                    src={p.avatar_url}
+                    alt={`Foto de ${p.nome}`}
+                    name={p.nome}
+                    width={56}
+                    height={56}
+                    className="nm-avatar"
+                  />
                   <div>
                     <h3>{p.nome}</h3>
                     <p>{[p.municipio, p.provincia].filter(Boolean).join(', ') || 'Angola'}</p>

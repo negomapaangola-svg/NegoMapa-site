@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { HomeSection, EstadoVazio } from './HomeSection';
+import { CompanyLogo } from '@/components/ui/CompanyLogo';
 
 export type EmpresaHome = {
   id: string;
@@ -8,6 +9,7 @@ export type EmpresaHome = {
   sector: string | null;
   province: string | null;
   city: string | null;
+  logo_url?: string | null;
 };
 
 interface Props {
@@ -34,6 +36,15 @@ export function HomeEmpresas({ empresas, erro }: Props) {
           {empresas.map((e) => (
             <li key={e.id}>
               <Link href={`/empresa/${e.slug}`} className="nm-card">
+                {e.logo_url ? (
+                  <CompanyLogo
+                    src={e.logo_url}
+                    alt={`Logótipo de ${e.name}`}
+                    name={e.name}
+                    width={48}
+                    height={48}
+                  />
+                ) : null}
                 <h3>{e.name}</h3>
                 <p>{[e.sector, e.city || e.province].filter(Boolean).join(' · ') || 'Angola'}</p>
                 <span className="nm-go">Ver empresa →</span>
