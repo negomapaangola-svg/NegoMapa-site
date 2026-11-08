@@ -14,8 +14,8 @@ const footerLinks = {
     { label: 'Profissionais', href: '/profissionais' },
     { label: 'Empresas', href: '/empresas' },
     { label: 'Vagas', href: '/vagas' },
-    { label: 'Cadastrar Empresa', href: '/cadastrar-empresa' },
-    { label: 'Cadastrar Profissional', href: '/cadastrar-profissional' },
+    { label: 'Registar empresa', href: '/cadastrar-empresa' },
+    { label: 'Registar profissional', href: '/cadastrar-profissional' },
   ],
   informacao: [
     { label: 'Regras para Profissionais', href: '/regras-profissionais' },
@@ -60,7 +60,7 @@ export const Footer = forwardRef<HTMLElement, FooterProps>(
                 <span>NegóMapa</span>
               </Link>
               <p className="mt-4 text-sm text-cream-text max-w-xs">
-                A plataforma líder em Angola para encontrar serviços profissionais e oportunidades de emprego. Conectamos pessoas e empresas.
+                Uma plataforma para encontrar serviços profissionais e oportunidades de emprego em Angola.
               </p>
             </div>
 

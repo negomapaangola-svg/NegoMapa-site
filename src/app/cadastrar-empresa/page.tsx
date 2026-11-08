@@ -122,7 +122,7 @@ export default function CadastrarEmpresaPage() {
       setUser(data.session.user)
       return
     }
-    // Confirmação de email activa: mostrar "Verifique o seu email"
+    // Confirmação de email activa: mostrar "Confirme o seu endereço de email"
     setPendingEmail(email)
   }
 
@@ -368,7 +368,7 @@ export default function CadastrarEmpresaPage() {
       <MainLayout>
         <div className="min-h-screen p-4 md:p-8 bg-cream dark:bg-navy-dark">
           <div className="max-w-md mx-auto space-y-4 bg-white rounded-[4px] p-6 shadow dark:bg-neutral-800">
-            <h1 className="text-2xl font-bold text-ink dark:text-cream text-center">Cadastro enviado</h1>
+            <h1 className="text-2xl font-bold text-ink dark:text-cream text-center">Registo enviado</h1>
             <p className="text-neutral-600 dark:text-cream-text">
               A sua empresa fica pendente até a equipa NegóMapa a aprovar. Só será publicada depois da aprovação.
             </p>
