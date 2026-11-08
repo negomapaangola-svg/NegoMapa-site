@@ -17,10 +17,10 @@ const css = `
 .nm-wrap{max-width:1280px;margin:0 auto;padding:8px 16px 48px}
 @media (min-width:640px){.nm-wrap{padding-inline:24px}}
 @media (min-width:1024px){.nm-wrap{padding-inline:32px}}
-.nm-hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:end;padding:40px 0 0;overflow-x:hidden}
+.nm-hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:stretch;min-height:520px;padding:40px 0 0;overflow-x:hidden}
 .nm-hero>div:first-child{align-self:center;padding-bottom:24px}
-.nm-hero-art{position:relative;justify-self:end;align-self:end;width:100%;max-width:680px;line-height:0;background:transparent}
-.nm-hero-art img{display:block;width:100%;height:auto;border:0;border-radius:0;box-shadow:none;filter:none}
+.nm-hero-art{position:relative;justify-self:center;align-self:end;width:100%;height:100%;max-width:none;line-height:0;background:transparent;display:flex;align-items:flex-end;justify-content:center}
+.nm-hero-art img{display:block;height:100%;width:auto;max-width:100%;object-fit:contain;object-position:bottom;border:0;border-radius:0;box-shadow:none;filter:none}
 .nm-eyebrow{display:inline-block;font-size:.78rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
 .nm-lead{color:var(--muted);font-size:1.05rem;max-width:32em}
 .nm-art{position:relative;aspect-ratio:4/3;border-radius:16px;border:1px solid var(--line);background:var(--soft);display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:16px;align-content:center}
@@ -73,7 +73,7 @@ a.nm-card:hover,a.nm-card:focus-visible{border-color:var(--accent);transform:tra
 /* Responsivo (breakpoints do protótipo: 1000px, 820px, 560px) */
 @media (max-width:1000px){.nm-grid3{grid-template-columns:repeat(2,minmax(0,1fr))}.nm-grid3>:last-child:nth-child(odd){grid-column:1/-1}}
 @media (max-width:820px){
-  .nm-hero{grid-template-columns:minmax(0,2fr) minmax(0,3fr);gap:12px;padding-top:28px}
+  .nm-hero{grid-template-columns:minmax(0,2fr) minmax(0,3fr);gap:12px;padding-top:28px;min-height:0}
   .nm-hero h1{font-size:1.15rem}
   .nm-lead{font-size:.95rem}
   .nm-art{aspect-ratio:3/4;grid-template-columns:1fr;align-content:center}
@@ -85,10 +85,10 @@ a.nm-card:hover,a.nm-card:focus-visible{border-color:var(--accent);transform:tra
   .nm-caminhos .nm-btn{padding:9px 10px;font-size:.85rem}
 }
 @media (max-width:560px){
-  .nm-hero{grid-template-columns:minmax(0,1fr);gap:16px;padding-top:24px}
+  .nm-hero{grid-template-columns:minmax(0,1fr);gap:16px;padding-top:24px;min-height:0}
   .nm-hero>div:first-child{padding-bottom:0}
-  .nm-hero-art{order:-1;max-width:100%;justify-self:center}
-  .nm-hero-art img{display:block}
+  .nm-hero-art{order:-1;max-width:100%;height:auto;justify-self:center}
+  .nm-hero-art img{display:block;width:100%;height:auto;max-height:340px;object-fit:contain;object-position:top}
   .nm-hero h1{font-size:clamp(1.6rem,7.5vw,2rem)}
   .nm-lead{font-size:1rem}
   .nm-art{aspect-ratio:4/3;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
