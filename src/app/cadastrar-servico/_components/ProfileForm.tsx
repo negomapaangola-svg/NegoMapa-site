@@ -400,7 +400,7 @@ export function ProfileForm({ initialData, categorias, defaultData }: ProfileFor
                 Horários de Disponibilidade
               </label>
               <div className="flex flex-wrap gap-3 mt-1">
-                [
+                {[
                   { key: 'manha', label: 'Manhã' },
                   { key: 'tarde', label: 'Tarde' },
                   { key: 'noite', label: 'Noite' },
