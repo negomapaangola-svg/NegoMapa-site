@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Inter, Space_Grotesk } from 'next/font/google';
 import './globals.css';
 import { AdminBottomBar } from '@/components/layout/AdminBottomBar';
+import { OG_IMAGE_PATH, OG_IMAGE_WIDTH, OG_IMAGE_HEIGHT } from '@/lib/og';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -47,9 +48,9 @@ export const metadata: Metadata = {
     description: 'A plataforma líder em Angola para encontrar serviços profissionais e oportunidades de emprego.',
     images: [
       {
-        url: '/og-image.png',
-        width: 1200,
-        height: 630,
+        url: OG_IMAGE_PATH,
+        width: OG_IMAGE_WIDTH,
+        height: OG_IMAGE_HEIGHT,
         alt: 'NegóMapa',
       },
     ],
@@ -58,7 +59,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'NegóMapa',
     description: 'A plataforma líder em Angola para encontrar serviços profissionais e oportunidades de emprego.',
-    images: ['/og-image.png'],
+    images: [OG_IMAGE_PATH],
   },
   icons: {
     icon: '/favicon.ico',
