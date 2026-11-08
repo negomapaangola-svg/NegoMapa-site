@@ -328,7 +328,7 @@ export default async function ServicosPage({
                 width={800}
                 height={600}
                 sizes="200px"
-                className="mx-auto h-auto w-44"
+                className="mx-auto mb-5 h-auto w-32 opacity-90"
               />
               <h2 className="mt-4 text-xl font-semibold text-ink dark:text-cream">Nenhum serviço encontrado</h2>
               <p className="mt-2 text-neutral-600 dark:text-cream-text max-w-md mx-auto">

@@ -60,7 +60,7 @@ export function VagasContent({
                   width={1200}
                   height={800}
                   sizes="(max-width: 768px) 100vw, 33vw"
-                  className="mb-4 h-36 w-full rounded-[4px] object-cover"
+                  className="mb-5 h-40 w-full rounded-[16px] object-cover"
                 />
                 <CardContent className="space-y-3">
                   <div className="flex items-start justify-between gap-2">
@@ -125,7 +125,7 @@ export function VagasContent({
               width={800}
               height={600}
               sizes="200px"
-              className="mx-auto mb-4 h-auto w-44"
+              className="mx-auto mb-5 h-auto w-32 opacity-90"
             />
             <h2 className="text-xl font-semibold text-ink dark:text-cream">Ainda não há vagas disponíveis</h2>
             <p className="mt-2 text-neutral-600 dark:text-cream-text">Volte mais tarde para ver novas oportunidades.</p>

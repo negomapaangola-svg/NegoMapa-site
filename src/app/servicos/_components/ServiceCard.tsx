@@ -62,7 +62,7 @@ export function ServiceCard({ service }: { service: Service }) {
         width={1200}
         height={800}
         sizes="(max-width: 768px) 100vw, 33vw"
-        className="mb-4 h-36 w-full rounded-[4px] object-cover"
+        className="mb-5 h-40 w-full rounded-[16px] object-cover"
       />
       <CardHeader>
         <CardTitle className="text-lg line-clamp-2">

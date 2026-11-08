@@ -196,7 +196,7 @@ export default async function ServicoPage({ params }: { params: Promise<{ slug: 
               width={1200}
               height={800}
               sizes="(max-width: 768px) 100vw, 768px"
-              className="mb-6 h-56 w-full rounded-[4px] object-cover"
+              className="mb-6 h-56 w-full rounded-[16px] object-cover"
             />
             <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
               <div>

@@ -26,15 +26,17 @@ export function HomeHero({ children }: HomeHeroProps) {
           <Link href="/investimentos" className="nm-btn nm-btn-g">Investidores</Link>
         </div>
       </div>
-      <Image
-        src={IMAGENS.hero}
-        alt=""
-        width={1672}
-        height={941}
-        priority
-        sizes="(max-width: 768px) 100vw, 50vw"
-        className="h-auto w-full rounded-[16px] border border-[var(--line)]"
-      />
+      <div className="nm-hero-art">
+        <Image
+          src={IMAGENS.hero}
+          alt=""
+          width={1672}
+          height={941}
+          priority
+          sizes="(max-width: 768px) 100vw, 50vw"
+          className="h-auto w-full"
+        />
+      </div>
     </section>
   );
 }

@@ -176,7 +176,7 @@ export default async function VagaDetailPage({
               width={1200}
               height={800}
               sizes="(max-width: 768px) 100vw, 768px"
-              className="h-56 w-full rounded-[4px] object-cover"
+              className="mb-2 h-56 w-full rounded-[16px] object-cover"
             />
             <CardHeader className="space-y-4">
               <div className="flex flex-wrap items-center gap-2">

@@ -180,7 +180,7 @@ function EmpresasContent() {
                     width={800}
                     height={600}
                     sizes="200px"
-                    className="mx-auto mb-4 h-auto w-44"
+                    className="mx-auto mb-5 h-auto w-32 opacity-90"
                   />
                   <p className="text-lg text-neutral-500 dark:text-cream-text">
                     Nenhuma empresa cadastrada ainda.

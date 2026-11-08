@@ -40,7 +40,7 @@ export function EstadoVazio({ titulo, texto, erro, imagem, children }: EstadoVaz
           width={800}
           height={600}
           sizes="200px"
-          className="mx-auto mb-4 h-auto w-44"
+          className="mx-auto mb-5 h-auto w-32 opacity-90"
         />
       )}
       <strong>{erro ? 'Não foi possível carregar esta secção' : titulo}</strong>

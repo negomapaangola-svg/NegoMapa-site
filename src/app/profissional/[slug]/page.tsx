@@ -147,7 +147,7 @@ export default async function ProfissionalPublicoPage({ params }: { params: Para
             width={1600}
             height={900}
             sizes="(max-width: 896px) 100vw, 896px"
-            className="mb-8 h-auto w-full rounded-[16px] object-cover"
+            className="mb-10 h-auto w-full rounded-[24px] object-cover"
           />
 
           <header className="flex items-center gap-6">

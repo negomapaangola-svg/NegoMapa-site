@@ -155,7 +155,7 @@ function EmpresaContent() {
             width={1672}
             height={941}
             sizes="(max-width: 768px) 100vw, 768px"
-            className="mb-6 h-auto w-full rounded-[4px] object-cover"
+            className="mb-6 h-auto w-full rounded-[16px] object-cover"
           />
           <div className="mb-6">
             {isHttpsUrl(empresa.logo_url) ? (
