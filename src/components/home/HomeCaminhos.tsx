@@ -12,7 +12,7 @@ const caminhos = [
   {
     titulo: 'Produtos',
     descricao: 'Descubra produtos de empresas angolanas.',
-    href: '/empresas',
+    href: '/descobrir?tipo=produtos',
     imagem: '/images/home/produtos.webp',
     alt: 'Produtos disponíveis numa empresa angolana',
   },
