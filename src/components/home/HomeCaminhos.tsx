@@ -7,28 +7,24 @@ const caminhos = [
     descricao: 'Encontre quem pode ajudar.',
     href: '/servicos',
     imagem: '/images/home/servicos.webp',
-    alt: 'Técnico angolano a trabalhar numa instalação eléctrica',
   },
   {
     titulo: 'Profissionais',
     descricao: 'Descubra quem pode ajudar.',
     href: '/profissionais',
     imagem: '/images/home/profissionais.webp',
-    alt: 'Profissional de costura no seu espaço de trabalho',
   },
   {
     titulo: 'Empresas',
     descricao: 'Conheça empresas.',
     href: '/empresas',
     imagem: '/images/home/empresas.webp',
-    alt: 'Pequeno empresário à entrada da sua loja',
   },
   {
     titulo: 'Vagas',
     descricao: 'Encontre oportunidades.',
     href: '/vagas',
     imagem: '/images/home/vagas.webp',
-    alt: 'Candidata numa conversa de entrevista profissional',
   },
 ];
 
@@ -41,19 +37,20 @@ export function HomeCaminhos() {
       <div className="nm-path-grid">
         {caminhos.map((caminho) => (
           <Link key={caminho.href} href={caminho.href} className="nm-path-card">
-            <span className="nm-path-media">
-              <Image
-                src={caminho.imagem}
-                alt={caminho.alt}
-                width={640}
-                height={480}
-                sizes="(max-width: 640px) 100vw, (max-width: 900px) 48vw, 25vw"
-                className="nm-card-image"
-              />
-            </span>
-            <h3>{caminho.titulo}</h3>
-            <p>{caminho.descricao}</p>
-            <span className="nm-path-link">Explorar <span aria-hidden="true">→</span></span>
+            <Image
+              src={caminho.imagem}
+              alt=""
+              width={640}
+              height={480}
+              loading="lazy"
+              sizes="(min-width: 901px) 25vw, (min-width: 641px) 50vw, 100vw"
+              className="nm-card-img"
+            />
+            <div className="nm-card-body">
+              <h3>{caminho.titulo}</h3>
+              <p>{caminho.descricao}</p>
+              <span className="nm-path-link">Explorar <span aria-hidden="true">→</span></span>
+            </div>
           </Link>
         ))}
       </div>

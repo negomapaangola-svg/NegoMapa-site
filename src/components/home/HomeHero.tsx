@@ -1,5 +1,5 @@
-import Image from 'next/image';
 import type { ReactNode } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 
 interface HomeHeroProps {
@@ -20,15 +20,15 @@ export function HomeHero({ children }: HomeHeroProps) {
           Publicar serviço <span aria-hidden="true">→</span>
         </Link>
       </div>
-      <div className="nm-hero-media">
+      <div className="nm-hero-art">
         <Image
           src="/images/hero/hero-plataforma-clientes-profissionais.png"
-          alt="Clientes e profissionais a ligarem-se através do NegóMapa"
-          width={1200}
-          height={900}
+          alt="Clientes e profissionais a usar o NegóMapa"
+          width={1536}
+          height={864}
           priority
-          sizes="(max-width: 640px) 100vw, (max-width: 1100px) 48vw, 560px"
-          className="nm-hero-image"
+          sizes="(min-width: 1024px) 50vw, 100vw"
+          className="nm-hero-img"
         />
       </div>
     </section>

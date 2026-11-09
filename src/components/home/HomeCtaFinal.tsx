@@ -8,32 +8,38 @@ export function HomeCtaFinal() {
         <div className="nm-cta">
           <Image
             src="/images/home/precisa-servico.webp"
-            alt="Cliente a conversar com um profissional num ambiente doméstico"
+            alt=""
             width={720}
             height={405}
-            sizes="(max-width: 640px) 100vw, 50vw"
-            className="nm-cta-image"
+            loading="lazy"
+            sizes="(min-width: 641px) 50vw, 100vw"
+            className="nm-card-img"
           />
-          <h2>Precisa de um serviço?</h2>
-          <p>Encontre um profissional perto de si.</p>
-          <Link href="/profissionais" className="nm-btn nm-btn-p">
-            Encontrar um profissional <span aria-hidden="true">→</span>
-          </Link>
+          <div className="nm-card-body">
+            <h2>Precisa de um serviço?</h2>
+            <p>Encontre um profissional perto de si.</p>
+            <Link href="/profissionais" className="nm-btn nm-btn-p">
+              Encontrar um profissional <span aria-hidden="true">→</span>
+            </Link>
+          </div>
         </div>
         <div className="nm-cta">
           <Image
             src="/images/home/oferece-servico.webp"
-            alt="Profissional independente a trabalhar numa oficina"
+            alt=""
             width={720}
             height={405}
-            sizes="(max-width: 640px) 100vw, 50vw"
-            className="nm-cta-image"
+            loading="lazy"
+            sizes="(min-width: 641px) 50vw, 100vw"
+            className="nm-card-img"
           />
-          <h2>Oferece um serviço?</h2>
-          <p>Crie o seu perfil profissional.</p>
-          <Link href="/cadastrar-profissional" className="nm-btn nm-btn-g">
-            Criar perfil profissional <span aria-hidden="true">→</span>
-          </Link>
+          <div className="nm-card-body">
+            <h2>Oferece um serviço?</h2>
+            <p>Crie o seu perfil profissional.</p>
+            <Link href="/cadastrar-profissional" className="nm-btn nm-btn-g">
+              Criar perfil profissional <span aria-hidden="true">→</span>
+            </Link>
+          </div>
         </div>
       </div>
     </section>
