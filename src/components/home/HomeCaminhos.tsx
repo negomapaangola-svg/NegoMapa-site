@@ -12,6 +12,13 @@ const caminhos = [
     titulo: 'Produtos',
     descricao: 'Descubra produtos de empresas angolanas.',
     href: '/empresas',
+    // Imagem própria pendente: public/images/home/produtos.webp (640 × 480, WebP).
+    imagem: null,
+  },
+  {
+    titulo: 'Profissionais',
+    descricao: 'Encontre profissionais qualificados perto de si.',
+    href: '/profissionais',
     imagem: '/images/home/profissionais.webp',
   },
   {
@@ -37,15 +44,19 @@ export function HomeCaminhos() {
       <div className="nm-path-grid">
         {caminhos.map((caminho) => (
           <Link key={caminho.titulo} href={caminho.href} className="nm-path-card">
-            <Image
-              src={caminho.imagem}
-              alt=""
-              width={640}
-              height={480}
-              loading="lazy"
-              sizes="(min-width: 901px) 25vw, (min-width: 641px) 50vw, 100vw"
-              className="nm-card-img"
-            />
+            {caminho.imagem ? (
+              <Image
+                src={caminho.imagem}
+                alt=""
+                width={640}
+                height={480}
+                loading="lazy"
+                sizes="(min-width: 1101px) 20vw, (min-width: 641px) 33vw, 100vw"
+                className="nm-card-img"
+              />
+            ) : (
+              <span className="nm-card-placeholder" aria-hidden="true" />
+            )}
             <div className="nm-card-body">
               <h3>{caminho.titulo}</h3>
               <p>{caminho.descricao}</p>

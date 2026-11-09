@@ -42,7 +42,8 @@ const css = `
 .nm-sec-head p{color:var(--muted);margin-top:8px}
 .nm-card-img{display:block;width:100%;height:auto}
 .nm-card-body{display:flex;flex-direction:column;align-items:flex-start;gap:10px;flex:1;padding:18px 20px 20px;min-width:0}
-.nm-path-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.nm-path-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px}
+.nm-card-placeholder{display:block;width:100%;aspect-ratio:4/3;background:var(--soft)}
 .nm-path-card{display:flex;flex-direction:column;min-width:0;overflow:hidden;border:1px solid var(--line);border-radius:16px;background:var(--card);box-shadow:var(--shadow-soft);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);text-decoration:none;transition:border-color .2s,transform .2s,background .2s}
 .nm-path-card:hover,.nm-path-card:focus-visible{border-color:var(--accent);transform:translateY(-2px);outline:none}
 .nm-path-card p{color:var(--muted);font-size:.93rem}
@@ -61,6 +62,7 @@ const css = `
 .nm-search input{grid-column:1/-1}
 .nm-search .nm-btn{width:100%}
 .nm-home a:focus-visible,.nm-home button:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+@media(max-width:1100px){.nm-path-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:900px){.nm-path-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:640px){.nm-wrap{padding-inline:16px}.nm-hero{padding:24px 0 40px}.nm-hero h1{font-size:clamp(2rem,9vw,2.6rem)}.nm-search{grid-template-columns:minmax(0,1fr);padding:7px;border-radius:18px}.nm-search select{border-left:0;border-top:1px solid var(--line)}.nm-path-grid{grid-template-columns:minmax(0,1fr);gap:12px}.nm-steps{grid-template-columns:minmax(0,1fr);gap:12px}.nm-cta-grid{grid-template-columns:minmax(0,1fr);gap:12px}.nm-card-body{padding:16px 18px 18px}}
 `;
