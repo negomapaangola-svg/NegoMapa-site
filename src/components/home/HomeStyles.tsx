@@ -61,7 +61,8 @@ const css = `
 .nm-cta p{color:var(--muted)}
 .nm-cta .nm-btn{margin-top:6px}
 .nm-home a:focus-visible,.nm-home button:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
-@media(max-width:1100px){.nm-path-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}\n@media(max-width:800px){.nm-path-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:1100px){.nm-path-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:800px){.nm-path-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:640px){
   .nm-wrap{padding-inline:16px}
   .nm-hero{gap:20px;padding:30px 0 42px}
@@ -72,7 +73,7 @@ const css = `
   .nm-search{grid-template-columns:minmax(0,1fr);gap:4px;padding:7px;border-radius:18px}
   .nm-search select{border-left:0;border-top:1px solid var(--line)}
   .nm-search .nm-btn{width:100%;margin-top:4px}
-  .nm-hero-media{padding:7px}\n  .nm-hero-image{max-height:none}
+  .nm-hero-media{padding:7px}
   .nm-hero-image{max-height:none}
   .nm-path-grid{grid-template-columns:minmax(0,1fr);gap:10px}
   .nm-path-card{padding:10px 10px 16px}
