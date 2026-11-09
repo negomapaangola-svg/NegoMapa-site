@@ -12,8 +12,7 @@ const caminhos = [
     titulo: 'Produtos',
     descricao: 'Descubra produtos de empresas angolanas.',
     href: '/empresas',
-    // Imagem própria pendente: public/images/home/produtos.webp (640 × 480, WebP).
-    imagem: null,
+    imagem: '/images/home/produtos.webp',
   },
   {
     titulo: 'Profissionais',
