@@ -7,7 +7,7 @@ import { IMAGENS } from "@/lib/imagens"
 import { supabase } from "@/lib/supabase"
 import { Card, CardContent } from "@/components/ui/Card"
 import { Button } from "@/components/ui/Button"
-import { Footer } from "@/components/layout/Footer"
+import { MainLayout } from "@/components/layout/MainLayout"
 
 type Empresa = {
   id: string
@@ -66,7 +66,6 @@ function EmpresasContent() {
         <div className="min-h-screen flex items-center justify-center p-4 bg-cream dark:bg-navy-dark">
           <p className="text-ink dark:text-cream">Carregando empresas...</p>
         </div>
-        <Footer />
       </>
     )
   }
@@ -202,11 +201,14 @@ function EmpresasContent() {
           </div>
         </div>
       </div>
-      <Footer />
     </>
   )
 }
 
 export default function EmpresasPage() {
-  return <EmpresasContent />
+  return (
+    <MainLayout>
+      <EmpresasContent />
+    </MainLayout>
+  )
 }

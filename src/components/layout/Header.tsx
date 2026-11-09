@@ -2,182 +2,194 @@
 
 import { forwardRef, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { createBrowserSupabaseClient } from '@/lib/supabase-browser';
 import { AuthUserMenu } from './AuthUserMenu';
+import { MobileMenu } from './MobileMenu';
 import { NotificacoesBotao } from './NotificacoesBotao';
 import { PesquisaGlobal } from './PesquisaGlobal';
 import { ThemeToggle } from './ThemeToggle';
 import { useTemaEscuro } from '@/hooks/useTemaEscuro';
 
-interface HeaderProps {
-  className?: string;
-  children?: React.ReactNode;
-  hideGlobalSearch?: boolean;
-}
-
 const NAV_LINKS = [
+  { href: '/descobrir', label: 'Descobrir' },
   { href: '/servicos', label: 'Serviços' },
-  { href: '/profissionais', label: 'Profissionais' },
   { href: '/empresas', label: 'Empresas' },
   { href: '/vagas', label: 'Vagas' },
 ] as const;
 
-function IconeMenu({ aberto }: { aberto: boolean }) {
+function IconeMenu() {
   return (
     <svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-      {aberto ? <path d="M6 6l12 12M18 6L6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
+      <path d="M4 7h16M4 12h16M4 17h16" />
     </svg>
   );
 }
 
-function IconeSino() {
+function IconeCasa() {
   return (
     <svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
-      <path d="M13.7 21a2 2 0 0 1-3.4 0" />
+      <path d="M3 10.5L12 3l9 7.5" />
+      <path d="M5 10v10h14V10" />
     </svg>
   );
 }
 
-export const Header = forwardRef<HTMLElement, HeaderProps>(
+export const Header = forwardRef<HTMLElement, { className?: string; hideGlobalSearch?: boolean }>(
   ({ className, hideGlobalSearch = false }, ref) => {
-    const router = useRouter();
+    const pathname = usePathname();
+    const estaNaHome = pathname === '/';
     const isDark = useTemaEscuro();
     const [menuAberto, setMenuAberto] = useState(false);
+    const [autenticado, setAutenticado] = useState(false);
 
     useEffect(() => {
-      if (!menuAberto) return;
-      function aoTeclar(e: KeyboardEvent) {
-        if (e.key === 'Escape') setMenuAberto(false);
-      }
-      document.addEventListener('keydown', aoTeclar);
-      return () => document.removeEventListener('keydown', aoTeclar);
-    }, [menuAberto]);
+      const supabase = createBrowserSupabaseClient();
+      let activo = true;
+
+      const verificarSessao = async () => {
+        const { data } = await supabase.auth.getSession();
+        if (activo) setAutenticado(Boolean(data.session));
+      };
+
+      verificarSessao();
+
+      const { data } = supabase.auth.onAuthStateChange((_evento, sessao) => {
+        if (activo) setAutenticado(Boolean(sessao));
+      });
+
+      return () => {
+        activo = false;
+        data.subscription.unsubscribe();
+      };
+    }, []);
+
+    const estaActivo = (href: string) =>
+      pathname === href || pathname.startsWith(`${href}/`);
 
     return (
-      <header
-        ref={ref}
-        className={cn('liquid-glass-navbar sticky top-0 z-200 w-full', className)}
-        role="banner"
-      >
-        <div className="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8">
-          <div className="relative flex h-16 items-center justify-between gap-1 sm:gap-4">
-            <div className="flex items-center gap-1 sm:gap-2">
-              <button
-                type="button"
-                onClick={() => router.back()}
-                aria-label="Voltar"
-                className="inline-flex min-h-11 min-w-11 items-center justify-center gap-1 rounded-md border border-card-border bg-white px-2 text-sm font-semibold text-navy hover:border-orange-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:bg-navy-dark dark:text-cream dark:hover:bg-neutral-800"
-              >
-                <svg aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M19 12H5" />
-                  <path d="M12 19l-7-7 7-7" />
-                </svg>
-                <span className="hidden sm:inline">Voltar</span>
-              </button>
+      <>
+        <a
+          href="#main-content"
+          className="skip-link"
+        >
+          Ir para o conteúdo principal
+        </a>
 
-              <Link
-                href="/"
-                aria-label="Início"
-                className="inline-flex min-h-11 min-w-11 items-center justify-center gap-1 rounded-md border border-card-border bg-white px-2 text-sm font-semibold text-navy hover:border-orange-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:bg-navy-dark dark:text-cream dark:hover:bg-neutral-800"
-              >
-                <svg aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M3 10.5L12 3l9 7.5" />
-                  <path d="M5 10v10h14V10" />
-                </svg>
-                <span className="hidden sm:inline">Início</span>
-              </Link>
-            </div>
+        <header
+          ref={ref}
+          className={cn('liquid-glass-navbar sticky top-0 z-200 w-full', className)}
+          role="banner"
+        >
+          <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8">
+            <div className="flex h-16 items-center justify-between gap-2 sm:gap-4">
+              <div className="flex min-w-0 items-center gap-2">
+                {!estaNaHome && (
+                  <Link
+                    href="/"
+                    aria-label="Início"
+                    className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-card-border bg-white/70 text-navy transition-colors hover:border-orange-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:bg-navy-dark/70 dark:text-cream"
+                  >
+                    <IconeCasa />
+                  </Link>
+                )}
 
-            <Link
-              href="/"
-              className="absolute left-1/2 -translate-x-1/2 flex items-center text-navy dark:text-cream"
-              aria-label="NegóMapa - Página inicial"
-            >
-              <img
-                src={isDark ? '/identidade/logo-negomapa-fundo-escuro.svg' : '/identidade/logo-negomapa-fundo-claro.svg'}
-                alt="NegóMapa"
-                className="h-8 w-auto max-w-[110px] object-contain sm:h-10 sm:max-w-[180px]"
-                width="560"
-                height="120"
-              />
-            </Link>
+                <Link
+                  href="/"
+                  aria-label="NegóMapa - Página inicial"
+                  className="inline-flex min-h-11 items-center rounded-full px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+                >
+                  <img
+                    src={isDark ? '/identidade/logo-negomapa-fundo-escuro.svg' : '/identidade/logo-negomapa-fundo-claro.svg'}
+                    alt="NegóMapa"
+                    className="h-8 w-auto max-w-[120px] object-contain sm:h-10 sm:max-w-[180px]"
+                    width="560"
+                    height="120"
+                  />
+                </Link>
 
-            <div className="flex items-center gap-1 sm:gap-3">
-              <ThemeToggle />
-              <NotificacoesBotao />
-              <div className="hidden lg:block">
-                <AuthUserMenu />
-              </div>
-              <button
-                type="button"
-                onClick={() => setMenuAberto((aberto) => !aberto)}
-                aria-expanded={menuAberto}
-                aria-controls="menu-principal"
-                className="inline-flex min-h-11 items-center gap-2 rounded-md border border-card-border bg-white px-2 sm:px-3 text-sm font-semibold text-navy hover:border-orange-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:bg-navy-dark dark:text-cream dark:hover:bg-neutral-800 lg:hidden"
-              >
-                <IconeMenu aberto={menuAberto} />
-                <span className="hidden sm:inline">{menuAberto ? 'Fechar' : 'Menu'}</span>
-              </button>
-            </div>
-          </div>
-
-          <div className="hidden xl:flex items-center justify-center gap-6 pb-2">
-            {NAV_LINKS.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="whitespace-nowrap text-sm font-medium text-neutral-700 dark:text-cream-text hover:text-orange-500 dark:hover:text-orange-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 rounded-sm"
-              >
-                {link.label}
-              </Link>
-            ))}
-          </div>
-
-          {!hideGlobalSearch && (
-            <div className="pb-3 lg:hidden">
-              <PesquisaGlobal />
-            </div>
-          )}
-        </div>
-
-        {menuAberto && (
-          <div
-            id="menu-principal"
-            className="absolute inset-x-0 top-full border-t border-card-border bg-white text-navy shadow-lg dark:bg-navy-dark dark:text-cream lg:hidden"
-          >
-            <nav aria-label="Navegação principal (menu)" className="mx-auto max-w-7xl px-4 py-3">
-              <ul className="flex flex-col">
-                {NAV_LINKS.map((link) => (
-                  <li key={link.href}>
+                <nav
+                  aria-label="Navegação principal"
+                  className="hidden lg:flex items-center gap-1 xl:gap-2"
+                >
+                  {NAV_LINKS.map((link) => (
                     <Link
+                      key={link.href}
                       href={link.href}
-                      onClick={() => setMenuAberto(false)}
-                      className="flex min-h-12 items-center rounded-md px-3 text-base font-medium text-navy hover:bg-cream hover:text-orange-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:text-cream dark:hover:bg-white/10 dark:hover:text-orange-400"
+                      aria-current={estaActivo(link.href) ? 'page' : undefined}
+                      className={cn(
+                        'inline-flex min-h-11 items-center whitespace-nowrap rounded-full px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500',
+                        estaActivo(link.href)
+                          ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400'
+                          : 'text-neutral-700 hover:bg-white/50 hover:text-orange-500 dark:text-cream-text dark:hover:bg-white/10 dark:hover:text-orange-400'
+                      )}
                     >
                       {link.label}
                     </Link>
-                  </li>
-                ))}
-                <li>
-                  <Link
-                    href="/notificacoes"
-                    onClick={() => setMenuAberto(false)}
-                    className="flex min-h-12 items-center gap-2 rounded-md px-3 text-base font-medium text-navy hover:bg-cream hover:text-orange-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:text-cream dark:hover:bg-white/10 dark:hover:text-orange-400"
-                  >
-                    <IconeSino />
-                    Notificações
-                  </Link>
-                </li>
-              </ul>
-              <div className="mt-3 border-t border-card-border pt-3">
-                <AuthUserMenu variante="lista" />
+                  ))}
+                </nav>
               </div>
-            </nav>
+
+              <div className="flex min-w-0 items-center gap-1 sm:gap-2">
+                {!hideGlobalSearch && (
+                  <div className="hidden min-w-0 flex-1 justify-end md:flex lg:max-w-xs">
+                    <PesquisaGlobal />
+                  </div>
+                )}
+
+                <Link
+                  href="/descobrir?tipo=servicos"
+                  aria-label="Pesquisar"
+                  className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-card-border bg-white/70 text-navy transition-colors hover:border-orange-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:bg-navy-dark/70 dark:text-cream md:hidden"
+                >
+                  <svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                    <circle cx="11" cy="11" r="7" />
+                    <path d="M20 20l-3.5-3.5" />
+                  </svg>
+                </Link>
+
+                <Link
+                  href="/cadastrar-servico"
+                  className="hidden min-h-12 items-center rounded-full bg-orange-500 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-orange-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 lg:inline-flex"
+                >
+                  Publicar
+                </Link>
+
+                <ThemeToggle />
+                {autenticado && <NotificacoesBotao />}
+
+                <div className="hidden lg:block">
+                  <AuthUserMenu />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setMenuAberto(true)}
+                  aria-expanded={menuAberto}
+                  aria-controls="mobile-menu"
+                  aria-label="Abrir menu"
+                  className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-card-border bg-white/70 text-navy transition-colors hover:border-orange-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:bg-navy-dark/70 dark:text-cream lg:hidden"
+                >
+                  <IconeMenu />
+                </button>
+              </div>
+            </div>
+
+            {!hideGlobalSearch && (
+              <div className="pb-3 md:hidden">
+                <PesquisaGlobal />
+              </div>
+            )}
           </div>
-        )}
-      </header>
+        </header>
+
+        <MobileMenu
+          aberto={menuAberto}
+          onFechar={() => setMenuAberto(false)}
+          pathname={pathname}
+        />
+      </>
     );
   }
 );

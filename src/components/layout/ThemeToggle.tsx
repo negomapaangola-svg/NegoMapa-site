@@ -33,7 +33,7 @@ export function ThemeToggle() {
       onClick={alternarTema}
       aria-label={escuro ? 'Mudar para modo claro' : 'Mudar para modo escuro'}
       title={escuro ? 'Modo claro' : 'Modo escuro'}
-      className="inline-flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md border border-card-border bg-white text-navy hover:border-orange-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-cream"
+      className="inline-flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full border border-card-border bg-white text-navy hover:border-orange-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-cream"
     >
       {escuro ? <IconeSol /> : <IconeLua />}
     </button>
