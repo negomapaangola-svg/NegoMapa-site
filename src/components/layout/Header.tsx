@@ -39,6 +39,7 @@ function IconeCasa() {
 export const Header = forwardRef<HTMLElement, { className?: string; hideGlobalSearch?: boolean }>(
   ({ className, hideGlobalSearch = false }, ref) => {
     const pathname = usePathname();
+    const estaNaHome = pathname === '/';
     const isDark = useTemaEscuro();
     const [menuAberto, setMenuAberto] = useState(false);
     const [autenticado, setAutenticado] = useState(false);
@@ -84,13 +85,15 @@ export const Header = forwardRef<HTMLElement, { className?: string; hideGlobalSe
           <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8">
             <div className="flex h-16 items-center justify-between gap-2 sm:gap-4">
               <div className="flex min-w-0 items-center gap-2">
-                <Link
-                  href="/"
-                  aria-label="Início"
-                  className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-card-border bg-white/70 text-navy transition-colors hover:border-orange-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:bg-navy-dark/70 dark:text-cream"
-                >
-                  <IconeCasa />
-                </Link>
+                {!estaNaHome && (
+                  <Link
+                    href="/"
+                    aria-label="Início"
+                    className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-card-border bg-white/70 text-navy transition-colors hover:border-orange-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:bg-navy-dark/70 dark:text-cream"
+                  >
+                    <IconeCasa />
+                  </Link>
+                )}
 
                 <Link
                   href="/"
