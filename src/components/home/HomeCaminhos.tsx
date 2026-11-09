@@ -4,25 +4,25 @@ import Link from 'next/link';
 const caminhos = [
   {
     titulo: 'Serviços',
-    descricao: 'Encontre quem pode ajudar.',
+    descricao: 'Encontre profissionais qualificados para o que precisa.',
     href: '/servicos',
     imagem: '/images/home/servicos.webp',
   },
   {
-    titulo: 'Profissionais',
-    descricao: 'Descubra quem pode ajudar.',
-    href: '/profissionais',
+    titulo: 'Produtos',
+    descricao: 'Descubra produtos de empresas angolanas.',
+    href: '/empresas',
     imagem: '/images/home/profissionais.webp',
   },
   {
     titulo: 'Empresas',
-    descricao: 'Conheça empresas.',
+    descricao: 'Encontre empresas e negócios locais.',
     href: '/empresas',
     imagem: '/images/home/empresas.webp',
   },
   {
     titulo: 'Vagas',
-    descricao: 'Encontre oportunidades.',
+    descricao: 'Encontre oportunidades de emprego em Angola.',
     href: '/vagas',
     imagem: '/images/home/vagas.webp',
   },
@@ -36,7 +36,7 @@ export function HomeCaminhos() {
       </div>
       <div className="nm-path-grid">
         {caminhos.map((caminho) => (
-          <Link key={caminho.href} href={caminho.href} className="nm-path-card">
+          <Link key={caminho.titulo} href={caminho.href} className="nm-path-card">
             <Image
               src={caminho.imagem}
               alt=""
