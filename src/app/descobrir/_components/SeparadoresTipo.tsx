@@ -21,7 +21,7 @@ export function SeparadoresTipo({ params }: { params: ParamsDescobrir }) {
         Produtos
       </button>
       <span id="produtos-em-breve" className="text-sm text-neutral-500 dark:text-cream-text/70">
-        Produtos em breve.
+        Em preparação: os produtos das empresas aparecerão aqui.
       </span>
     </nav>
   );
