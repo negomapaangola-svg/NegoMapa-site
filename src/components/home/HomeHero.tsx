@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 
@@ -18,6 +19,17 @@ export function HomeHero({ children }: HomeHeroProps) {
         <Link href="/cadastrar-servico" className="nm-hero-secondary">
           Publicar serviço <span aria-hidden="true">→</span>
         </Link>
+      </div>
+      <div className="nm-hero-media">
+        <Image
+          src="/images/hero/hero-plataforma-clientes-profissionais.png"
+          alt="Clientes e profissionais a ligarem-se através do NegóMapa"
+          width={1200}
+          height={900}
+          priority
+          sizes="(max-width: 640px) 100vw, (max-width: 1100px) 48vw, 560px"
+          className="nm-hero-image"
+        />
       </div>
     </section>
   );
