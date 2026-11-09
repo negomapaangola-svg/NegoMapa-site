@@ -16,7 +16,7 @@ export function ResultadoCard({ item }: { item: ItemResultado }) {
 
   const localizacao = [item.provincia, item.municipio].filter(Boolean).join(', ') || 'Angola';
   const href = ehProduto ? `/produto/${item.slug}` : `/servico/${item.slug}`;
-  const imagem = ehProduto && 'imagem' in item ? item.imagem : IMAGENS.servicoPadrao;
+  const imagem = (ehProduto && 'imagem' in item ? item.imagem : null) ?? IMAGENS.servicoPadrao;
 
   return (
     <article className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-card-border bg-white/85 shadow-sm backdrop-blur transition hover:-translate-y-0.5 hover:shadow-md focus-within:ring-2 focus-within:ring-orange-500 dark:bg-neutral-800/85">
