@@ -13,6 +13,7 @@ import { useTemaEscuro } from '@/hooks/useTemaEscuro';
 interface HeaderProps {
   className?: string;
   children?: React.ReactNode;
+  hideGlobalSearch?: boolean;
 }
 
 const NAV_LINKS = [
@@ -40,7 +41,7 @@ function IconeSino() {
 }
 
 export const Header = forwardRef<HTMLElement, HeaderProps>(
-  ({ className }, ref) => {
+  ({ className, hideGlobalSearch = false }, ref) => {
     const router = useRouter();
     const isDark = useTemaEscuro();
     const [menuAberto, setMenuAberto] = useState(false);
@@ -134,9 +135,11 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(
             ))}
           </div>
 
-          <div className="pb-3 lg:hidden">
-            <PesquisaGlobal />
-          </div>
+          {!hideGlobalSearch && (
+            <div className="pb-3 lg:hidden">
+              <PesquisaGlobal />
+            </div>
+          )}
         </div>
 
         {menuAberto && (
