@@ -2,145 +2,42 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { createBrowserSupabaseClient } from '@/lib/supabase-browser'
-import { Button } from '@/components/ui/Button'
 import { logoutAction } from '@/lib/actions/logout'
-import { checkIsAdmin } from '@/lib/actions/admin'
+import { obterContextoNavegacao } from '@/lib/actions/permissoes'
+import { GRUPOS_MENU_MOBILE, ITENS_NAVEGACAO, podeVerItem, type ItemNavegacao } from '@/lib/navegacao'
 
-export function AuthUserMenu({ variante = 'cabecalho' }: { variante?: 'cabecalho' | 'lista' }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [isAdmin, setIsAdmin] = useState(false)
-  const [temEmpresa, setTemEmpresa] = useState(false)
-  const [temProfissional, setTemProfissional] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
-  const lista = variante === 'lista'
+type Contexto = Awaited<ReturnType<typeof obterContextoNavegacao>>
 
+export function AuthUserMenu({ variante = 'cabecalho', onNavigate }: { variante?: 'cabecalho' | 'lista'; onNavigate?: () => void }) {
+  const [contexto, setContexto] = useState<Contexto | null>(null)
   useEffect(() => {
-    const supabase = createBrowserSupabaseClient()
-
-    const verificarPaineis = async () => {
-      const [empresa, profissional] = await Promise.all([
-        supabase.from('companies').select('id').maybeSingle(),
-        supabase.from('profissionais').select('id').maybeSingle(),
-      ])
-      setTemEmpresa(Boolean(empresa.data))
-      setTemProfissional(Boolean(profissional.data))
-    }
-
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      setIsAuthenticated(!!session)
-      if (session) {
-        const adminResult = await checkIsAdmin()
-        setIsAdmin(adminResult)
-        await verificarPaineis()
-      } else {
-        setIsAdmin(false)
-        setTemEmpresa(false)
-        setTemProfissional(false)
-      }
-      setIsLoading(false)
-    }
-
-    checkSession()
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsAuthenticated(!!session)
-      if (session) {
-        checkIsAdmin().then(setIsAdmin)
-        verificarPaineis()
-      } else {
-        setIsAdmin(false)
-        setTemEmpresa(false)
-        setTemProfissional(false)
-      }
-    })
-
-    return () => subscription.unsubscribe()
+    let activo = true
+    const carregar = () => obterContextoNavegacao().then((c) => { if (activo) setContexto(c) }).catch(() => { if (activo) setContexto({ autenticado:false, profissional:false, estadoProfissional:null, empresa:false, empresaAprovada:false, administrador:false }) })
+    carregar()
+    return () => { activo = false }
   }, [])
 
-  if (isLoading) {
-    return null
-  }
-
+  if (!contexto) return null
+  const lista = variante === 'lista'
   const classeLink = lista
-    ? 'flex min-h-12 items-center rounded-md px-3 text-base font-medium text-navy hover:bg-cream hover:text-orange-500 dark:text-cream dark:hover:bg-white/5 dark:hover:text-orange-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500'
-    : 'text-sm font-medium text-navy dark:text-cream hover:text-orange-500 dark:hover:text-orange-400 px-3 py-2 rounded-[4px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2'
-  const classeContentor = lista ? 'flex flex-col gap-1' : 'flex items-center gap-3'
+    ? 'flex min-h-11 items-center rounded-md px-3 text-sm font-medium text-navy hover:bg-cream hover:text-orange-600 dark:text-cream dark:hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500'
+    : 'inline-flex min-h-11 items-center rounded-full px-3 text-sm font-medium text-navy hover:text-orange-600 dark:text-cream dark:hover:text-orange-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500'
+  const link = (item: ItemNavegacao) => <Link key={item.id} href={item.rota} onClick={onNavigate} aria-label={item.rotulo} className={classeLink}>{item.rotulo}</Link>
 
-  if (!isAuthenticated) {
-    return (
-      <div className={classeContentor}>
-        <Link href="/login" className={classeLink}>
-          Entrar
-        </Link>
-        <Button size="sm" asChild className={lista ? 'w-full justify-center' : undefined}>
-          <Link href="/cadastrar-empresa">Cadastro de Empresa</Link>
-        </Button>
-      </div>
-    )
+  if (!lista) {
+    if (!contexto.autenticado) return <Link href="/login" className={classeLink}>Entrar</Link>
+    const itemConta = ITENS_NAVEGACAO.find((i) => i.id === (contexto.profissional ? 'perfil' : contexto.empresa ? 'painel-empresa' : 'pedidos'))!
+    return <div className="flex items-center gap-2">{contexto.administrador && link(ITENS_NAVEGACAO.find(i => i.id === 'administracao')!)}{link(itemConta)}<form action={logoutAction}><button type="submit" className={classeLink}>Sair</button></form></div>
   }
 
-  return (
-    <div className={classeContentor}>
-      {isAdmin && (
-        <Link href="/admin" className={`${classeLink} text-orange-500 dark:text-orange-400`}>
-          Admin
-        </Link>
-      )}
-      {temEmpresa && (
-        <Link href="/empresa/painel" className={classeLink}>
-          Painel da Empresa
-        </Link>
-      )}
-      {!temEmpresa && (
-        <Link href="/cadastrar-empresa" className={classeLink}>
-          Cadastrar empresa
-        </Link>
-      )}
-      {temProfissional && (
-        <Link href="/profissional/painel" className={classeLink}>
-          Painel do Profissional
-        </Link>
-      )}
-      {!temProfissional && (
-        <Link href="/cadastrar-profissional" className={classeLink}>
-          Cadastrar profissional
-        </Link>
-      )}
-      {temProfissional && (
-        <Link href="/cadastrar-servico" className={classeLink}>
-          Cadastrar serviço
-        </Link>
-      )}
-      <Link href="/candidaturas" className={classeLink}>
-        Minhas candidaturas
-      </Link>
-      <Link href="/mensagens" className={classeLink}>
-        Mensagens
-      </Link>
-      <Link href="/pedidos" className={classeLink}>
-        Pedidos
-      </Link>
-      <Link href="/notificacoes" className={classeLink}>
-        Notificações
-      </Link>
-      <Link href="/preferencias-notificacoes" className={classeLink}>
-        Preferências de notificação
-      </Link>
-      <Link href="/editar-perfil" className={classeLink}>
-        Editar perfil
-      </Link>
-      <form action={logoutAction} className={lista ? 'w-full' : undefined}>
-        <Button
-          type="submit"
-          size="sm"
-          variant="ghost"
-          className={`text-navy dark:text-cream hover:text-orange-500 dark:hover:text-orange-400${lista ? ' w-full justify-start px-3 text-base' : ''}`}
-        >
-          Sair
-        </Button>
-      </form>
-    </div>
-  )
+  return <nav aria-label="Menu da conta" className="space-y-5">
+    {GRUPOS_MENU_MOBILE.map((grupo) => {
+      const itens = grupo.itens.map((id) => ITENS_NAVEGACAO.find((item) => item.id === id)).filter((item): item is ItemNavegacao => Boolean(item) && item!.locais.includes('menu_mobile') && podeVerItem(item!, contexto))
+      if (!itens.length) return null
+      return <section key={grupo.id} aria-labelledby={`menu-${grupo.id}`}>
+        <h2 id={`menu-${grupo.id}`} className="px-3 pb-1 text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-cream-text/70">{grupo.titulo}</h2>
+        <ul className="space-y-1">{itens.map((item) => <li key={item.id}>{item.id === 'sair' ? <form action={logoutAction}><button type="submit" onClick={onNavigate} className={`${classeLink} w-full text-left`}>Sair</button></form> : link(item)}</li>)}</ul>
+      </section>
+    })}
+  </nav>
 }
