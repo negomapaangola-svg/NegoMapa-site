@@ -1,6 +1,7 @@
 'use server'
 
 import { createSupabaseServerClient } from '@/lib/supabase-server'
+import { obterContextoUtilizador, podePublicarServico } from '@/lib/permissoes'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
@@ -208,6 +209,10 @@ export async function createService(formData: ServiceFormData): Promise<ActionRe
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) {
     return { success: false, error: 'Utilizador não autenticado' }
+  }
+
+  if (!podePublicarServico(await obterContextoUtilizador())) {
+    return { success: false, error: 'Apenas profissionais aprovados podem publicar serviços.' }
   }
 
   const fieldErrors = validateService(formData)
