@@ -39,10 +39,22 @@ export async function listarPedidosDoProfissional(): Promise<
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Sessão expirada. Inicie sessão novamente.' }
 
-  // A RLS devolve apenas os pedidos dirigidos a este profissional aprovado.
+  const { data: perfil, error: erroPerfil } = await supabase
+    .from('profissionais')
+    .select('id')
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  if (erroPerfil) {
+    console.error('Erro ao verificar perfil profissional. Código:', erroPerfil.code)
+    return { success: false, error: 'Não foi possível carregar os pedidos.' }
+  }
+  if (!perfil) return { success: true, data: [] }
+
   const { data, error } = await supabase
     .from('pedidos_servico')
     .select('id, titulo, descricao, provincia, data_preferida, orcamento, contacto, estado, criada_em')
+    .eq('profissional_id', perfil.id)
     .order('criada_em', { ascending: false })
 
   if (error) {
@@ -68,9 +80,12 @@ export async function atualizarEstadoPedidoProfissional(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Sessão expirada. Inicie sessão novamente.' }
 
+  const { data: perfil, error: erroPerfil } = await supabase.from('profissionais').select('id').eq('user_id', user.id).maybeSingle()
+  if (erroPerfil || !perfil) return { success: false, error: 'Perfil profissional não encontrado.' }
+
   const { data: atual, error: erroLeitura } = await supabase
     .from('pedidos_servico')
-    .select('id, estado')
+    .select('id, estado, profissional_id')
     .eq('id', pedidoId)
     .maybeSingle()
 
@@ -78,7 +93,7 @@ export async function atualizarEstadoPedidoProfissional(
     console.error('Erro ao ler pedido. Código:', erroLeitura.code)
     return { success: false, error: 'Não foi possível atualizar o pedido.' }
   }
-  if (!atual) return { success: false, error: 'Pedido não encontrado.' }
+  if (!atual || atual.profissional_id !== perfil.id) return { success: false, error: 'Pedido não encontrado ou sem permissão.' }
 
   const permitidos = TRANSICOES_PROFISSIONAL[atual.estado] ?? []
   if (!permitidos.includes(novoEstado)) {
@@ -90,6 +105,7 @@ export async function atualizarEstadoPedidoProfissional(
     .from('pedidos_servico')
     .update({ estado: novoEstado })
     .eq('id', pedidoId)
+    .eq('profissional_id', perfil.id)
     .eq('estado', atual.estado)
     .select('id')
 
