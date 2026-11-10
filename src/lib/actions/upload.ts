@@ -45,6 +45,14 @@ const bucketConfig: Record<AllowedBucket, { allowedTypes: string[]; maxSize: num
   },
 }
 
+function assinaturaValida(mimeType: string, bytes: Buffer): boolean {
+  if (mimeType === 'image/png') return bytes.length >= 8 && bytes.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))
+  if (mimeType === 'image/jpeg') return bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff
+  if (mimeType === 'image/webp') return bytes.length >= 12 && bytes.toString('ascii', 0, 4) === 'RIFF' && bytes.toString('ascii', 8, 12) === 'WEBP'
+  if (mimeType === 'application/pdf') return bytes.length >= 5 && bytes.toString('ascii', 0, 5) === '%PDF-'
+  return false
+}
+
 function getExtension(mimeType: string): string {
   switch (mimeType) {
     case 'image/png':
@@ -71,7 +79,7 @@ export async function uploadFile(
 
   const config = bucketConfig[bucket]
 
-  if (!config.allowedTypes.includes(file.type)) {
+  if (!(file instanceof File) || !config.allowedTypes.includes(file.type)) {
     return { error: `Tipo de ficheiro não permitido para ${bucket}. Tipos aceites: ${config.allowedTypes.join(', ')}` }
   }
 
@@ -93,6 +101,7 @@ export async function uploadFile(
 
   const arrayBuffer = await file.arrayBuffer()
   const buffer = Buffer.from(arrayBuffer)
+  if (!assinaturaValida(file.type, buffer)) return { error: 'O conteúdo do ficheiro não corresponde ao tipo declarado.' }
 
   const { error: uploadError } = await supabase.storage
     .from(bucket)
