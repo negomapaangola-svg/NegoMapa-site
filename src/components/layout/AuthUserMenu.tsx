@@ -28,7 +28,7 @@ export function AuthUserMenu({ variante = 'cabecalho', onNavigate }: { variante?
 
   if (!lista) {
     if (!contexto.autenticado) return <Link href="/login" className={classeLink}>Entrar</Link>
-    const itemConta = ITENS_NAVEGACAO.find((i) => i.id === (contexto.profissional ? 'perfil' : contexto.empresa ? 'painel-empresa' : 'pedidos'))!
+    const itemConta = ITENS_NAVEGACAO.find((i) => i.id === 'perfil')!
     return <div className="flex items-center gap-2">{contexto.administrador && link(ITENS_NAVEGACAO.find(i => i.id === 'administracao')!)}{link(itemConta)}<form action={logoutAction}><button type="submit" className={classeLink}>Sair</button></form></div>
   }
 
