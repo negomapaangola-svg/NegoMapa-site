@@ -20,7 +20,7 @@ export const ITENS_NAVEGACAO: ItemNavegacao[] = [
   { id:'cadastrar-profissional', rotulo:'Cadastrar profissional', rota:'/cadastrar-profissional', regras:['visitante','sem_profissional'], locais:['menu_mobile'] },
   { id:'entrar', rotulo:'Entrar', rota:'/login', regras:['visitante'], locais:['menu_mobile'] },
   { id:'registar', rotulo:'Registar', rota:'/registar', regras:['visitante'], locais:['menu_mobile'] },
-  { id:'perfil', rotulo:'Perfil', rota:'/editar-perfil', regras:['profissional'], locais:['menu_mobile'] },
+  { id:'perfil', rotulo:'Perfil', rota:'/perfil', regras:['autenticado'], locais:['menu_mobile'] },
   { id:'candidaturas', rotulo:'Candidaturas', rota:'/candidaturas', regras:['autenticado'], locais:['menu_mobile'] },
   { id:'mensagens', rotulo:'Mensagens', rota:'/mensagens', regras:['autenticado'], locais:['menu_mobile'] },
   { id:'pedidos', rotulo:'Pedidos', rota:'/pedidos', regras:['autenticado'], locais:['menu_mobile'] },
