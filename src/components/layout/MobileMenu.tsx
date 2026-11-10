@@ -12,7 +12,16 @@ export function MobileMenu({ aberto, onFechar }: MobileMenuProps) {
     const anteriorOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     painelRef.current?.querySelector<HTMLElement>('a, button')?.focus()
-    const aoTeclar = (evento: KeyboardEvent) => { if (evento.key === 'Escape') onFechar() }
+    const aoTeclar = (evento: KeyboardEvent) => {
+      if (evento.key === 'Escape') { onFechar(); return }
+      if (evento.key !== 'Tab' || !painelRef.current) return
+      const focaveis = Array.from(painelRef.current.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'))
+      if (!focaveis.length) return
+      const primeiro = focaveis[0]
+      const ultimo = focaveis[focaveis.length - 1]
+      if (evento.shiftKey && document.activeElement === primeiro) { evento.preventDefault(); ultimo.focus() }
+      else if (!evento.shiftKey && document.activeElement === ultimo) { evento.preventDefault(); primeiro.focus() }
+    }
     document.addEventListener('keydown', aoTeclar)
     return () => {
       document.body.style.overflow = anteriorOverflow
