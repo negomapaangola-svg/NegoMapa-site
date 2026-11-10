@@ -12,7 +12,7 @@ function normalizarNumeroAngolano(valor: string | null | undefined): string | nu
   const digitos = valor.replace(/\D/g, '');
   const local = digitos.startsWith('244') ? digitos.slice(3) : digitos;
   if (!/^9\d{8}$/.test(local)) return null;
-  return \`244\${local}\`;
+  return '244' + local;
 }
 
 export function ServiceWhatsApp({
@@ -32,7 +32,7 @@ export function ServiceWhatsApp({
 
   return (
     <a
-      href={\`https://wa.me/\${numero}\`}
+      href={'https://wa.me/' + numero}
       target="_blank"
       rel="noopener noreferrer"
       aria-label={label}
