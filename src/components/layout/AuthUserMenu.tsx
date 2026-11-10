@@ -12,7 +12,7 @@ export function AuthUserMenu({ variante = 'cabecalho', onNavigate }: { variante?
   const [contexto, setContexto] = useState<Contexto | null>(null)
   useEffect(() => {
     let activo = true
-    const carregar = () => obterContextoNavegacao().then((c) => { if (activo) setContexto(c) }).catch(() => { if (activo) setContexto({ userId:null, autenticado:false, profissional:false, estadoProfissional:null, empresa:false, empresaAprovada:false, administrador:false }) })
+    const carregar = () => obterContextoNavegacao().then((c) => { if (activo) setContexto(c) }).catch(() => { if (activo) setContexto({ autenticado:false, profissional:false, estadoProfissional:null, empresa:false, empresaAprovada:false, administrador:false }) })
     carregar()
     return () => { activo = false }
   }, [])
@@ -32,7 +32,7 @@ export function AuthUserMenu({ variante = 'cabecalho', onNavigate }: { variante?
 
   return <nav aria-label="Menu da conta" className="space-y-5">
     {GRUPOS_MENU_MOBILE.map((grupo) => {
-      const itens = grupo.itens.map((id) => ITENS_NAVEGACAO.find((item) => item.id === id)).filter((item): item is ItemNavegacao => { if (!item) return false; return item.locais.includes('menu_mobile') && podeVerItem(item, { ...contexto, userId: null }) })
+      const itens = grupo.itens.map((id) => ITENS_NAVEGACAO.find((item) => item.id === id)).filter((item): item is ItemNavegacao => { if (!item) return false; return item.locais.includes('menu_mobile') && podeVerItem(item, contexto) })
       if (!itens.length) return null
       return <section key={grupo.id} aria-labelledby={`menu-${grupo.id}`}>
         <h2 id={`menu-${grupo.id}`} className="px-3 pb-1 text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-cream-text/70">{grupo.titulo}</h2>
