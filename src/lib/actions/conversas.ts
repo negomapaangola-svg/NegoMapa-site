@@ -50,7 +50,15 @@ export async function listarConversas(): Promise<Resultado<ConversaResumo[]>> {
   const idsProfissional = new Set(perfil?.id ? [perfil.id] : [])
   const idsEmpresa = new Set((empresas ?? []).map((e) => e.id))
 
-  const conversas: ConversaResumo[] = (data ?? []).map((conversa) => {
+  // A política RLS também permite leitura administrativa. A interface de mensagens,
+  // porém, só deve devolver conversas em que a sessão actual é participante efectivo.
+  const minhasConversas = (data ?? []).filter((conversa) =>
+    conversa.cliente_id === user.id ||
+    Boolean(conversa.profissional_id && idsProfissional.has(conversa.profissional_id)) ||
+    Boolean(conversa.empresa_id && idsEmpresa.has(conversa.empresa_id))
+  )
+
+  const conversas: ConversaResumo[] = minhasConversas.map((conversa) => {
     let papel: PapelConversa = 'cliente'
     if (conversa.cliente_id === user.id) {
       papel = 'cliente'
