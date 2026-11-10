@@ -1,28 +1,30 @@
-﻿import { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
-import { IMAGENS } from '@/lib/imagens';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { notFound } from 'next/navigation';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { formatCurrency } from '@/lib/utils';
-import { ServiceWhatsApp } from './__components/ServiceWhatsApp';
-import { getUser } from '@/lib/auth';
-import { getMediaAvaliacoes, getAvaliacoesPorAlvo, AlvoAvaliacao } from '@/lib/actions/avaliacoes';
+import { Card } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
+import { Avatar } from '@/components/ui/Avatar';
 import { Rating, RatingStarsOnly } from '@/components/avaliacoes/Rating';
 import { ReviewForm } from '@/components/avaliacoes/ReviewForm';
 import { ReportForm } from '@/components/denuncias/ReportForm';
-import { AlvoDenuncia } from '@/lib/actions/denuncias';
-import { obterPerfilProfissionalDoUtilizador } from '@/lib/actions/profissional-painel';
-import { MENSAGEM_BLOQUEIO_PROFISSIONAL } from '@/lib/mensagens-bloqueio';
+import { IMAGENS } from '@/lib/imagens';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { formatCurrency } from '@/lib/utils';
+import { getUser } from '@/lib/auth';
+import { getMediaAvaliacoes, getAvaliacoesPorAlvo, type AlvoAvaliacao } from '@/lib/actions/avaliacoes';
+import { type AlvoDenuncia } from '@/lib/actions/denuncias';
 import {
+  obterIdsProfissionaisPublicos,
   obterProfissionalContactoPorId,
   type DisponibilidadeHorarios,
   type PortfolioItem,
   type ProfissionalContactoPublico,
 } from '@/lib/actions/profissionais-publicos';
+import { obterPerfilProfissionalDoUtilizador } from '@/lib/actions/profissional-painel';
+import { MENSAGEM_BLOQUEIO_PROFISSIONAL } from '@/lib/mensagens-bloqueio';
+import { ServiceWhatsApp } from './__components/ServiceWhatsApp';
 import { BotoesContactoServico } from './_components/BotoesContactoServico';
 
 interface ServiceRaw {
@@ -38,98 +40,97 @@ interface ServiceRaw {
   created_at: string;
   estado: string;
   profissional_id: string;
-  categoria: {
-    id: string;
-    nome: string;
-    slug: string;
-    ativo: boolean;
-  } | { id: string; nome: string; slug: string; ativo: boolean }[] | null;
+  categoria:
+    | { id: string; nome: string; slug: string; ativo: boolean }
+    | { id: string; nome: string; slug: string; ativo: boolean }[]
+    | null;
 }
 
-interface ServiceDetail {
+interface ServiceDetail extends Omit<ServiceRaw, 'categoria'> {
+  categoria: { id: string; nome: string; slug: string; ativo: boolean } | null;
+}
+
+interface RelatedService {
   id: string;
   slug: string;
   titulo: string;
-  descricao: string | null;
   preco: number | null;
   preco_tipo: string | null;
-  whatsapp: string | null;
   provincia: string | null;
   municipio: string | null;
-  created_at: string;
-  estado: string;
-  profissional_id: string;
-  categoria: {
-    id: string;
-    nome: string;
-    slug: string;
-    ativo: boolean;
-  } | null;
 }
 
-/**
- * Serviço aprovado com categoria ativa. O profissional NÃO é embutido: é obtido numa segunda
- * consulta à vista public.profissionais_publicos (só aprovados, colunas seguras).
- */
 async function getService(slug: string): Promise<ServiceDetail | null> {
   const supabase = await createSupabaseServerClient();
-
   const { data, error } = await supabase
     .from('servicos')
     .select('id,slug,titulo,descricao,preco,preco_tipo,whatsapp,provincia,municipio,created_at,estado,profissional_id,categoria:categoria_id(id,nome,slug,ativo)')
     .eq('slug', slug)
     .eq('estado', 'aprovado')
     .eq('categoria_id.ativo', true)
-    .single();
+    .maybeSingle();
 
   if (error) {
-    console.error('Erro ao buscar serviço. Código:', error.code);
+    console.error('Erro ao obter serviço público. Código:', error.code);
     return null;
   }
+  if (!data) return null;
 
-  const raw = data as ServiceRaw;
-
+  const raw = data as unknown as ServiceRaw;
   return {
     ...raw,
     categoria: Array.isArray(raw.categoria) ? raw.categoria[0] ?? null : raw.categoria,
   };
 }
 
+async function getRelatedServices(service: ServiceDetail): Promise<RelatedService[]> {
+  if (!service.categoria?.id) return [];
+
+  const professionalIds = await obterIdsProfissionaisPublicos();
+  if (professionalIds.length === 0) return [];
+
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from('servicos')
+    .select('id,slug,titulo,preco,preco_tipo,provincia,municipio')
+    .eq('estado', 'aprovado')
+    .eq('categoria_id', service.categoria.id)
+    .neq('id', service.id)
+    .in('profissional_id', professionalIds)
+    .order('created_at', { ascending: false })
+    .limit(3);
+
+  if (error) {
+    console.error('Erro ao obter serviços relacionados. Código:', error.code);
+    return [];
+  }
+  return (data ?? []) as RelatedService[];
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const service = await getService(slug);
-
-  if (!service) {
-    return {
-      title: 'Serviço não encontrado',
-    };
-  }
+  if (!service) return { title: 'Serviço não encontrado | NegóMapa' };
 
   const profissional = await obterProfissionalContactoPorId(service.profissional_id);
-
   return {
-    title: service.titulo,
-    description: service.descricao || `Serviço de ${service.titulo} por ${profissional?.nome ?? 'profissional'}`,
+    title: `${service.titulo} | NegóMapa`,
+    description: service.descricao || `Serviço de ${service.titulo} por ${profissional?.nome ?? 'profissional'}.`,
     openGraph: {
       title: service.titulo,
-      description: service.descricao || `Serviço de ${service.titulo}`,
+      description: service.descricao || `Conheça este serviço no NegóMapa.`,
       type: 'website',
     },
   };
 }
 
 function formatDias(dias: string[] | null): string {
-  if (!dias || dias.length === 0) return '';
-  const dayLabels: Record<string, string> = {
-    seg: 'Segunda',
-    ter: 'Terça',
-    qua: 'Quarta',
-    qui: 'Quinta',
-    sex: 'Sexta',
-    sab: 'Sábado',
-    dom: 'Domingo',
+  if (!dias?.length) return '';
+  const labels: Record<string, string> = {
+    seg: 'Segunda', ter: 'Terça', qua: 'Quarta', qui: 'Quinta',
+    sex: 'Sexta', sab: 'Sábado', dom: 'Domingo',
   };
-  return dias.map(d => dayLabels[d] || d).join(', ');
+  return dias.map((dia) => labels[dia] ?? dia).join(', ');
 }
 
 function formatHorarios(horarios: DisponibilidadeHorarios | null): string {
@@ -141,319 +142,283 @@ function formatHorarios(horarios: DisponibilidadeHorarios | null): string {
   return labels.join(', ');
 }
 
+function formatPreco(service: Pick<ServiceDetail, 'preco' | 'preco_tipo'>): string {
+  if (service.preco === null || service.preco === undefined) return 'Preço sob consulta';
+  const tipo: Record<string, string> = {
+    fixo: '',
+    a_partir_de: 'A partir de ',
+    por_hora: 'Por hora · ',
+    sob_consulta: '',
+  };
+  if (service.preco_tipo === 'sob_consulta') return 'Preço sob consulta';
+  return `${tipo[service.preco_tipo ?? ''] ?? ''}${formatCurrency(service.preco)}`;
+}
+
 export default async function ServicoPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const service = await getService(slug);
+  if (!service) notFound();
 
-  if (!service) {
-    notFound();
-  }
+  // A vista pública só devolve profissionais aprovados; se não existir, o serviço não é publicado.
+  const profissional: ProfissionalContactoPublico | null =
+    await obterProfissionalContactoPorId(service.profissional_id);
+  if (!profissional) notFound();
 
-  // Profissional via vista pública. Se não estiver aprovado, a vista não o devolve e o serviço não se mostra.
-  const profissional: ProfissionalContactoPublico | null = await obterProfissionalContactoPorId(service.profissional_id);
-  if (!profissional) {
-    notFound();
-  }
-
-  const [user, media, avaliacoes] = await Promise.all([
+  const [user, media, avaliacoes, relacionados] = await Promise.all([
     getUser(),
     getMediaAvaliacoes({ tipo: 'servico', id: service.id }),
     getAvaliacoesPorAlvo({ tipo: 'servico', id: service.id }),
+    getRelatedServices(service),
   ]);
 
-  // O próprio profissional não pede orçamento nem se contacta a si mesmo.
   const perfilProprio = user ? await obterPerfilProfissionalDoUtilizador() : null;
   const ehProprio = !!perfilProprio && perfilProprio.id === profissional.id;
-  // Contas de profissional não iniciam conversas nem pedidos (também barrado na RLS).
   const ehProfissional = !!perfilProprio;
-
-  // WhatsApp público: o do serviço, ou o do profissional (contacto público por decisão de produto).
-  const serviceWhatsApp = service.whatsapp || profissional.whatsapp;
-
   const alvo: AlvoAvaliacao = { tipo: 'servico', id: service.id };
   const alvoDenuncia: AlvoDenuncia = { tipo: 'servico', id: service.id };
+  const localizacao = [service.municipio, service.provincia].filter(Boolean).join(', ');
+  const dias = formatDias(profissional.disponibilidade_dias);
+  const horarios = formatHorarios(profissional.disponibilidade_horarios);
+  const preco = formatPreco(service);
 
   return (
     <MainLayout>
-      <section className="py-12 lg:py-16 bg-cream dark:bg-navy-dark" aria-labelledby="service-title">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-          <div className="mb-6">
+      <section className="min-h-screen bg-cream py-8 dark:bg-navy-dark sm:py-12" aria-labelledby="service-title">
+        <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8">
+          <nav aria-label="Navegação" className="mb-6">
             <Link
               href="/servicos"
-              className="inline-flex items-center gap-1 text-sm text-neutral-500 dark:text-cream-text/70 hover:text-orange-500 dark:hover:text-orange-400 transition-colors"
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-lg px-2 text-sm font-semibold text-neutral-700 transition-colors hover:text-orange-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:text-cream-text dark:hover:text-orange-300"
             >
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
+              <span aria-hidden="true">←</span>
               Voltar aos serviços
             </Link>
-          </div>
+          </nav>
 
-          <Card variant="liquid" padding="lg" className="border-card-border">
-            <Image
-              src={IMAGENS.servicoPadrao}
-              alt=""
-              width={1200}
-              height={800}
-              sizes="(max-width: 768px) 100vw, 768px"
-              className="mb-6 h-56 w-full rounded-[16px] object-cover"
-            />
-            <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-              <div>
-                {service.categoria && (
-                  <span className="inline-flex items-center px-3 py-1 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 text-sm font-medium mb-3">
-                    {service.categoria.nome}
-                  </span>
-                )}
-                <h1 id="service-title" className="text-3xl md:text-4xl font-bold text-ink dark:text-cream">
-                  {service.titulo}
-                </h1>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-              <div className="space-y-4">
-                <div>
-                  <p className="text-sm text-neutral-500 dark:text-cream-text/70">Preço</p>
-                  {service.preco !== null && service.preco !== undefined ? (
-                    <p className="text-2xl font-bold text-orange-500 dark:text-orange-400 mt-1">
-                      {formatCurrency(service.preco)}
-                      {service.preco_tipo && <span className="text-lg font-normal text-neutral-500 dark:text-cream-text/70 ml-2">/ {service.preco_tipo}</span>}
-                    </p>
-                  ) : (
-                    <p className="text-ink dark:text-cream mt-1">Sob consulta</p>
-                  )}
+          <div className="grid min-w-0 grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(280px,360px)]">
+            <div className="min-w-0 space-y-6">
+              <Card variant="liquid" padding="none" className="overflow-hidden border border-white/60 shadow-lg shadow-slate-900/5 dark:border-white/10 dark:shadow-black/20">
+                <div className="relative overflow-hidden bg-neutral-100 dark:bg-neutral-800">
+                  <Image
+                    src={IMAGENS.servicoPadrao}
+                    alt={`Imagem ilustrativa para o serviço ${service.titulo}; não foi fornecida uma fotografia deste serviço.`}
+                    width={1600}
+                    height={900}
+                    priority
+                    sizes="(max-width: 1024px) 100vw, 65vw"
+                    className="h-56 w-full object-cover sm:h-72 lg:h-80"
+                  />
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent" />
                 </div>
 
-                <div>
-                  <p className="text-sm text-neutral-500 dark:text-cream-text/70">Localização</p>
-                  <p className="text-ink dark:text-cream mt-1 flex flex-wrap items-center gap-2">
-                    {service.provincia && (
-                      <span className="flex items-center gap-1">
-                        <svg className="h-4 w-4 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        {service.provincia}
-                      </span>
-                    )}
-                    {service.municipio && (
-                      <span className="flex items-center gap-1">
-                        <svg className="h-4 w-4 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                        </svg>
-                        {service.municipio}
-                      </span>
-                    )}
-                    {!service.provincia && !service.municipio && (
-                      <span className="text-neutral-500 dark:text-cream-text/70">Não informada</span>
-                    )}
-                  </p>
-                </div>
-              </div>
+                <div className="p-5 sm:p-8">
+                  <div className="mb-4 flex flex-wrap items-center gap-2">
+                    {service.categoria && <Badge variant="primary">{service.categoria.nome}</Badge>}
+                    <Badge variant="neutral">Serviço aprovado</Badge>
+                  </div>
 
-              <div className="space-y-4 md:justify-self-end">
-                <ServiceWhatsApp telefone={serviceWhatsApp} label="Contactar via WhatsApp" />
-              </div>
-            </div>
+                  <h1 id="service-title" className="break-words text-3xl font-bold leading-tight tracking-tight text-ink dark:text-cream sm:text-4xl">
+                    {service.titulo}
+                  </h1>
 
-            {service.descricao && (
-              <div className="mb-8">
-                <h2 className="text-lg font-semibold text-ink dark:text-cream mb-3">Descrição</h2>
-                <div className="prose prose-neutral dark:prose-invert max-w-none text-neutral-700 dark:text-neutral-300 leading-relaxed">
-                  <p className="whitespace-pre-wrap">{service.descricao}</p>
-                </div>
-              </div>
-            )}
-
-            <div className="pt-6 border-t border-card-border">
-              <h2 className="text-lg font-semibold text-ink dark:text-cream mb-4">Profissional</h2>
-              <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
-                <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-2xl md:text-3xl font-bold text-orange-500 dark:text-orange-400 flex-shrink-0 overflow-hidden">
-                  {profissional.avatar_url ? (
-                    <img
-                      src={profissional.avatar_url}
-                      alt={profissional.nome}
-                      className="w-full h-full object-cover"
-                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                    />
-                  ) : (
-                    profissional.nome.charAt(0).toUpperCase()
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-xl font-bold text-ink dark:text-cream truncate">
-                    {profissional.nome}
-                  </h3>
-                  {profissional.categoria && (
-                    <p className="mt-1 text-sm text-neutral-600 dark:text-cream-text/80">{profissional.categoria}</p>
-                  )}
-                  <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-neutral-600 dark:text-cream-text/80">
-                    {profissional.provincia && (
-                      <span className="flex items-center gap-1">
-                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3 text-sm text-neutral-700 dark:text-cream-text">
+                    {localizacao ? (
+                      <span className="inline-flex min-w-0 items-center gap-2">
+                        <svg className="h-5 w-5 flex-shrink-0 text-orange-600 dark:text-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z" />
+                          <circle cx="12" cy="10" r="2.5" strokeWidth="1.8" />
                         </svg>
-                        {profissional.provincia}
+                        <span className="break-words">{localizacao}</span>
                       </span>
+                    ) : (
+                      <span>Localização não informada</span>
                     )}
-                    {profissional.municipio && (
-                      <span className="flex items-center gap-1">
-                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                        </svg>
-                        {profissional.municipio}
-                      </span>
+                    <span className="inline-flex items-center gap-2">
+                      <RatingStarsOnly media={media.media} size="sm" />
+                      <span>{media.total > 0 ? `${media.media.toFixed(1)} · ${media.total} avaliação(ões)` : 'Sem avaliações'}</span>
+                    </span>
+                  </div>
+
+                  <div className="mt-7 rounded-2xl border border-orange-200/80 bg-orange-50/80 p-4 dark:border-orange-400/20 dark:bg-orange-950/25 sm:p-5">
+                    <p className="text-sm font-medium text-neutral-600 dark:text-cream-text">Preço</p>
+                    <p className="mt-1 break-words text-2xl font-bold text-orange-700 dark:text-orange-300 sm:text-3xl">{preco}</p>
+                    {service.preco_tipo && service.preco_tipo !== 'fixo' && service.preco_tipo !== 'sob_consulta' && (
+                      <p className="mt-1 text-xs text-neutral-600 dark:text-cream-text/80">
+                        {service.preco_tipo === 'por_hora' ? 'Valor por hora' : service.preco_tipo === 'a_partir_de' ? 'Valor inicial indicativo' : ''}
+                      </p>
                     )}
                   </div>
-                  {profissional.bio && (
-                    <p className="mt-3 text-sm text-neutral-600 dark:text-cream-text line-clamp-2">
-                      {profissional.bio}
+
+                  <section className="mt-8" aria-labelledby="descricao-titulo">
+                    <h2 id="descricao-titulo" className="text-xl font-semibold text-ink dark:text-cream">Sobre este serviço</h2>
+                    <p className="mt-3 whitespace-pre-wrap break-words leading-relaxed text-neutral-700 dark:text-neutral-200">
+                      {service.descricao?.trim() || 'O profissional ainda não adicionou uma descrição para este serviço.'}
                     </p>
-                  )}
+                  </section>
 
-                  {profissional.anos_experiencia !== null && profissional.anos_experiencia !== undefined && profissional.anos_experiencia > 0 && (
-                    <div className="mt-4 flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300">
-                      <svg className="h-5 w-5 text-orange-500 dark:text-orange-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span>{profissional.anos_experiencia} ano{profissional.anos_experiencia > 1 ? 's' : ''} de experiência</span>
-                    </div>
-                  )}
-
-                  {profissional.disponibilidade_dias && profissional.disponibilidade_dias.length > 0 && (
-                    <div className="mt-4 flex items-start gap-2 text-sm text-neutral-700 dark:text-neutral-300">
-                      <svg className="h-5 w-5 text-orange-500 dark:text-orange-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 002 2v12a2 2 0 002 2z" />
-                      </svg>
-                      <div>
-                        <p className="font-medium">Disponibilidade: {formatDias(profissional.disponibilidade_dias)}</p>
-                        {formatHorarios(profissional.disponibilidade_horarios) && (
-                          <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">{formatHorarios(profissional.disponibilidade_horarios)}</p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {profissional.portfolio && profissional.portfolio.length > 0 && (
-                    <div className="mt-4">
-                      <p className="font-medium text-sm text-neutral-700 dark:text-neutral-300 mb-2">Portfólio</p>
-                      <div className="space-y-3">
-                        {profissional.portfolio.map((item: PortfolioItem, index: number) => (
-                          <div key={index} className="border border-card-border rounded-[4px] p-3 bg-white/50 dark:bg-neutral-800/50">
-                            <h4 className="font-medium text-ink dark:text-cream">{item.titulo}</h4>
-                            {item.descricao && (
-                              <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">{item.descricao}</p>
-                            )}
-                            {item.url_projeto && (
-                              <a
-                                href={item.url_projeto}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="mt-2 inline-flex items-center gap-1 text-sm text-orange-500 dark:text-orange-400 hover:underline"
-                              >
-                                Ver projeto
-                                <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                                </svg>
-                              </a>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-                <div className="flex flex-col gap-2 w-full md:w-auto">
-                  <ServiceWhatsApp telefone={profissional.whatsapp} label="WhatsApp" />
-                </div>
-              </div>
-            </div>
-
-            {!ehProprio && (
-              <div className="pt-6 border-t border-card-border">
-                <h2 className="text-lg font-semibold text-ink dark:text-cream mb-4">Pedir orçamento ou contactar</h2>
-                {user && ehProfissional ? (
-                  <p role="status" className="text-neutral-600 dark:text-cream-text/80">
-                    {MENSAGEM_BLOQUEIO_PROFISSIONAL}
-                  </p>
-                ) : user ? (
-                  <BotoesContactoServico servicoId={service.id} profissionalId={profissional.id} />
-                ) : (
-                  <div className="space-y-3">
-                    <p className="text-neutral-600 dark:text-cream-text/80">
-                      Entre na sua conta ou crie uma para pedir orçamento ou enviar mensagem a este profissional.
-                    </p>
+                  <div className="mt-8 flex flex-wrap items-center gap-3 border-t border-card-border pt-6">
+                    <ServiceWhatsApp
+                      telefone={service.whatsapp}
+                      fallbackTelefone={profissional.whatsapp}
+                      label="Contactar no WhatsApp"
+                    />
                     <Link
-                      href={`/registar?redirectTo=${encodeURIComponent(`/servico/${slug}`)}`}
-                      className="inline-flex items-center justify-center px-4 py-2 rounded-[4px] bg-orange-500 text-white hover:bg-orange-600 transition-colors"
+                      href={`/profissional/${profissional.slug}`}
+                      aria-label={`Ver perfil público de ${profissional.nome}`}
+                      className="inline-flex min-h-[52px] w-full items-center justify-center rounded-xl border border-card-border bg-white/80 px-5 py-3 text-center text-sm font-semibold text-ink shadow-sm transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:bg-white/5 dark:text-cream dark:hover:bg-white/10 sm:w-auto"
                     >
-                      Entrar ou criar conta
+                      Ver perfil do profissional
                     </Link>
                   </div>
-                )}
-              </div>
-            )}
+                </div>
+              </Card>
 
-            <div className="pt-4 border-t border-card-border">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-ink dark:text-cream">Segurança</h2>
-                {user && <ReportForm alvo={alvoDenuncia} userId={user.id} triggerLabel="Denunciar este serviço" />}
-              </div>
-            </div>
-
-            <div className="pt-6 border-t border-card-border">
-              <h2 className="text-lg font-semibold text-ink dark:text-cream mb-4">Avaliações</h2>
-              <div className="space-y-6">
-                <div className="flex items-center gap-4">
+              <Card variant="liquid" padding="md" className="border border-white/60 shadow-md shadow-slate-900/5 dark:border-white/10 dark:shadow-black/20 sm:p-7">
+                <h2 className="text-xl font-semibold text-ink dark:text-cream">Avaliações do serviço</h2>
+                <div className="mt-4">
                   <Rating media={media.media} total={media.total} size="lg" />
                 </div>
 
                 {avaliacoes.length > 0 ? (
-                  <div className="space-y-4">
+                  <div className="mt-6 space-y-4">
                     {avaliacoes.map((avaliacao) => (
-                      <Card key={avaliacao.id} variant="outlined" padding="md" className="border-card-border">
-                        <div className="flex items-start gap-3">
-                          <div className="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-lg font-bold text-orange-500 dark:text-orange-400 flex-shrink-0">
-                            {avaliacao.user?.email?.charAt(0).toUpperCase() || 'U'}
+                      <article key={avaliacao.id} className="rounded-xl border border-card-border bg-white/70 p-4 dark:bg-white/5">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div>
+                            <p className="font-semibold text-ink dark:text-cream">Cliente</p>
+                            <RatingStarsOnly media={avaliacao.nota} size="sm" />
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between gap-2">
-                              <p className="font-medium text-ink dark:text-cream truncate">
-                                {avaliacao.user?.email?.split('@')[0] || 'Utilizador'}
-                              </p>
-                              <div className="flex items-center gap-2">
-                                <RatingStarsOnly media={avaliacao.nota} size="sm" />
-                                <time className="text-xs text-neutral-500 dark:text-neutral-400">
-                                  {new Date(avaliacao.created_at).toLocaleDateString('pt-AO', {
-                                    day: '2-digit',
-                                    month: '2-digit',
-                                    year: 'numeric',
-                                  })}
-                                </time>
-                              </div>
-                            </div>
-                            {avaliacao.comentario && (
-                              <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400 whitespace-pre-wrap">
-                                {avaliacao.comentario}
-                              </p>
-                            )}
-                          </div>
+                          <time dateTime={avaliacao.created_at} className="text-xs text-neutral-500 dark:text-neutral-400">
+                            {new Date(avaliacao.created_at).toLocaleDateString('pt-AO', {
+                              day: '2-digit', month: 'long', year: 'numeric',
+                            })}
+                          </time>
                         </div>
-                      </Card>
+                        {avaliacao.comentario && (
+                          <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-relaxed text-neutral-700 dark:text-neutral-200">
+                            {avaliacao.comentario}
+                          </p>
+                        )}
+                      </article>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-neutral-500 dark:text-cream-text/70 text-center py-8">Sem avaliações</p>
+                  <p className="mt-5 rounded-xl bg-neutral-50 p-4 text-sm text-neutral-600 dark:bg-white/5 dark:text-cream-text">
+                    Este serviço ainda não recebeu avaliações.
+                  </p>
                 )}
 
-                {user && (
-                  <ReviewForm alvo={alvo} userId={user.id} />
-                )}
-              </div>
+                {user && <div className="mt-6"><ReviewForm alvo={alvo} userId={user.id} /></div>}
+              </Card>
             </div>
-          </Card>
+
+            <aside className="min-w-0 space-y-6" aria-label="Informações do profissional e contacto">
+              <Card variant="liquid" padding="md" className="border border-white/60 shadow-lg shadow-slate-900/5 dark:border-white/10 dark:shadow-black/20 sm:p-6">
+                <h2 className="text-lg font-semibold text-ink dark:text-cream">O profissional</h2>
+                <div className="mt-5 flex min-w-0 items-center gap-4">
+                  <Avatar
+                    src={profissional.avatar_url}
+                    alt={`Fotografia de perfil de ${profissional.nome}`}
+                    name={profissional.nome}
+                    width={72}
+                    height={72}
+                    className="h-[72px] w-[72px] flex-shrink-0"
+                  />
+                  <div className="min-w-0">
+                    <h3 className="break-words text-lg font-bold text-ink dark:text-cream">{profissional.nome}</h3>
+                    {profissional.categoria && <p className="mt-1 break-words text-sm text-neutral-600 dark:text-cream-text">{profissional.categoria}</p>}
+                  </div>
+                </div>
+
+                <div className="mt-5 space-y-3 text-sm text-neutral-700 dark:text-cream-text">
+                  {(profissional.municipio || profissional.provincia) && (
+                    <p><span className="font-semibold text-ink dark:text-cream">Localização:</span> {[profissional.municipio, profissional.provincia].filter(Boolean).join(', ')}</p>
+                  )}
+                  {profissional.anos_experiencia != null && profissional.anos_experiencia > 0 && (
+                    <p><span className="font-semibold text-ink dark:text-cream">Experiência:</span> {profissional.anos_experiencia} {profissional.anos_experiencia === 1 ? 'ano' : 'anos'}</p>
+                  )}
+                  {profissional.bio && <p className="break-words leading-relaxed">{profissional.bio}</p>}
+                  {dias && <p><span className="font-semibold text-ink dark:text-cream">Dias:</span> {dias}</p>}
+                  {horarios && <p><span className="font-semibold text-ink dark:text-cream">Horários:</span> {horarios}</p>}
+                </div>
+
+                <Link
+                  href={`/profissional/${profissional.slug}`}
+                  className="mt-6 inline-flex min-h-[48px] w-full items-center justify-center rounded-xl border border-card-border bg-white/80 px-4 py-3 text-sm font-semibold text-ink transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:bg-white/5 dark:text-cream dark:hover:bg-white/10"
+                >
+                  Ver perfil completo
+                </Link>
+              </Card>
+
+              <Card variant="liquid" padding="md" className="border border-white/60 shadow-md shadow-slate-900/5 dark:border-white/10 dark:shadow-black/20 sm:p-6">
+                <h2 className="text-lg font-semibold text-ink dark:text-cream">Contactar o profissional</h2>
+                <p className="mt-2 text-sm leading-relaxed text-neutral-600 dark:text-cream-text">
+                  Fale directamente com o profissional ou envie um pedido através do NegóMapa.
+                </p>
+                {!ehProprio && (
+                  <div className="mt-4">
+                    {user && ehProfissional ? (
+                      <p role="status" className="text-sm text-neutral-600 dark:text-cream-text">{MENSAGEM_BLOQUEIO_PROFISSIONAL}</p>
+                    ) : user ? (
+                      <BotoesContactoServico servicoId={service.id} profissionalId={profissional.id} />
+                    ) : (
+                      <div className="space-y-3">
+                        <p className="text-sm text-neutral-600 dark:text-cream-text">Entre na sua conta ou crie uma para pedir orçamento ou enviar mensagem.</p>
+                        <Link
+                          href={`/registar?redirectTo=${encodeURIComponent(`/servico/${slug}`)}`}
+                          className="inline-flex min-h-[48px] w-full items-center justify-center rounded-xl bg-orange-500 px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-orange-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2"
+                        >
+                          Entrar ou criar conta
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {ehProprio && <p className="mt-4 text-sm text-neutral-600 dark:text-cream-text">Este é o seu próprio serviço.</p>}
+              </Card>
+
+              <Card variant="liquid" padding="md" className="border border-white/60 dark:border-white/10 sm:p-6">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <h2 className="text-lg font-semibold text-ink dark:text-cream">Segurança</h2>
+                  {user && <ReportForm alvo={alvoDenuncia} userId={user.id} triggerLabel="Denunciar serviço" />}
+                </div>
+                <p className="mt-2 text-sm text-neutral-600 dark:text-cream-text">
+                  Nunca partilhe passwords ou documentos pessoais numa conversa.
+                </p>
+              </Card>
+            </aside>
+          </div>
+
+          <section className="mt-12 sm:mt-16" aria-labelledby="related-title">
+            <div className="mb-6">
+              <h2 id="related-title" className="text-2xl font-bold text-ink dark:text-cream">Serviços relacionados</h2>
+              <p className="mt-2 text-sm text-neutral-600 dark:text-cream-text">
+                Outros serviços aprovados na categoria {service.categoria?.nome ?? 'seleccionada'}.
+              </p>
+            </div>
+            {relacionados.length > 0 ? (
+              <div className="grid min-w-0 grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+                {relacionados.map((relacionado) => (
+                  <Link key={relacionado.id} href={`/servico/${relacionado.slug}`} className="group block min-w-0 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500">
+                    <Card variant="liquid" padding="md" hover className="h-full min-w-0 border border-white/60 shadow-md shadow-slate-900/5 dark:border-white/10 dark:shadow-black/20">
+                      <h3 className="break-words text-lg font-semibold text-ink group-hover:text-orange-700 dark:text-cream dark:group-hover:text-orange-300">{relacionado.titulo}</h3>
+                      <p className="mt-3 break-words text-sm font-semibold text-orange-700 dark:text-orange-300">
+                        {relacionado.preco != null ? `${formatCurrency(relacionado.preco)}${relacionado.preco_tipo === 'por_hora' ? ' / hora' : ''}` : 'Preço sob consulta'}
+                      </p>
+                      <p className="mt-2 break-words text-sm text-neutral-600 dark:text-cream-text">
+                        {[relacionado.municipio, relacionado.provincia].filter(Boolean).join(', ') || 'Localização não informada'}
+                      </p>
+                      <span className="mt-4 inline-flex min-h-[44px] items-center text-sm font-semibold text-orange-700 dark:text-orange-300">Ver serviço <span aria-hidden="true" className="ml-2 transition-transform group-hover:translate-x-1">→</span></span>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <p className="rounded-2xl border border-dashed border-card-border bg-white/60 p-6 text-sm text-neutral-600 dark:bg-white/5 dark:text-cream-text">
+                Ainda não existem outros serviços aprovados nesta categoria.
+              </p>
+            )}
+          </section>
         </div>
       </section>
     </MainLayout>
