@@ -2,7 +2,6 @@
 
 import { revalidatePath } from 'next/cache'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
-import { MENSAGEM_BLOQUEIO_PROFISSIONAL } from '@/lib/mensagens-bloqueio'
 
 /** Função que o utilizador desempenha numa conversa. Um utilizador pode ter várias. */
 export type PapelConversa = 'cliente' | 'profissional' | 'empresa'
@@ -26,19 +25,6 @@ export type MensagemConversa = {
 }
 
 type Resultado<T> = { success: true; data: T } | { success: false; error: string }
-
-/**
- * Indica se o utilizador tem perfil de profissional. A RLS (utilizador_e_profissional) é a
- * barreira real; esta verificação só antecipa a mensagem. Em caso de erro, deixa a RLS decidir.
- */
-async function eContaDeProfissional(supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>): Promise<boolean> {
-  const { data, error } = await supabase.rpc('utilizador_e_profissional')
-  if (error) {
-    console.error('Erro ao verificar perfil de profissional. Código:', error.code)
-    return false
-  }
-  return data === true
-}
 
 export async function listarConversas(): Promise<Resultado<ConversaResumo[]>> {
   const supabase = await createSupabaseServerClient()
@@ -212,10 +198,6 @@ export async function iniciarConversaComProfissional(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Sessão expirada. Inicie sessão novamente.' }
 
-  if (await eContaDeProfissional(supabase)) {
-    return { success: false, error: MENSAGEM_BLOQUEIO_PROFISSIONAL }
-  }
-
   const { data: existente, error: erroLeitura } = await supabase
     .from('conversas')
     .select('id')
@@ -236,7 +218,7 @@ export async function iniciarConversaComProfissional(
     .single()
 
   if (error?.code === '42501') {
-    return { success: false, error: MENSAGEM_BLOQUEIO_PROFISSIONAL }
+    return { success: false, error: 'Não foi possível iniciar a conversa. Verifique se o profissional está aprovado e se tem permissão para o contacto.' }
   }
 
   if (error || !data) {
