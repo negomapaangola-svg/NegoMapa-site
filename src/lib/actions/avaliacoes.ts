@@ -43,6 +43,13 @@ export type MediaAvaliacoes = {
   total: number
 }
 
+const UUID_ALVO_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const TIPOS_ALVO = ['profissional', 'empresa', 'servico', 'vaga'] as const
+
+function alvoValido(alvo: AlvoAvaliacao): boolean {
+  return Boolean(alvo && TIPOS_ALVO.includes(alvo.tipo) && UUID_ALVO_RE.test(alvo.id))
+}
+
 export type ActionResult = {
   success: boolean
   error?: string
@@ -52,8 +59,8 @@ export type ActionResult = {
 function validateAvaliacao(input: AvaliacaoInput): Record<string, string> {
   const errors: Record<string, string> = {}
 
-  if (!input.alvo || !input.alvo.tipo || !input.alvo.id) {
-    errors.alvo = 'Alvo da avaliação é obrigatório'
+  if (!alvoValido(input.alvo)) {
+    errors.alvo = 'Alvo da avaliação inválido'
   }
 
   if (!Number.isInteger(input.nota) || input.nota < 1 || input.nota > 5) {
@@ -70,7 +77,7 @@ function validateAvaliacao(input: AvaliacaoInput): Record<string, string> {
 function validateUpdate(input: AvaliacaoUpdateInput): Record<string, string> {
   const errors: Record<string, string> = {}
 
-  if (!input.avaliacaoId) {
+  if (!UUID_ALVO_RE.test(input.avaliacaoId)) {
     errors.avaliacaoId = 'ID da avaliação é obrigatório'
   }
 
@@ -243,7 +250,7 @@ export async function removerAvaliacao(avaliacaoId: string): Promise<ActionResul
     return { success: false, error: 'Utilizador não autenticado' }
   }
 
-  if (!avaliacaoId) {
+  if (!UUID_ALVO_RE.test(avaliacaoId)) {
     return { success: false, error: 'ID da avaliação é obrigatório' }
   }
 
@@ -284,6 +291,8 @@ export async function removerAvaliacao(avaliacaoId: string): Promise<ActionResul
 }
 
 export async function getAvaliacoesPorAlvo(alvo: AlvoAvaliacao): Promise<AvaliacaoWithUser[]> {
+  if (!alvoValido(alvo)) return []
+  if (!alvoValido(alvo)) return { media: 0, total: 0 }
   const supabase = await createSupabaseServerClient()
 
   const column = `${alvo.tipo}_id`
