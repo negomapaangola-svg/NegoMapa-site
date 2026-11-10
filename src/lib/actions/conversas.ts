@@ -170,6 +170,18 @@ export async function iniciarConversaComEmpresa(
   }
   if (existente) return { success: true, conversaId: existente.id }
 
+  // Só iniciar contacto com empresas aprovadas; a vista pública não expõe dados privados.
+  const { data: empresaAprovada, error: erroAprovacao } = await supabase
+    .from('empresas_publicas')
+    .select('id')
+    .eq('id', empresaId)
+    .eq('is_approved', true)
+    .maybeSingle()
+
+  if (erroAprovacao || !empresaAprovada) {
+    return { success: false, error: 'Empresa não encontrada ou indisponível para contacto.' }
+  }
+
   const { data, error } = await supabase
     .from('conversas')
     .insert({ cliente_id: user.id, empresa_id: empresaId })
@@ -210,6 +222,17 @@ export async function iniciarConversaComProfissional(
     return { success: false, error: 'Não foi possível iniciar a conversa.' }
   }
   if (existente) return { success: true, conversaId: existente.id }
+
+  // A vista contém apenas profissionais aprovados e é a fonte pública de elegibilidade.
+  const { data: profissionalAprovado, error: erroAprovacao } = await supabase
+    .from('profissionais_publicos')
+    .select('id')
+    .eq('id', profissionalId)
+    .maybeSingle()
+
+  if (erroAprovacao || !profissionalAprovado) {
+    return { success: false, error: 'Profissional não encontrado ou indisponível para contacto.' }
+  }
 
   const { data, error } = await supabase
     .from('conversas')
