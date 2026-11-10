@@ -16,7 +16,6 @@ import { ReportForm } from "@/components/denuncias/ReportForm"
 import { getMediaAvaliacoes, getAvaliacoesPorAlvo } from "@/lib/actions/avaliacoes"
 import { AlvoDenuncia } from "@/lib/actions/denuncias"
 import { createBrowserSupabaseClient } from "@/lib/supabase-browser"
-import { ContactarEmpresaButton } from "./_components/ContactarEmpresaButton"
 import { AvaliacoesProfissional } from "@/app/profissional/[slug]/_components/AvaliacoesProfissional"
 import { PortfolioProfissional } from "@/app/profissional/[slug]/_components/PortfolioProfissional"
 import { ProfissionalWhatsApp } from "@/app/profissional/[slug]/_components/ProfissionalWhatsApp"
@@ -160,10 +159,6 @@ function EmpresaContent() {
             </p>
           </section>
         )}
-
-        <section className="mt-8">
-          <ContactarEmpresaButton empresaId={empresa.id} />
-        </section>
 
         <section className="mt-14">
           <SectionHeader title="Contactos e localização" />
