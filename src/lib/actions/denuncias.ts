@@ -59,11 +59,13 @@ export type ActionResult = {
 function validateDenuncia(input: DenunciaInput): Record<string, string> {
   const errors: Record<string, string> = {}
 
-  if (!input.alvo || !input.alvo.tipo || !input.alvo.id) {
-    errors.alvo = 'Alvo da denúncia é obrigatório'
+  if (!input.alvo || !['profissional', 'empresa', 'servico', 'vaga'].includes(input.alvo.tipo) || !UUID_DENUNCIA_RE.test(input.alvo.id)) {
+    errors.alvo = 'Alvo da denúncia inválido'
   }
 
-  const motivosValidos = ['conteudo_inadequado', 'fraude', 'informacao_falsa', 'spam', 'comportamento_abusivo', 'outro']
+  const UUID_DENUNCIA_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+const motivosValidos = ['conteudo_inadequado', 'fraude', 'informacao_falsa', 'spam', 'comportamento_abusivo', 'outro']
   if (!input.motivo || !motivosValidos.includes(input.motivo)) {
     errors.motivo = 'Motivo inválido'
   }
@@ -78,7 +80,7 @@ function validateDenuncia(input: DenunciaInput): Record<string, string> {
 function validateEstado(input: AtualizarEstadoInput): Record<string, string> {
   const errors: Record<string, string> = {}
 
-  if (!input.denunciaId) {
+  if (!UUID_DENUNCIA_RE.test(input.denunciaId)) {
     errors.denunciaId = 'ID da denúncia é obrigatório'
   }
 
@@ -226,11 +228,11 @@ export async function getDenunciasAdmin(filtros: FiltrosDenuncias = {}): Promise
     `)
     .order('created_at', { ascending: false })
 
-  if (filtros.estado) {
+  if (filtros.estado && ['pendente', 'analisada', 'resolvida', 'arquivada'].includes(filtros.estado)) {
     query = query.eq('estado', filtros.estado)
   }
 
-  if (filtros.tipo_alvo) {
+  if (filtros.tipo_alvo && ['profissional', 'empresa', 'servico', 'vaga'].includes(filtros.tipo_alvo)) {
     query = query.not(`${filtros.tipo_alvo}_id`, 'is', null)
   }
 
