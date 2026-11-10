@@ -56,6 +56,8 @@ export type ActionResult = {
   fieldErrors?: Record<string, string>
 }
 
+const UUID_DENUNCIA_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 function validateDenuncia(input: DenunciaInput): Record<string, string> {
   const errors: Record<string, string> = {}
 
@@ -63,7 +65,7 @@ function validateDenuncia(input: DenunciaInput): Record<string, string> {
     errors.alvo = 'Alvo da denúncia inválido'
   }
 
-  const UUID_DENUNCIA_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 
 const motivosValidos = ['conteudo_inadequado', 'fraude', 'informacao_falsa', 'spam', 'comportamento_abusivo', 'outro']
   if (!input.motivo || !motivosValidos.includes(input.motivo)) {
