@@ -311,6 +311,10 @@ export async function atualizarEstadoDenuncia(input: AtualizarEstadoInput): Prom
 }
 
 export async function getDenunciaPendenteDoUsuario(alvo: AlvoDenuncia, userId: string): Promise<DenunciaWithDetails | null> {
+  const user = await getUser()
+  const tiposValidos = ['profissional', 'empresa', 'servico', 'vaga']
+  if (!user || user.id !== userId || !alvo || !tiposValidos.includes(alvo.tipo) || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(alvo.id)) return null
+
   const supabase = await createSupabaseServerClient()
 
   const { data, error } = await supabase
