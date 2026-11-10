@@ -1,6 +1,7 @@
 'use server'
 
 import { createSupabaseServerClient } from '@/lib/supabase-server'
+import { obterContextoUtilizador, podePublicarVaga } from '@/lib/permissoes'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
@@ -84,6 +85,10 @@ export async function createVaga(formData: VagaFormData): Promise<ActionResult> 
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) {
     return { success: false, error: 'Utilizador não autenticado' }
+  }
+
+  if (!podePublicarVaga(await obterContextoUtilizador())) {
+    return { success: false, error: 'Apenas empresas aprovadas podem publicar vagas.' }
   }
 
   const fieldErrors = validateVaga(formData)
@@ -223,6 +228,10 @@ export type VagaAdminItem = {
 
 export async function getAllVagasAdmin(): Promise<VagaAdminItem[]> {
   const supabase = await createSupabaseServerClient()
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError || !user) return []
+  const { data: admin, error: adminError } = await supabase.rpc('is_admin')
+  if (adminError || admin !== true) return []
 
   const { data, error } = await supabase
     .from('vagas')

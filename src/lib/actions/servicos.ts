@@ -1,6 +1,7 @@
 'use server'
 
 import { createSupabaseServerClient } from '@/lib/supabase-server'
+import { obterContextoUtilizador, podePublicarServico } from '@/lib/permissoes'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
@@ -210,6 +211,10 @@ export async function createService(formData: ServiceFormData): Promise<ActionRe
     return { success: false, error: 'Utilizador não autenticado' }
   }
 
+  if (!podePublicarServico(await obterContextoUtilizador())) {
+    return { success: false, error: 'Apenas profissionais aprovados podem publicar serviços.' }
+  }
+
   const fieldErrors = validateService(formData)
   if (Object.keys(fieldErrors).length > 0) {
     return { success: false, error: 'Dados inválidos', fieldErrors }
@@ -217,12 +222,15 @@ export async function createService(formData: ServiceFormData): Promise<ActionRe
 
   const { data: profissional, error: profError } = await supabase
     .from('profissionais')
-    .select('id')
+    .select('id, estado')
     .eq('user_id', user.id)
     .single()
 
   if (profError || !profissional) {
     return { success: false, error: 'Perfil profissional não encontrado. Crie o perfil primeiro.' }
+  }
+  if (profissional.estado !== 'aprovado') {
+    return { success: false, error: 'Apenas profissionais aprovados podem publicar serviços.' }
   }
 
   const baseSlug = generateSlug(formData.titulo)

@@ -48,7 +48,19 @@ export default async function CadastrarServicoPage() {
     )
   }
 
-  // Perfil pendente ou aprovado pode cadastrar serviços
+  if (profile.estado !== 'aprovado') {
+    return (
+      <MainLayout>
+        <section className="min-h-[60vh] bg-cream px-4 py-12 dark:bg-navy-dark">
+          <div className="mx-auto max-w-2xl rounded-xl border border-card-border bg-white/80 p-8 text-center shadow-sm dark:bg-neutral-900/80">
+            <h1 className="text-2xl font-bold text-ink dark:text-cream">Publicação indisponível</h1>
+            <p className="mt-3 text-neutral-700 dark:text-cream-text">O seu perfil profissional precisa de aprovação antes de publicar serviços.</p>
+          </div>
+        </section>
+      </MainLayout>
+    )
+  }
+
   return (
     <MainLayout>
       <ServiceFormPage categorias={categorias} profileEstado={profile.estado} />
