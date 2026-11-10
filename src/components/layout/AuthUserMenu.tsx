@@ -12,7 +12,7 @@ export function AuthUserMenu({ variante = 'cabecalho', onNavigate }: { variante?
   const [contexto, setContexto] = useState<Contexto | null>(null)
   useEffect(() => {
     let activo = true
-    const carregar = () => obterContextoNavegacao().then((c) => { if (activo) setContexto(c) }).catch(() => { if (activo) setContexto({ autenticado:false, profissional:false, estadoProfissional:null, empresa:false, empresaAprovada:false, administrador:false }) })
+    const carregar = () => obterContextoNavegacao().then((c) => { if (activo) setContexto(c) }).catch(() => { if (activo) setContexto({ userId:null, autenticado:false, profissional:false, estadoProfissional:null, empresa:false, empresaAprovada:false, administrador:false }) })
     carregar()
     return () => { activo = false }
   }, [])
