@@ -365,3 +365,37 @@ export async function getAvaliacaoDoUsuario(alvo: AlvoAvaliacao, userId: string)
 
   return data as AvaliacaoWithUser
 }
+
+export type AvaliacaoPublicaProfissional = {
+  id: string;
+  nota: number;
+  comentario: string | null;
+  created_at: string;
+};
+
+/**
+ * Leitura pública mínima: não selecciona user_id, email ou identificadores de outros alvos.
+ * A RLS da tabela limita as avaliações públicas a profissionais aprovados.
+ */
+export async function getAvaliacoesPublicasPorProfissional(
+  profissionalId: string
+): Promise<AvaliacaoPublicaProfissional[]> {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(profissionalId)) {
+    return [];
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from('avaliacoes')
+    .select('id, nota, comentario, created_at')
+    .eq('profissional_id', profissionalId)
+    .order('created_at', { ascending: false })
+    .limit(50);
+
+  if (error) {
+    console.error('Erro ao buscar avaliações públicas do profissional:', error.code);
+    return [];
+  }
+
+  return (data ?? []) as AvaliacaoPublicaProfissional[];
+}

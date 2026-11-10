@@ -42,7 +42,7 @@ export type ProfissionalContactoPublico = ProfissionalPublico & {
   disponibilidade_horarios: DisponibilidadeHorarios | null
   especialidades: string[] | null
   experiencia_faixa: string | null
-  faixa_preco_desde: number | null
+  faixa_preco_desde: string | null
 }
 
 export type ServicoPublico = {
@@ -207,4 +207,42 @@ export async function listarServicosAprovadosDoProfissional(
     const categoria = Array.isArray(item.categoria) ? item.categoria[0] : item.categoria
     return { ...item, categoria: categoria ?? null } as ServicoPublico
   })
+}
+
+
+export type ServicoRelacionadoPublico = {
+  id: string;
+  slug: string;
+  titulo: string;
+  preco: number | null;
+  preco_tipo: string | null;
+  provincia: string | null;
+  municipio: string | null;
+};
+
+/** Serviços aprovados da mesma categoria, publicados por outros profissionais. */
+export async function listarServicosRelacionadosDoProfissional(
+  categoriaId: string | null,
+  profissionalId: string
+): Promise<ServicoRelacionadoPublico[]> {
+  if (!categoriaId || !UUID_REGEX.test(categoriaId) || !UUID_REGEX.test(profissionalId)) {
+    return [];
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from('servicos')
+    .select('id, slug, titulo, preco, preco_tipo, provincia, municipio')
+    .eq('categoria_id', categoriaId)
+    .eq('estado', 'aprovado')
+    .neq('profissional_id', profissionalId)
+    .order('created_at', { ascending: false })
+    .limit(3);
+
+  if (error) {
+    console.error('Erro ao listar serviços relacionados. Código:', error.code);
+    return [];
+  }
+
+  return (data ?? []) as ServicoRelacionadoPublico[];
 }
