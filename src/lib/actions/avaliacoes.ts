@@ -292,7 +292,6 @@ export async function removerAvaliacao(avaliacaoId: string): Promise<ActionResul
 
 export async function getAvaliacoesPorAlvo(alvo: AlvoAvaliacao): Promise<AvaliacaoWithUser[]> {
   if (!alvoValido(alvo)) return []
-  if (!alvoValido(alvo)) return { media: 0, total: 0 }
   const supabase = await createSupabaseServerClient()
 
   const column = `${alvo.tipo}_id`
@@ -322,6 +321,7 @@ export async function getAvaliacoesPorAlvo(alvo: AlvoAvaliacao): Promise<Avaliac
 }
 
 export async function getMediaAvaliacoes(alvo: AlvoAvaliacao): Promise<MediaAvaliacoes> {
+  if (!alvoValido(alvo)) return { media: 0, total: 0 }
   const supabase = await createSupabaseServerClient()
 
   const column = `${alvo.tipo}_id`
