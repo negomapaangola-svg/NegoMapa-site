@@ -11,7 +11,7 @@ import { PesquisaGlobal } from './PesquisaGlobal';
 import { ThemeToggle } from './ThemeToggle';
 import { useTemaEscuro } from '@/hooks/useTemaEscuro';
 import { obterContextoNavegacao } from '@/lib/actions/permissoes';
-import { ITENS_NAVEGACAO, podeVerItem } from '@/lib/navegacao';
+import { ITENS_NAVEGACAO } from '@/lib/navegacao';
 
 type Contexto = Awaited<ReturnType<typeof obterContextoNavegacao>>
 
