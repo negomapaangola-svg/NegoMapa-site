@@ -87,6 +87,7 @@ export async function getAllEmpresasAdmin(): Promise<EmpresasAdminResult> {
 }
 
 export async function aprovarEmpresa(empresaId: string): Promise<ActionResult> {
+  if (!UUID_RE.test(empresaId)) return { success: false, error: 'Empresa não encontrada.' }
   const adminCheck = await isAdmin()
   if (!adminCheck) {
     return { success: false, error: 'Acesso negado. Privilégios de administrador necessários.' }
@@ -135,6 +136,7 @@ export async function aprovarEmpresa(empresaId: string): Promise<ActionResult> {
 }
 
 export async function rejeitarEmpresa(empresaId: string): Promise<ActionResult> {
+  if (!UUID_RE.test(empresaId)) return { success: false, error: 'Empresa não encontrada.' }
   const adminCheck = await isAdmin()
   if (!adminCheck) {
     return { success: false, error: 'Acesso negado. Privilégios de administrador necessários.' }
@@ -178,6 +180,7 @@ export async function rejeitarEmpresa(empresaId: string): Promise<ActionResult> 
 }
 
 export async function suspenderEmpresa(empresaId: string): Promise<ActionResult> {
+  if (!UUID_RE.test(empresaId)) return { success: false, error: 'Empresa não encontrada.' }
   const adminCheck = await isAdmin()
   if (!adminCheck) {
     return { success: false, error: 'Acesso negado. Privilégios de administrador necessários.' }
