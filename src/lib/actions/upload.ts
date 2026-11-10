@@ -65,7 +65,7 @@ export async function uploadFile(
   folder: string,
   file: File
 ): Promise<UploadResult> {
-  if (!bucketConfig[bucket]) {
+  if (!bucketConfig[bucket] || typeof folder !== 'string' || !/^[a-zA-Z0-9_-]{1,48}$/.test(folder)) {
     return { error: 'Bucket inválido' }
   }
 
@@ -75,7 +75,7 @@ export async function uploadFile(
     return { error: `Tipo de ficheiro não permitido para ${bucket}. Tipos aceites: ${config.allowedTypes.join(', ')}` }
   }
 
-  if (file.size > config.maxSize) {
+  if (!file || typeof file.size !== 'number' || file.size <= 0 || file.size > config.maxSize) {
     const maxMB = config.maxSize / (1024 * 1024)
     return { error: `Ficheiro excede o tamanho máximo de ${maxMB}MB para ${bucket}` }
   }
@@ -102,13 +102,8 @@ export async function uploadFile(
     })
 
   if (uploadError) {
-    console.error('Erro no upload:', {
-      message: uploadError.message,
-      statusCode: uploadError.statusCode,
-      name: uploadError.name,
-      stack: uploadError.stack,
-    })
-    return { error: uploadError.message || 'Erro ao fazer upload do ficheiro' }
+    console.error('Erro no upload do ficheiro. Código:', uploadError.statusCode ?? 'indisponível')
+    return { error: 'Não foi possível carregar o ficheiro. Verifique o tipo, tamanho e permissões.' }
   }
 
   if (config.isPublic) {
