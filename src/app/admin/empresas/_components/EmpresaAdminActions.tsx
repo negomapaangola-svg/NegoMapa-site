@@ -3,16 +3,14 @@
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
-import { aprovarEmpresa, rejeitarEmpresa, suspenderEmpresa } from '@/lib/actions/empresas'
+import { aprovarEmpresa, suspenderEmpresa } from '@/lib/actions/empresas'
 
 type Props = {
   empresaId: string
   isApproved: boolean
-  /** Caminho para onde ir depois de rejeitar (o registo deixa de existir). */
-  redirectAfterReject?: string
 }
 
-export function EmpresaAdminActions({ empresaId, isApproved, redirectAfterReject }: Props) {
+export function EmpresaAdminActions({ empresaId, isApproved }: Props) {
   const router = useRouter()
   const [pending, startTransition] = React.useTransition()
 
@@ -20,10 +18,6 @@ export function EmpresaAdminActions({ empresaId, isApproved, redirectAfterReject
     startTransition(async () => {
       const result = await action(empresaId)
       if (!result.success) alert(result.error)
-      if (result.success && action === rejeitarEmpresa && redirectAfterReject) {
-        router.push(redirectAfterReject)
-        return
-      }
       router.refresh()
     })
   }
@@ -34,8 +28,8 @@ export function EmpresaAdminActions({ empresaId, isApproved, redirectAfterReject
         <Button variant="primary" size="sm" disabled={pending} onClick={() => run(aprovarEmpresa)} className="w-full sm:w-auto">
           Aprovar
         </Button>
-        <Button variant="destructive" size="sm" disabled={pending} onClick={() => run(rejeitarEmpresa)} className="w-full sm:w-auto">
-          Rejeitar
+        <Button variant="secondary" size="sm" disabled title="A rejeição requer um estado próprio na base de dados." className="w-full sm:w-auto">
+          Rejeição indisponível
         </Button>
       </div>
     )
