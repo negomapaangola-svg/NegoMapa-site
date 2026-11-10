@@ -338,6 +338,10 @@ export async function getMediaAvaliacoes(alvo: AlvoAvaliacao): Promise<MediaAval
 }
 
 export async function getAvaliacaoDoUsuario(alvo: AlvoAvaliacao, userId: string): Promise<AvaliacaoWithUser | null> {
+  const user = await getUser()
+  const tiposValidos = ['profissional', 'empresa', 'servico', 'vaga']
+  if (!user || user.id !== userId || !alvo || !tiposValidos.includes(alvo.tipo) || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(alvo.id)) return null
+
   const supabase = await createSupabaseServerClient()
 
   const column = `${alvo.tipo}_id`
