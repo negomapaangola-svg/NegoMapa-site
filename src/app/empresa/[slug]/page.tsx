@@ -39,31 +39,20 @@ function EmpresaContent() {
         return
       }
 
+      // Leitura a partir da vista pública: a tabela companies já não é legível pelo anon
+      // em email, phone e estado_legalizacao (migração 20261110), o que causava "não encontrada".
       const { data, error } = await supabase
-        .from("companies")
-        .select("id, name, sector, province, city, bairro, rua, referencia_localizacao, description, email, phone, horario_atendimento, estado_legalizacao, slug, is_approved")
+        .from("empresas_publicas")
+        .select("id, name, sector, province, city, bairro, rua, referencia_localizacao, description, horario_atendimento, slug, is_approved, whatsapp, logo_url, portfolio")
         .eq("slug", slug)
         .eq("is_approved", true)
-        .single()
+        .maybeSingle()
 
       if (error) {
-        console.error("Empresa não encontrada:", error)
+        console.error("Erro ao carregar empresa. Código:", error.code)
         setEmpresa(null)
       } else {
-        const { data: extras, error: erroExtras } = await supabase
-          .from("empresas_publicas")
-          .select("whatsapp, logo_url, portfolio")
-          .eq("slug", slug)
-          .maybeSingle()
-
-        if (erroExtras) console.error("Dados públicos adicionais indisponíveis:", erroExtras.code)
-
-        setEmpresa({
-          ...data,
-          whatsapp: extras?.whatsapp ?? null,
-          logo_url: extras?.logo_url ?? null,
-          portfolio: extras?.portfolio ?? null,
-        })
+        setEmpresa(data)
       }
       setCarregando(false)
     }
@@ -122,25 +111,9 @@ function EmpresaContent() {
     )
   }
 
-  const hasPhone = !!empresa.phone
-  const hasEmail = !!empresa.email
   const alvo = { tipo: 'empresa' as const, id: empresa.id }
   const alvoDenuncia: AlvoDenuncia = { tipo: 'empresa', id: empresa.id }
 
-  const traduzirEstadoLegalizacao = (estado: string): string => {
-    switch (estado) {
-      case 'legalizada':
-        return 'Legalizada'
-      case 'em_processo':
-        return 'Em processo'
-      case 'pendente_documentacao':
-        return 'Documentação pendente'
-      default:
-        return estado
-    }
-  }
-
-  const temDadosLegalizacao = !!empresa.estado_legalizacao
   const temEnderecoDetalhado = empresa.rua || empresa.bairro || empresa.referencia_localizacao
   const localizacao = [empresa.city, empresa.province].filter(Boolean).join(', ')
 
@@ -205,16 +178,8 @@ function EmpresaContent() {
         <section className="mt-14">
           <SectionHeader title="Contactos e localização" />
           <Card variant="muted" padding="md">
-            <CardContent className="grid gap-6 sm:grid-cols-2">
+            <CardContent className="grid gap-6">
               <div>
-                <p className="text-sm font-medium text-neutral-500 dark:text-cream-text/70">Telefone</p>
-                <p className="mt-1 text-neutral-900 dark:text-cream">{empresa.phone || 'Não informado'}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-neutral-500 dark:text-cream-text/70">Email</p>
-                <p className="mt-1 break-all text-neutral-900 dark:text-cream">{empresa.email || 'Não informado'}</p>
-              </div>
-              <div className="sm:col-span-2">
                 <p className="text-sm font-medium text-neutral-500 dark:text-cream-text/70">Endereço</p>
                 <div className="mt-1 space-y-1 text-neutral-900 dark:text-cream">
                   {temEnderecoDetalhado ? (
@@ -239,13 +204,6 @@ function EmpresaContent() {
             <p className="whitespace-pre-wrap text-neutral-700 dark:text-cream-text">
               {empresa.horario_atendimento}
             </p>
-          </section>
-        )}
-
-        {temDadosLegalizacao && (
-          <section className="mt-14">
-            <SectionHeader title="Legalização" />
-            <Badge variant="neutral">{traduzirEstadoLegalizacao(empresa.estado_legalizacao)}</Badge>
           </section>
         )}
 

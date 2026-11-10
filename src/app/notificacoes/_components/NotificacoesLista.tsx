@@ -24,6 +24,8 @@ function obterDestino(notificacao: Notificacao): string | null {
       return '/empresa/painel'
     case 'empresa_rejeitada':
       return '/cadastrar-empresa'
+    case 'nova_mensagem':
+      return notificacao.referencia_id ? `/mensagens?conversa=${encodeURIComponent(notificacao.referencia_id)}` : '/mensagens'
     default:
       return null
   }

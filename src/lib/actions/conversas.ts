@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { createClient } from '@supabase/supabase-js'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 
 /** Função que o utilizador desempenha numa conversa. Um utilizador pode ter várias. */
@@ -14,6 +15,20 @@ export type ConversaResumo = {
   criada_em: string
   /** Papel do utilizador autenticado nesta conversa; define o rótulo do interlocutor. */
   papel: PapelConversa
+  /** Nome do interlocutor: profissional ou empresa (para clientes); "Cliente" nos outros casos. */
+  nome_interlocutor: string
+  ultima_mensagem: string | null
+  ultima_mensagem_em: string | null
+  /** Mensagens recebidas e ainda não lidas nesta conversa. */
+  nao_lidas: number
+}
+
+type LinhaMensagemResumo = {
+  conversa_id: string
+  remetente_id: string
+  conteudo: string
+  lida_em: string | null
+  criada_em: string
 }
 
 export type MensagemConversa = {
@@ -58,7 +73,7 @@ export async function listarConversas(): Promise<Resultado<ConversaResumo[]>> {
     Boolean(conversa.empresa_id && idsEmpresa.has(conversa.empresa_id))
   )
 
-  const conversas: ConversaResumo[] = minhasConversas.map((conversa) => {
+  const conversasBase = minhasConversas.map((conversa) => {
     let papel: PapelConversa = 'cliente'
     if (conversa.cliente_id === user.id) {
       papel = 'cliente'
@@ -67,7 +82,56 @@ export async function listarConversas(): Promise<Resultado<ConversaResumo[]>> {
     } else if (conversa.empresa_id && idsEmpresa.has(conversa.empresa_id)) {
       papel = 'empresa'
     }
-    return { ...(conversa as Omit<ConversaResumo, 'papel'>), papel }
+    return { ...conversa, papel }
+  })
+
+  const idsConversas = conversasBase.map((c) => c.id)
+  const idsProfissionaisConversas = conversasBase.map((c) => c.profissional_id).filter((id): id is string => !!id)
+  const idsEmpresasConversas = conversasBase.map((c) => c.empresa_id).filter((id): id is string => !!id)
+
+  // Últimas mensagens (limite fixo) para calcular pré-visualização e não lidas. A RLS limita às conversas do utilizador.
+  const resMensagens = idsConversas.length > 0
+    ? await supabase
+        .from('mensagens')
+        .select('conversa_id, remetente_id, conteudo, lida_em, criada_em')
+        .in('conversa_id', idsConversas)
+        .order('criada_em', { ascending: false })
+        .limit(1000)
+    : null
+  const resProfissionais = idsProfissionaisConversas.length > 0
+    ? await supabase.from('profissionais_publicos').select('id, nome').in('id', idsProfissionaisConversas)
+    : null
+  const resEmpresas = idsEmpresasConversas.length > 0
+    ? await supabase.from('empresas_publicas').select('id, name').in('id', idsEmpresasConversas)
+    : null
+
+  const mensagens = (resMensagens?.data ?? []) as LinhaMensagemResumo[]
+  const ultimaPorConversa = new Map<string, LinhaMensagemResumo>()
+  const naoLidasPorConversa = new Map<string, number>()
+  for (const mensagem of mensagens) {
+    if (!ultimaPorConversa.has(mensagem.conversa_id)) ultimaPorConversa.set(mensagem.conversa_id, mensagem)
+    if (mensagem.remetente_id !== user.id && mensagem.lida_em === null) {
+      naoLidasPorConversa.set(mensagem.conversa_id, (naoLidasPorConversa.get(mensagem.conversa_id) ?? 0) + 1)
+    }
+  }
+  const nomesProfissionais = new Map(((resProfissionais?.data ?? []) as { id: string; nome: string | null }[]).map((p) => [p.id, p.nome]))
+  const nomesEmpresas = new Map(((resEmpresas?.data ?? []) as { id: string; name: string | null }[]).map((e) => [e.id, e.name]))
+
+  const conversas: ConversaResumo[] = conversasBase.map((conversa) => {
+    const ultima = ultimaPorConversa.get(conversa.id)
+    let nome = 'Cliente'
+    if (conversa.papel === 'cliente') {
+      if (conversa.profissional_id) nome = nomesProfissionais.get(conversa.profissional_id) || 'Profissional'
+      else if (conversa.empresa_id) nome = nomesEmpresas.get(conversa.empresa_id) || 'Empresa'
+      else nome = 'Contacto'
+    }
+    return {
+      ...conversa,
+      nome_interlocutor: nome,
+      ultima_mensagem: ultima ? ultima.conteudo : null,
+      ultima_mensagem_em: ultima ? ultima.criada_em : null,
+      nao_lidas: naoLidasPorConversa.get(conversa.id) ?? 0,
+    }
   })
 
   return { success: true, data: conversas }
@@ -146,10 +210,84 @@ export async function enviarMensagem(conversaId: string, conteudo: string): Prom
     return { success: false, error: 'Não foi possível enviar a mensagem.' }
   }
 
+  // A notificação nunca bloqueia o envio da mensagem.
+  try {
+    await notificarNovaMensagem(conversaId, user.id)
+  } catch {
+    console.error('Erro ao criar notificação de nova mensagem.')
+  }
+
   return { success: true }
 }
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+/**
+ * Cliente de serviço, só no servidor, para criar notificações (a tabela não permite INSERT ao utilizador).
+ * Devolve null se a chave ou o URL não estiverem configurados.
+ */
+function criarClienteServico() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const chave = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!url || !chave) return null
+  return createClient(url, chave, { auth: { persistSession: false, autoRefreshToken: false } })
+}
+
+/**
+ * Cria uma notificação de plataforma para o outro participante.
+ * Não expõe o conteúdo da mensagem, não notifica o remetente e não duplica uma notificação ainda por ler.
+ */
+async function notificarNovaMensagem(conversaId: string, remetenteId: string): Promise<void> {
+  const admin = criarClienteServico()
+  if (!admin) return
+
+  const { data: conversa } = await admin
+    .from('conversas')
+    .select('cliente_id, profissional_id, empresa_id')
+    .eq('id', conversaId)
+    .maybeSingle()
+  if (!conversa) return
+
+  let destinatario: string | null = null
+  if (conversa.cliente_id === remetenteId) {
+    if (conversa.profissional_id) {
+      const { data } = await admin.from('profissionais').select('user_id').eq('id', conversa.profissional_id).maybeSingle()
+      destinatario = data?.user_id ?? null
+    } else if (conversa.empresa_id) {
+      const { data } = await admin.from('companies').select('user_id').eq('id', conversa.empresa_id).maybeSingle()
+      destinatario = data?.user_id ?? null
+    }
+  } else {
+    destinatario = conversa.cliente_id
+  }
+  if (!destinatario || destinatario === remetenteId) return
+
+  const { data: preferencias } = await admin
+    .from('preferencias_notificacao')
+    .select('plataforma')
+    .eq('user_id', destinatario)
+    .maybeSingle()
+  if (preferencias && !preferencias.plataforma) return
+
+  const { count } = await admin
+    .from('notificacoes')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', destinatario)
+    .eq('tipo', 'nova_mensagem')
+    .eq('referencia_id', conversaId)
+    .eq('lida', false)
+  if ((count ?? 0) > 0) return
+
+  const { error } = await admin.rpc('criar_notificacao', {
+    p_user_id: destinatario,
+    p_tipo: 'nova_mensagem',
+    p_titulo: 'Nova mensagem',
+    p_corpo: 'Recebeu uma nova mensagem no NegóMapa. Abra a conversa para a ler.',
+    p_canal: 'plataforma',
+    p_referencia_id: conversaId,
+  })
+  if (error) console.error('Erro ao criar notificação de nova mensagem. Código:', error.code)
+}
 
 /**
  * Regras de contacto: ninguém contacta o próprio perfil/empresa, e o destino tem de estar aprovado.
@@ -349,6 +487,16 @@ export async function marcarMensagensLidas(conversaId: string): Promise<{ succes
     console.error('Erro ao marcar mensagens como lidas. Código:', error.code)
     return { success: false, error: 'Não foi possível atualizar as mensagens.' }
   }
+
+  // Ao abrir a conversa, a notificação de nova mensagem desta conversa passa a lida (só as do próprio utilizador).
+  const { error: erroNotificacao } = await supabase
+    .from('notificacoes')
+    .update({ lida: true })
+    .eq('user_id', user.id)
+    .eq('tipo', 'nova_mensagem')
+    .eq('referencia_id', conversaId)
+    .eq('lida', false)
+  if (erroNotificacao) console.error('Erro ao marcar notificação de mensagem. Código:', erroNotificacao.code)
 
   revalidatePath('/mensagens')
   revalidatePath('/empresa/painel/mensagens')
