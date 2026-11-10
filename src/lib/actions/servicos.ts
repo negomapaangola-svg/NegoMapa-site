@@ -2,6 +2,7 @@
 
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { obterContextoUtilizador, podePublicarServico } from '@/lib/permissoes'
+import { isAdmin } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
@@ -320,23 +321,9 @@ export async function getActiveCategories() {
 }
 
 async function verifyAdmin(): Promise<ActionResult | null> {
-  const supabase = await createSupabaseServerClient()
-
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-  if (authError || !user) {
-    return { success: false, error: 'Utilizador não autenticado' }
-  }
-
-  const { data: adminRow, error: adminError } = await supabase
-    .from('admin_users')
-    .select('user_id')
-    .eq('user_id', user.id)
-    .maybeSingle()
-
-  if (adminError || !adminRow) {
+  if (!(await isAdmin())) {
     return { success: false, error: 'Acesso negado. Privilégios de administrador necessários.' }
   }
-
   return null
 }
 
@@ -344,7 +331,7 @@ export async function approveService(serviceId: string): Promise<ActionResult> {
   const authError = await verifyAdmin()
   if (authError) return authError
 
-  if (!serviceId || typeof serviceId !== 'string') {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(serviceId)) {
     return { success: false, error: 'ID do serviço inválido' }
   }
 
