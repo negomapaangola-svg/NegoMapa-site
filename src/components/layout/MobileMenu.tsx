@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { logoutAction } from '@/lib/actions/logout';
 import { obterContextoNavegacao } from '@/lib/actions/permissoes';
 import { GRUPOS_MENU_MOBILE, ITENS_NAVEGACAO, podeVerItem, type ItemNavegacao } from '@/lib/navegacao';
@@ -51,8 +51,12 @@ interface MobileMenuProps { aberto: boolean; onFechar: () => void; pathname: str
 
 export function MobileMenu({ aberto, onFechar, pathname }: MobileMenuProps) {
   const painelRef = useRef<HTMLDivElement>(null);
-  const searchParams = useSearchParams();
+  const [queryActual, setQueryActual] = useState('');
   const [contexto, setContexto] = useState<Contexto | null>(null);
+
+  useEffect(() => {
+    if (aberto) setQueryActual(window.location.search);
+  }, [aberto, pathname]);
 
   useEffect(() => {
     if (!aberto) return;
@@ -95,7 +99,7 @@ export function MobileMenu({ aberto, onFechar, pathname }: MobileMenuProps) {
   const classeLink = 'group flex min-h-12 min-w-0 items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-navy transition-colors hover:bg-white/80 hover:text-orange-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:text-cream dark:hover:bg-white/10 dark:hover:text-orange-300';
   const itemLink = (item: ItemNavegacao) => {
     const [rota, query] = item.rota.split('?');
-    const queryActiva = query ? new URLSearchParams(query).toString() === searchParams.toString() : !item.rota.includes('?');
+    const queryActiva = query ? new URLSearchParams(query).toString() === new URLSearchParams(queryActual).toString() : !item.rota.includes('?');
     const activo = pathname === rota && queryActiva || (rota !== '/' && pathname.startsWith(rota + '/'));
     return <Link key={item.id} href={item.rota} onClick={onFechar} aria-current={activo ? 'page' : undefined} className={`${classeLink} ${activo ? 'bg-orange-500/10 text-orange-800 dark:bg-orange-400/15 dark:text-orange-200' : ''}`}>
       <IconeMenu id={item.id} />
