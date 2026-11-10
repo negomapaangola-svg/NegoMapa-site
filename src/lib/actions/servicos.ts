@@ -217,12 +217,15 @@ export async function createService(formData: ServiceFormData): Promise<ActionRe
 
   const { data: profissional, error: profError } = await supabase
     .from('profissionais')
-    .select('id')
+    .select('id, estado')
     .eq('user_id', user.id)
     .single()
 
   if (profError || !profissional) {
     return { success: false, error: 'Perfil profissional não encontrado. Crie o perfil primeiro.' }
+  }
+  if (profissional.estado !== 'aprovado') {
+    return { success: false, error: 'Apenas profissionais aprovados podem publicar serviços.' }
   }
 
   const baseSlug = generateSlug(formData.titulo)
