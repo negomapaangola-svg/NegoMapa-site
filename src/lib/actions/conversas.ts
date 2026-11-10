@@ -152,6 +152,58 @@ export async function enviarMensagem(conversaId: string, conteudo: string): Prom
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 /**
+ * Regras de contacto: ninguém contacta o próprio perfil/empresa, e o destino tem de estar aprovado.
+ * Serve as páginas (para mostrar o botão) e as ações abaixo (para validar no servidor).
+ * A RLS continua a ser a barreira final na inserção.
+ */
+export async function verificarPodeContactar(
+  alvo: { tipo: 'profissional' | 'empresa'; id: string }
+): Promise<{ pode: boolean; motivo?: string }> {
+  if (!UUID_REGEX.test(alvo.id)) return { pode: false, motivo: 'Destino inválido.' }
+
+  const supabase = await createSupabaseServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { pode: false, motivo: 'Sessão expirada. Inicie sessão novamente.' }
+
+  if (alvo.tipo === 'profissional') {
+    const { data: proprio, error: erroProprio } = await supabase
+      .from('profissionais')
+      .select('id')
+      .eq('user_id', user.id)
+      .maybeSingle()
+    if (erroProprio) return { pode: false, motivo: 'Não foi possível verificar o contacto.' }
+    if (proprio?.id === alvo.id) return { pode: false, motivo: 'Não pode contactar o seu próprio perfil.' }
+
+    // A vista contém apenas profissionais aprovados.
+    const { data: aprovado } = await supabase
+      .from('profissionais_publicos')
+      .select('id')
+      .eq('id', alvo.id)
+      .maybeSingle()
+    if (!aprovado) return { pode: false, motivo: 'Profissional não encontrado ou indisponível para contacto.' }
+    return { pode: true }
+  }
+
+  const { data: minhasEmpresas, error: erroEmpresas } = await supabase
+    .from('companies')
+    .select('id')
+    .eq('user_id', user.id)
+  if (erroEmpresas) return { pode: false, motivo: 'Não foi possível verificar o contacto.' }
+  if ((minhasEmpresas ?? []).some((empresa) => empresa.id === alvo.id)) {
+    return { pode: false, motivo: 'Não pode contactar a sua própria empresa.' }
+  }
+
+  const { data: aprovada } = await supabase
+    .from('empresas_publicas')
+    .select('id')
+    .eq('id', alvo.id)
+    .eq('is_approved', true)
+    .maybeSingle()
+  if (!aprovada) return { pode: false, motivo: 'Empresa não encontrada ou indisponível para contacto.' }
+  return { pode: true }
+}
+
+/**
  * Abre (ou reutiliza) a conversa do utilizador, na função de cliente, com uma empresa aprovada.
  * Usada pelo candidato a partir das suas candidaturas. A RLS impede conversas com a própria empresa.
  * Não é bloqueada para contas de profissional: o contacto com empresas mantém-se.
@@ -178,16 +230,10 @@ export async function iniciarConversaComEmpresa(
   }
   if (existente) return { success: true, conversaId: existente.id }
 
-  // Só iniciar contacto com empresas aprovadas; a vista pública não expõe dados privados.
-  const { data: empresaAprovada, error: erroAprovacao } = await supabase
-    .from('empresas_publicas')
-    .select('id')
-    .eq('id', empresaId)
-    .eq('is_approved', true)
-    .maybeSingle()
-
-  if (erroAprovacao || !empresaAprovada) {
-    return { success: false, error: 'Empresa não encontrada ou indisponível para contacto.' }
+  // Regras: não é a própria empresa e o destino tem de estar aprovado.
+  const permissao = await verificarPodeContactar({ tipo: 'empresa', id: empresaId })
+  if (!permissao.pode) {
+    return { success: false, error: permissao.motivo ?? 'Empresa indisponível para contacto.' }
   }
 
   // INSERT sem RETURNING: a RLS de SELECT não é avaliada sobre a linha recém-inserida.
@@ -244,15 +290,10 @@ export async function iniciarConversaComProfissional(
   }
   if (existente) return { success: true, conversaId: existente.id }
 
-  // A vista contém apenas profissionais aprovados e é a fonte pública de elegibilidade.
-  const { data: profissionalAprovado, error: erroAprovacao } = await supabase
-    .from('profissionais_publicos')
-    .select('id')
-    .eq('id', profissionalId)
-    .maybeSingle()
-
-  if (erroAprovacao || !profissionalAprovado) {
-    return { success: false, error: 'Profissional não encontrado ou indisponível para contacto.' }
+  // Regras: não é o próprio perfil e o destino tem de estar aprovado.
+  const permissao = await verificarPodeContactar({ tipo: 'profissional', id: profissionalId })
+  if (!permissao.pode) {
+    return { success: false, error: permissao.motivo ?? 'Profissional indisponível para contacto.' }
   }
 
   // INSERT sem RETURNING: a RLS de SELECT não é avaliada sobre a linha recém-inserida.

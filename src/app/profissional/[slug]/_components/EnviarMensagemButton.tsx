@@ -26,7 +26,7 @@ export function EnviarMensagemButton({ profissionalId }: { profissionalId: strin
   return (
     <div>
       <Button size="lg" onClick={handleClick} disabled={pending}>
-        {pending ? 'A abrir conversa…' : 'Enviar mensagem'}
+        {pending ? 'A abrir conversa…' : 'Contactar profissional'}
       </Button>
       {erro && (
         <p role="alert" className="mt-3 text-sm text-red-600 dark:text-red-400">

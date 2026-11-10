@@ -26,7 +26,6 @@ import { EnviarMensagemButton } from './_components/EnviarMensagemButton';
 import { ProfissionalWhatsApp } from './_components/ProfissionalWhatsApp';
 import { AvaliacoesProfissional } from './_components/AvaliacoesProfissional';
 import { PortfolioProfissional } from './_components/PortfolioProfissional';
-import { MENSAGEM_BLOQUEIO_PROFISSIONAL } from '@/lib/mensagens-bloqueio';
 
 type Params = Promise<{ slug: string }>;
 
@@ -104,11 +103,9 @@ export default async function ProfissionalPublicoPage({ params }: { params: Para
   );
 
   let eDono = false;
-  let ehProfissional = false;
   if (user) {
     const perfilProprio = await obterPerfilProfissionalDoUtilizador();
     eDono = perfilProprio?.id === dados.id;
-    ehProfissional = !!perfilProprio;
   }
 
   const localizacao = [dados.municipio, dados.provincia].filter(Boolean).join(', ');
@@ -189,14 +186,9 @@ export default async function ProfissionalPublicoPage({ params }: { params: Para
                 >
                   Ver serviços
                 </a>
-                {user && !eDono && !ehProfissional && <EnviarMensagemButton profissionalId={dados.id} />}
+                {user && !eDono && <EnviarMensagemButton profissionalId={dados.id} />}
               </div>
 
-              {user && !eDono && ehProfissional && (
-                <p role="status" className="mt-4 text-sm text-neutral-600 dark:text-cream-text">
-                  {MENSAGEM_BLOQUEIO_PROFISSIONAL}
-                </p>
-              )}
               {!user && (
                 <div className="mt-4 rounded-2xl border border-card-border bg-neutral-50/80 p-4 dark:bg-white/5 sm:flex sm:items-center sm:justify-between sm:gap-4">
                   <p className="text-sm text-neutral-700 dark:text-cream-text">
