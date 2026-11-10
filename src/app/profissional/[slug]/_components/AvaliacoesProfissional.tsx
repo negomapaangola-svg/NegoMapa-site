@@ -1,4 +1,3 @@
-import { Rating } from '@/components/avaliacoes/Rating';
 import { formatDate } from '@/lib/utils';
 import type { AvaliacaoPublicaProfissional, MediaAvaliacoes } from '@/lib/actions/avaliacoes';
 

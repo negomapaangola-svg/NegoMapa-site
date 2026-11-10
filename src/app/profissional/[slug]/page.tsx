@@ -259,17 +259,12 @@ export default async function ProfissionalPublicoPage({ params }: { params: Para
                 <p className="mt-2 text-sm leading-relaxed text-neutral-600 dark:text-cream-text">
                   Tem interesse nos serviços deste profissional? Entre em contacto directamente ou envie uma mensagem pela plataforma.
                 </p>
-                <div className="mt-4">
-                  <ProfissionalWhatsApp whatsapp={dados.whatsapp} />
-                </div>
-                {user && !eDono && !ehProfissional && (
-                  <div className="mt-3"><EnviarMensagemButton profissionalId={dados.id} /></div>
-                )}
-                {!dados.whatsapp && (
-                  <p className="mt-3 text-xs text-neutral-500 dark:text-cream-text/80">
-                    O contacto por WhatsApp não está disponível neste perfil.
-                  </p>
-                )}
+                <a
+                  href="#servicos"
+                  className="mt-4 inline-flex min-h-[44px] items-center text-sm font-semibold text-orange-700 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:text-orange-300"
+                >
+                  Explorar serviços publicados
+                </a>
               </Card>
             </aside>
           </div>
