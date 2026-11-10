@@ -190,19 +190,32 @@ export async function iniciarConversaComEmpresa(
     return { success: false, error: 'Empresa não encontrada ou indisponível para contacto.' }
   }
 
-  const { data, error } = await supabase
+  // INSERT sem RETURNING: a RLS de SELECT não é avaliada sobre a linha recém-inserida.
+  const { error } = await supabase
     .from('conversas')
     .insert({ cliente_id: user.id, empresa_id: empresaId })
-    .select('id')
-    .single()
 
-  if (error || !data) {
-    console.error('Erro ao criar conversa com empresa. Código:', error?.code)
+  // 23505: a conversa já existe (inserção concorrente). Nesse caso lê-se a existente.
+  if (error && error.code !== '23505') {
+    console.error('Erro ao criar conversa com empresa. Código:', error.code)
+    return { success: false, error: 'Não foi possível iniciar a conversa com a empresa.' }
+  }
+
+  // Leitura separada, após o INSERT, já com a linha committed.
+  const { data: criada, error: erroLeituraFinal } = await supabase
+    .from('conversas')
+    .select('id')
+    .eq('cliente_id', user.id)
+    .eq('empresa_id', empresaId)
+    .maybeSingle()
+
+  if (erroLeituraFinal || !criada) {
+    console.error('Erro ao obter conversa com empresa. Código:', erroLeituraFinal?.code)
     return { success: false, error: 'Não foi possível iniciar a conversa com a empresa.' }
   }
 
   revalidatePath('/mensagens')
-  return { success: true, conversaId: data.id }
+  return { success: true, conversaId: criada.id }
 }
 
 /**
@@ -242,23 +255,36 @@ export async function iniciarConversaComProfissional(
     return { success: false, error: 'Profissional não encontrado ou indisponível para contacto.' }
   }
 
-  const { data, error } = await supabase
+  // INSERT sem RETURNING: a RLS de SELECT não é avaliada sobre a linha recém-inserida.
+  const { error } = await supabase
     .from('conversas')
     .insert({ cliente_id: user.id, profissional_id: profissionalId })
-    .select('id')
-    .single()
 
   if (error?.code === '42501') {
     return { success: false, error: 'Não foi possível iniciar a conversa. Verifique se o profissional está aprovado e se tem permissão para o contacto.' }
   }
 
-  if (error || !data) {
-    console.error('Erro ao criar conversa. Código:', error?.code)
+  // 23505: a conversa já existe (inserção concorrente). Nesse caso lê-se a existente.
+  if (error && error.code !== '23505') {
+    console.error('Erro ao criar conversa. Código:', error.code)
+    return { success: false, error: 'Não foi possível iniciar a conversa. O profissional pode não estar disponível.' }
+  }
+
+  // Leitura separada, após o INSERT, já com a linha committed.
+  const { data: criada, error: erroLeituraFinal } = await supabase
+    .from('conversas')
+    .select('id')
+    .eq('cliente_id', user.id)
+    .eq('profissional_id', profissionalId)
+    .maybeSingle()
+
+  if (erroLeituraFinal || !criada) {
+    console.error('Erro ao obter conversa. Código:', erroLeituraFinal?.code)
     return { success: false, error: 'Não foi possível iniciar a conversa. O profissional pode não estar disponível.' }
   }
 
   revalidatePath('/mensagens')
-  return { success: true, conversaId: data.id }
+  return { success: true, conversaId: criada.id }
 }
 
 export async function marcarMensagensLidas(conversaId: string): Promise<{ success: boolean; error?: string }> {
