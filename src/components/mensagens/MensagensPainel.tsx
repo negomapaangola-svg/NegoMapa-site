@@ -155,7 +155,7 @@ export function MensagensPainel({ conversas: conversasIniciais, userId, basePath
   const painelBase = 'min-h-0 flex-col overflow-hidden rounded-2xl border border-card-border bg-white/70 dark:bg-neutral-800/70'
 
   return (
-    <div className="grid grid-cols-1 gap-4 md:h-[640px] md:grid-cols-3">
+    <div className="grid h-full min-h-0 grid-cols-1 gap-4 md:grid-cols-3 md:grid-rows-[minmax(0,1fr)]">
       <aside className={`${selecionada ? 'hidden md:flex' : 'flex'} ${painelBase}`}>
         <h2 className="border-b border-card-border px-4 py-3 text-sm font-semibold text-ink dark:text-cream">
           Conversas

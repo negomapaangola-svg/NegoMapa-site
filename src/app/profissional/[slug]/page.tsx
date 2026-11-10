@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { MainLayout } from '@/components/layout/MainLayout';
@@ -9,7 +8,6 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Rating } from '@/components/avaliacoes/Rating';
-import { IMAGENS } from '@/lib/imagens';
 import { formatCurrency } from '@/lib/utils';
 import { getUser } from '@/lib/auth';
 import {
@@ -128,22 +126,12 @@ export default async function ProfissionalPublicoPage({ params }: { params: Para
           </nav>
 
           <Card variant="liquid" padding="none" className="overflow-hidden border border-white/70 shadow-xl shadow-slate-900/5 dark:border-white/10 dark:shadow-black/20">
-            <div className="relative h-36 overflow-hidden bg-orange-50 dark:bg-neutral-900 sm:h-48 lg:h-56">
-              <Image
-                src={IMAGENS.profissionalCapaPadrao}
-                alt=""
-                fill
-                priority
-                sizes="(max-width: 1024px) 100vw, 1152px"
-                className="object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-r from-slate-950/55 via-slate-950/15 to-transparent" aria-hidden="true" />
-              <div className="absolute bottom-4 left-5 sm:bottom-6 sm:left-8">
-                {dados.categoria && <Badge variant="primary">{dados.categoria}</Badge>}
-              </div>
-            </div>
-
             <div className="p-5 sm:p-8">
+              {dados.categoria && (
+                <div className="mb-4">
+                  <Badge variant="primary">{dados.categoria}</Badge>
+                </div>
+              )}
               <div className="flex min-w-0 flex-col gap-5 sm:flex-row sm:items-end">
                 <Avatar
                   src={dados.avatar_url}

@@ -43,12 +43,14 @@ export default async function EmpresaMensagensPage({
             </CardHeader>
             <CardContent className="mt-6">
               {resultado.success ? (
-                <MensagensPainel
-                  conversas={conversasEmpresa}
-                  userId={user.id}
-                  basePath="/empresa/painel/mensagens"
-                  conversaInicial={conversa ?? null}
-                />
+                <div className="h-[calc(100dvh-12rem)] min-h-[520px]">
+                  <MensagensPainel
+                    conversas={conversasEmpresa}
+                    userId={user.id}
+                    basePath="/empresa/painel/mensagens"
+                    conversaInicial={conversa ?? null}
+                  />
+                </div>
               ) : (
                 <p role="alert" className="text-red-700 dark:text-red-300">{resultado.error}</p>
               )}

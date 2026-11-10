@@ -3,8 +3,6 @@
 import * as React from "react"
 import { useParams } from "next/navigation"
 import Link from "next/link"
-import Image from "next/image"
-import { IMAGENS } from "@/lib/imagens"
 import { supabase } from "@/lib/supabase"
 import { isHttpsUrl } from "@/lib/utils"
 import { Badge } from "@/components/ui/Badge"
@@ -120,14 +118,6 @@ function EmpresaContent() {
   return (
     <MainLayout>
       <div className="mx-auto max-w-4xl bg-white px-4 py-12 dark:bg-navy-dark sm:px-6 lg:px-8">
-        <Image
-          src={IMAGENS.empresaCapaPadrao}
-          alt=""
-          width={1672}
-          height={941}
-          sizes="(max-width: 768px) 100vw, 896px"
-          className="mb-8 h-auto w-full rounded-[16px] object-cover"
-        />
         <nav aria-label="Navegação" className="mb-8">
           <Link href="/empresas" className="text-sm font-medium text-neutral-600 hover:text-orange-600 dark:text-cream-text dark:hover:text-orange-400">
             ← Voltar a empresas

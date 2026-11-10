@@ -303,6 +303,19 @@ export async function verificarPodeContactar(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { pode: false, motivo: 'Sessão expirada. Inicie sessão novamente.' }
 
+  // Confirmação do dono no servidor, independente da sessão do browser e da RLS: só corre com chave de serviço.
+  const admin = criarClienteServico()
+  if (admin) {
+    const tabela = alvo.tipo === 'profissional' ? 'profissionais' : 'companies'
+    const { data: destino } = await admin.from(tabela).select('user_id').eq('id', alvo.id).maybeSingle()
+    if (destino?.user_id === user.id) {
+      return {
+        pode: false,
+        motivo: alvo.tipo === 'profissional' ? 'Não pode contactar o seu próprio perfil.' : 'Não pode contactar a sua própria empresa.',
+      }
+    }
+  }
+
   if (alvo.tipo === 'profissional') {
     const { data: proprio, error: erroProprio } = await supabase
       .from('profissionais')
