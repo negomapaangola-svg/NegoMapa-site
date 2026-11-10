@@ -28,7 +28,9 @@ export const Header = forwardRef<HTMLElement, { className?: string; hideGlobalSe
       let activo = true
       const carregar = () => obterContextoNavegacao().then((c) => { if (activo) setContexto(c) }).catch(() => { if (activo) setContexto({ autenticado:false, profissional:false, estadoProfissional:null, empresa:false, empresaAprovada:false, administrador:false }) })
       carregar()
-      return () => { activo = false }
+      const aoSair = () => setContexto({ autenticado:false, profissional:false, estadoProfissional:null, empresa:false, empresaAprovada:false, administrador:false })
+      window.addEventListener('negomapa:auth-logout-started', aoSair)
+      return () => { activo = false; window.removeEventListener('negomapa:auth-logout-started', aoSair) }
     }, [])
 
     const estaActivo = (href: string) => pathname === href || pathname.startsWith(`${href}/`)
