@@ -95,7 +95,7 @@ export function MobileMenu({ aberto, onFechar, pathname }: MobileMenuProps) {
     const activo = pathname === item.rota || (item.rota !== '/' && pathname.startsWith(item.rota.split('?')[0] + '/'));
     return <Link key={item.id} href={item.rota} onClick={onFechar} aria-current={activo ? 'page' : undefined} className={`${classeLink} ${activo ? 'bg-orange-500/10 text-orange-800 dark:bg-orange-400/15 dark:text-orange-200' : ''}`}>
       <IconeMenu id={item.id} />
-      <span className="min-w-0 flex-1 truncate">{item.rotulo}</span>
+      <span className="min-w-0 flex-1 whitespace-normal break-words leading-snug">{item.rotulo}</span>
       {activo && <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full bg-orange-500" />}
     </Link>;
   };
