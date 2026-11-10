@@ -129,7 +129,7 @@ export function MobileMenu({ aberto, onFechar, pathname }: MobileMenuProps) {
             return <section key={grupo.id} aria-labelledby={`menu-${grupo.id}`} className="rounded-2xl border border-white/80 bg-white/65 p-3 shadow-sm shadow-navy/[0.04] dark:border-white/10 dark:bg-white/[0.055] dark:shadow-black/10">
               <h2 id={`menu-${grupo.id}`} className="mb-2 px-2 text-[11px] font-bold uppercase tracking-[0.14em] text-neutral-500 dark:text-cream-text/65">{grupo.titulo}</h2>
               <ul className="space-y-1">
-                {itens.map((item) => <li key={item.id}>{item.id === 'sair' ? <form action={logoutAction} onSubmit={() => { setContexto(null); onFechar(); }}><button type="submit" className={`${classeLink} w-full text-left`}><IconeMenu id={item.id} /><span className="flex-1">Sair</span></button></form> : itemLink(item)}</li>)}
+                {itens.map((item) => <li key={item.id}>{item.id === 'sair' ? <form action={logoutAction} onSubmit={() => { setContexto(null); window.dispatchEvent(new Event('negomapa:auth-logout-started')); onFechar(); }}><button type="submit" className={`${classeLink} w-full text-left`}><IconeMenu id={item.id} /><span className="flex-1">Sair</span></button></form> : itemLink(item)}</li>)}
               </ul>
             </section>;
           })}
