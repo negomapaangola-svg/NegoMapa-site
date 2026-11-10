@@ -1,6 +1,7 @@
 import type { ContextoUtilizador } from '@/lib/permissoes'
 
 export type LocalNavegacao = 'cabecalho' | 'menu_mobile' | 'rodape'
+export type ContextoNavegacao = Omit<ContextoUtilizador, 'userId'>
 type Regra = 'publico' | 'autenticado' | 'profissional' | 'profissional_aprovado' | 'empresa' | 'empresa_aprovada' | 'administrador' | 'visitante' | 'sem_empresa' | 'sem_profissional'
 export type ItemNavegacao = { id: string; rotulo: string; rota: string; icone?: string; regras: Regra[]; locais: LocalNavegacao[] }
 
@@ -37,7 +38,7 @@ export const ITENS_NAVEGACAO: ItemNavegacao[] = [
   { id:'regras-profissionais', rotulo:'Regras para profissionais', rota:'/regras-profissionais', regras:['publico'], locais:['menu_mobile','rodape'] },
 ]
 
-export function podeVerItem(item: ItemNavegacao, c: ContextoUtilizador): boolean {
+export function podeVerItem(item: ItemNavegacao, c: ContextoNavegacao): boolean {
   return item.regras.some((r) => {
     switch (r) {
       case 'publico': return true
