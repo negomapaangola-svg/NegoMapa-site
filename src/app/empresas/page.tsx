@@ -8,6 +8,7 @@ import { supabase } from "@/lib/supabase"
 import { Card, CardContent } from "@/components/ui/Card"
 import { Button } from "@/components/ui/Button"
 import { MainLayout } from "@/components/layout/MainLayout"
+import { BotaoContactarEmpresa } from "@/components/empresas/BotaoContactarEmpresa"
 
 type Empresa = {
   id: string
@@ -137,25 +138,27 @@ function EmpresasContent() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {empresasFiltradas.length > 0 ? (
               empresasFiltradas.map((empresa) => (
-                <Link
-                  key={empresa.id}
-                  href={`/empresa/${empresa.slug}`}
-                  className="block"
-                >
-                  <Card variant="default" padding="md" hover className="h-full border-card-border">
-                    <CardContent className="space-y-2">
-                      <h3 className="text-xl font-bold text-ink dark:text-cream">
-                        {empresa.name}
-                      </h3>
-                      <p className="text-sm text-neutral-600 dark:text-cream-text">
-                        {empresa.sector || ""}
-                      </p>
-                      <p className="text-sm text-neutral-500 dark:text-cream-text/70">
-                        {empresa.province || ""}
-                      </p>
-                    </CardContent>
-                  </Card>
-                </Link>
+                <div key={empresa.id} className="flex h-full flex-col gap-3">
+                  <Link
+                    href={`/empresa/${empresa.slug}`}
+                    className="block flex-1"
+                  >
+                    <Card variant="default" padding="md" hover className="h-full border-card-border">
+                      <CardContent className="space-y-2">
+                        <h3 className="text-xl font-bold text-ink dark:text-cream">
+                          {empresa.name}
+                        </h3>
+                        <p className="text-sm text-neutral-600 dark:text-cream-text">
+                          {empresa.sector || ""}
+                        </p>
+                        <p className="text-sm text-neutral-500 dark:text-cream-text/70">
+                          {empresa.province || ""}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                  <BotaoContactarEmpresa empresaId={empresa.id} />
+                </div>
               ))
             ) : (
               temFiltrosAtivos ? (

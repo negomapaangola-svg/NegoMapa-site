@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { BotaoContactarEmpresa } from '@/components/empresas/BotaoContactarEmpresa'
 
 type Resultados = {
   empresas: Array<{ id: string; name: string; slug: string; sector: string | null; province: string | null }>
@@ -104,15 +105,26 @@ export function PesquisaGlobal() {
             <div className="mb-2">
               <p className="px-3 py-1 text-xs font-semibold uppercase text-neutral-500">Empresas</p>
               {resultados.empresas.map((empresa) => (
-                <button
+                <div
                   key={empresa.id}
-                  type="button"
-                  onClick={() => selecionar(`/empresa/${empresa.slug}`)}
-                  className="flex w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-left hover:bg-cream dark:hover:bg-white/5"
+                  className="flex items-center gap-2 rounded-md pr-2 hover:bg-cream dark:hover:bg-white/5"
                 >
-                  <span className="text-sm font-medium text-navy dark:text-cream">{empresa.name}</span>
-                  <span className="text-xs text-neutral-500">{empresa.sector ?? empresa.province ?? ''}</span>
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => selecionar(`/empresa/${empresa.slug}`)}
+                    className="flex min-w-0 flex-1 items-center justify-between gap-3 rounded-md px-3 py-2 text-left"
+                  >
+                    <span className="truncate text-sm font-medium text-navy dark:text-cream">{empresa.name}</span>
+                    <span className="shrink-0 text-xs text-neutral-500">{empresa.sector ?? empresa.province ?? ''}</span>
+                  </button>
+                  <BotaoContactarEmpresa
+                    empresaId={empresa.id}
+                    aoIniciar={() => {
+                      setAberto(false)
+                      setTermo('')
+                    }}
+                  />
+                </div>
               ))}
             </div>
           )}
