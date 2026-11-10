@@ -223,6 +223,10 @@ export type VagaAdminItem = {
 
 export async function getAllVagasAdmin(): Promise<VagaAdminItem[]> {
   const supabase = await createSupabaseServerClient()
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError || !user) return []
+  const { data: admin, error: adminError } = await supabase.rpc('is_admin')
+  if (adminError || admin !== true) return []
 
   const { data, error } = await supabase
     .from('vagas')
