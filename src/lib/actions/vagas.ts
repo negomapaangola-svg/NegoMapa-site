@@ -2,6 +2,7 @@
 
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { obterContextoUtilizador, podePublicarVaga } from '@/lib/permissoes'
+import { isAdmin } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
@@ -227,11 +228,8 @@ export type VagaAdminItem = {
 }
 
 export async function getAllVagasAdmin(): Promise<VagaAdminItem[]> {
+  if (!(await isAdmin())) return []
   const supabase = await createSupabaseServerClient()
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-  if (authError || !user) return []
-  const { data: admin, error: adminError } = await supabase.rpc('is_admin')
-  if (adminError || admin !== true) return []
 
   const { data, error } = await supabase
     .from('vagas')
@@ -263,9 +261,11 @@ export async function aprovarVaga(vagaId: string): Promise<ActionResult> {
     return { success: false, error: 'Utilizador não autenticado' }
   }
 
-  const { data: isAdminData, error: adminError } = await supabase.rpc('is_admin')
-  if (adminError || !isAdminData) {
+  if (!(await isAdmin())) {
     return { success: false, error: 'Acesso negado. Privilégios de administrador necessários.' }
+  }
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(vagaId)) {
+    return { success: false, error: 'Vaga inválida.' }
   }
 
   const { data: vaga, error: leituraError } = await supabase
