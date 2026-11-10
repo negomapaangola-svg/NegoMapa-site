@@ -79,10 +79,39 @@ export async function listarConversas(): Promise<Resultado<ConversaResumo[]>> {
   return { success: true, data: conversas }
 }
 
+async function utilizadorParticipaNaConversa(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  conversaId: string,
+  userId: string
+): Promise<boolean> {
+  if (!UUID_REGEX.test(conversaId)) return false
+
+  const { data: conversa, error } = await supabase
+    .from('conversas')
+    .select('id, cliente_id, profissional_id, empresa_id')
+    .eq('id', conversaId)
+    .maybeSingle()
+
+  if (error || !conversa) return false
+  if (conversa.cliente_id === userId) return true
+
+  const [{ data: perfil }, { data: empresas }] = await Promise.all([
+    supabase.from('profissionais').select('id').eq('user_id', userId).maybeSingle(),
+    supabase.from('companies').select('id').eq('user_id', userId),
+  ])
+
+  if (conversa.profissional_id && perfil?.id === conversa.profissional_id) return true
+  return Boolean(conversa.empresa_id && (empresas ?? []).some((empresa) => empresa.id === conversa.empresa_id))
+}
+
 export async function listarMensagens(conversaId: string): Promise<Resultado<MensagemConversa[]>> {
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Sessão expirada. Inicie sessão novamente.' }
+
+  if (!UUID_REGEX.test(conversaId) || !(await utilizadorParticipaNaConversa(supabase, conversaId, user.id))) {
+    return { success: false, error: 'Conversa não encontrada ou sem permissão.' }
+  }
 
   const { data, error } = await supabase
     .from('mensagens')
@@ -102,6 +131,10 @@ export async function enviarMensagem(conversaId: string, conteudo: string): Prom
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Sessão expirada. Inicie sessão novamente.' }
+
+  if (typeof conteudo !== 'string' || !UUID_REGEX.test(conversaId) || !(await utilizadorParticipaNaConversa(supabase, conversaId, user.id))) {
+    return { success: false, error: 'Conversa não encontrada ou sem permissão.' }
+  }
 
   const texto = conteudo.trim()
   if (texto.length < 1 || texto.length > 4000) {
@@ -220,7 +253,11 @@ export async function marcarMensagensLidas(conversaId: string): Promise<{ succes
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Sessão expirada. Inicie sessão novamente.' }
 
-  // A RLS só permite marcar mensagens de outros participantes.
+  if (!UUID_REGEX.test(conversaId) || !(await utilizadorParticipaNaConversa(supabase, conversaId, user.id))) {
+    return { success: false, error: 'Conversa não encontrada ou sem permissão.' }
+  }
+
+  // A RLS continua a ser aplicada como segunda barreira.
   const { error } = await supabase
     .from('mensagens')
     .update({ lida_em: new Date().toISOString() })
