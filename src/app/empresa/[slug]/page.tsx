@@ -15,6 +15,8 @@ import { ReportForm } from "@/components/denuncias/ReportForm"
 import { getMediaAvaliacoes, getAvaliacoesPorAlvo } from "@/lib/actions/avaliacoes"
 import { AlvoDenuncia } from "@/lib/actions/denuncias"
 import { createBrowserSupabaseClient } from "@/lib/supabase-browser"
+import { BotaoContactarEmpresa } from "@/components/empresas/BotaoContactarEmpresa"
+import { verificarPodeContactar } from "@/lib/actions/conversas"
 import { AvaliacoesProfissional } from "@/app/profissional/[slug]/_components/AvaliacoesProfissional"
 import { PortfolioProfissional } from "@/app/profissional/[slug]/_components/PortfolioProfissional"
 import { ProfissionalWhatsApp } from "@/app/profissional/[slug]/_components/ProfissionalWhatsApp"
@@ -26,6 +28,7 @@ function EmpresaContent() {
   const [media, setMedia] = React.useState({ media: 0, total: 0 })
   const [avaliacoes, setAvaliacoes] = React.useState<any[]>([])
   const [userId, setUserId] = React.useState<string | null>(null)
+  const [podeContactar, setPodeContactar] = React.useState(false)
   const [avaliacoesCarregando, setAvaliacoesCarregando] = React.useState(true)
 
   React.useEffect(() => {
@@ -86,6 +89,24 @@ function EmpresaContent() {
     }
     getUser()
   }, [])
+
+  React.useEffect(() => {
+    if (!empresa || !userId) {
+      setPodeContactar(false)
+      return
+    }
+    let activo = true
+    verificarPodeContactar({ tipo: 'empresa', id: empresa.id })
+      .then((resultado) => {
+        if (activo) setPodeContactar(resultado.pode)
+      })
+      .catch(() => {
+        if (activo) setPodeContactar(false)
+      })
+    return () => {
+      activo = false
+    }
+  }, [empresa, userId])
 
   if (carregando) {
     return (
@@ -149,6 +170,8 @@ function EmpresaContent() {
             </div>
           </CardContent>
         </Card>
+
+        <BotaoContactarEmpresa empresaId={empresa.id} visivel={podeContactar} />
 
         {empresa.description && (
           <Card variant="muted" padding="md">

@@ -23,6 +23,7 @@ import { getAvaliacoesPublicasPorProfissional, getMediaAvaliacoes } from '@/lib/
 import { EnviarMensagemButton } from './_components/EnviarMensagemButton';
 import { ProfissionalWhatsApp } from './_components/ProfissionalWhatsApp';
 import { AvaliacoesProfissional } from './_components/AvaliacoesProfissional';
+import { ReviewForm } from '@/components/avaliacoes/ReviewForm';
 import { PortfolioProfissional } from './_components/PortfolioProfissional';
 
 type Params = Promise<{ slug: string }>;
@@ -225,6 +226,12 @@ export default async function ProfissionalPublicoPage({ params }: { params: Para
                     <Rating media={resumo.media} total={resumo.total} size="lg" />
                   </div>
                   <AvaliacoesProfissional avaliacoes={avaliacoes} resumo={resumo} />
+                  <div className="mt-6 border-t border-card-border pt-6">
+                    <ReviewForm
+                      alvo={{ tipo: 'profissional', id: dados.id }}
+                      userId={user?.id}
+                    />
+                  </div>
                 </section>
               </Card>
 

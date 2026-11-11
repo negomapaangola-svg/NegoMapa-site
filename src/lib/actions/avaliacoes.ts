@@ -67,7 +67,7 @@ function validateAvaliacao(input: AvaliacaoInput): Record<string, string> {
     errors.nota = 'Nota deve ser um número inteiro entre 1 e 5'
   }
 
-  if (input.comentario && input.comentario.length > 1000) {
+  if (input.comentario !== undefined && (typeof input.comentario !== 'string' || input.comentario.trim().length > 1000)) {
     errors.comentario = 'Comentário deve ter no máximo 1000 caracteres'
   }
 
@@ -95,12 +95,12 @@ function validateUpdate(input: AvaliacaoUpdateInput): Record<string, string> {
 async function verificarAlvoAprovado(supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>, alvo: AlvoAvaliacao): Promise<boolean> {
   switch (alvo.tipo) {
     case 'profissional': {
-      const { data } = await supabase
-        .from('profissionais')
-        .select('estado')
+      const { data, error } = await supabase
+        .from('profissionais_publicos')
+        .select('id')
         .eq('id', alvo.id)
-        .single()
-      return data?.estado === 'aprovado'
+        .maybeSingle()
+      return !error && Boolean(data)
     }
     case 'empresa': {
       const { data } = await supabase
@@ -143,6 +143,10 @@ function getAlvoColumns(alvo: AlvoAvaliacao): Record<string, string | null> {
 }
 
 export async function criarAvaliacao(input: AvaliacaoInput): Promise<ActionResult> {
+  if (!input || typeof input !== 'object') {
+    return { success: false, error: 'Dados da avaliação inválidos.' }
+  }
+
   const supabase = await createSupabaseServerClient()
 
   const user = await getUser()
@@ -160,6 +164,22 @@ export async function criarAvaliacao(input: AvaliacaoInput): Promise<ActionResul
     return { success: false, error: 'Não é possível avaliar este alvo. Apenas alvos aprovados podem ser avaliados.' }
   }
 
+  const colunaAlvo = `${input.alvo.tipo}_id`
+  const { data: existente, error: erroExistente } = await supabase
+    .from('avaliacoes')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq(colunaAlvo, input.alvo.id)
+    .maybeSingle()
+
+  if (erroExistente) {
+    console.error('Erro ao verificar avaliação existente. Código:', erroExistente.code)
+    return { success: false, error: 'Não foi possível verificar se já existe uma avaliação.' }
+  }
+  if (existente) {
+    return { success: false, error: 'Já existe uma avaliação sua para este alvo.' }
+  }
+
   const alvoColumns = getAlvoColumns(input.alvo)
 
   const { error } = await supabase
@@ -175,12 +195,15 @@ export async function criarAvaliacao(input: AvaliacaoInput): Promise<ActionResul
     if (error.code === '23505') {
       return { success: false, error: 'Já existe uma avaliação sua para este alvo' }
     }
-    console.error('Erro ao criar avaliação:', error)
-    return { success: false, error: 'Erro ao criar avaliação. Tente novamente.' }
+    console.error('Erro ao criar avaliação. Código:', error.code)
+    return { success: false, error: 'Não foi possível enviar a avaliação. Tente novamente.' }
   }
 
-  const path = `/${input.alvo.tipo === 'empresa' ? 'empresa' : input.alvo.tipo}/${input.alvo.id}`
-  revalidatePath(path)
+  if (input.alvo.tipo === 'profissional') {
+    revalidatePath('/profissional/[slug]', 'page')
+  } else {
+    revalidatePath(`/${input.alvo.tipo}/${input.alvo.id}`)
+  }
 
   return { success: true }
 }
