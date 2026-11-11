@@ -103,12 +103,12 @@ async function verificarAlvoAprovado(supabase: Awaited<ReturnType<typeof createS
       return !error && Boolean(data)
     }
     case 'empresa': {
-      const { data } = await supabase
-        .from('companies')
-        .select('is_approved')
+      const { data, error } = await supabase
+        .from('empresas_publicas')
+        .select('id')
         .eq('id', alvo.id)
-        .single()
-      return data?.is_approved === true
+        .maybeSingle()
+      return !error && Boolean(data)
     }
     case 'servico': {
       const { data } = await supabase
@@ -138,7 +138,8 @@ function getAlvoColumns(alvo: AlvoAvaliacao): Record<string, string | null> {
     servico_id: null,
     vaga_id: null,
   }
-  columns[`${alvo.tipo}_id`] = alvo.id
+  const coluna = alvo.tipo === 'empresa' ? 'company_id' : `${alvo.tipo}_id`
+  columns[coluna] = alvo.id
   return columns
 }
 
@@ -164,7 +165,7 @@ export async function criarAvaliacao(input: AvaliacaoInput): Promise<ActionResul
     return { success: false, error: 'Não é possível avaliar este alvo. Apenas alvos aprovados podem ser avaliados.' }
   }
 
-  const colunaAlvo = `${input.alvo.tipo}_id`
+  const colunaAlvo = input.alvo.tipo === 'empresa' ? 'company_id' : `${input.alvo.tipo}_id`
   const { data: existente, error: erroExistente } = await supabase
     .from('avaliacoes')
     .select('id')
@@ -317,7 +318,7 @@ export async function getAvaliacoesPorAlvo(alvo: AlvoAvaliacao): Promise<Avaliac
   if (!alvoValido(alvo)) return []
   const supabase = await createSupabaseServerClient()
 
-  const column = `${alvo.tipo}_id`
+  const column = alvo.tipo === 'empresa' ? 'company_id' : `${alvo.tipo}_id`
   const { data, error } = await supabase
     .from('avaliacoes')
     .select(`
@@ -347,7 +348,7 @@ export async function getMediaAvaliacoes(alvo: AlvoAvaliacao): Promise<MediaAval
   if (!alvoValido(alvo)) return { media: 0, total: 0 }
   const supabase = await createSupabaseServerClient()
 
-  const column = `${alvo.tipo}_id`
+  const column = alvo.tipo === 'empresa' ? 'company_id' : `${alvo.tipo}_id`
   const { data, error } = await supabase
     .from('avaliacoes')
     .select('nota')
@@ -376,7 +377,7 @@ export async function getAvaliacaoDoUsuario(alvo: AlvoAvaliacao, userId: string)
 
   const supabase = await createSupabaseServerClient()
 
-  const column = `${alvo.tipo}_id`
+  const column = alvo.tipo === 'empresa' ? 'company_id' : `${alvo.tipo}_id`
   const { data, error } = await supabase
     .from('avaliacoes')
     .select(`
