@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/Card"
 import { Button } from "@/components/ui/Button"
 import { MainLayout } from "@/components/layout/MainLayout"
 import { BotaoContactarEmpresa } from "@/components/empresas/BotaoContactarEmpresa"
+import { verificarPodeContactarEmpresas } from "@/lib/actions/conversas"
 
 type Empresa = {
   id: string
@@ -49,6 +50,20 @@ function EmpresasContent() {
 
     carregarDados()
   }, [])
+
+  // Uma única verificação em lote para todas as empresas carregadas (os filtros não voltam a pedir).
+  const [idsContactaveis, setIdsContactaveis] = React.useState<Set<string>>(new Set())
+  React.useEffect(() => {
+    const ids = empresas.map((empresa) => empresa.id)
+    if (ids.length === 0) return
+    let ativo = true
+    verificarPodeContactarEmpresas(ids).then((resultado) => {
+      if (ativo) setIdsContactaveis(new Set(resultado.success ? resultado.ids : []))
+    })
+    return () => {
+      ativo = false
+    }
+  }, [empresas])
 
   const empresasFiltradas = empresas.filter(
     (empresa) => {
@@ -157,7 +172,7 @@ function EmpresasContent() {
                       </CardContent>
                     </Card>
                   </Link>
-                  <BotaoContactarEmpresa empresaId={empresa.id} />
+                  <BotaoContactarEmpresa empresaId={empresa.id} visivel={idsContactaveis.has(empresa.id)} />
                 </div>
               ))
             ) : (

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { BotaoContactarEmpresa } from '@/components/empresas/BotaoContactarEmpresa'
+import { verificarPodeContactarEmpresas } from '@/lib/actions/conversas'
 
 type Resultados = {
   empresas: Array<{ id: string; name: string; slug: string; sector: string | null; province: string | null }>
@@ -20,6 +21,7 @@ export function PesquisaGlobal() {
   const [resultados, setResultados] = useState<Resultados>(VAZIO)
   const [carregando, setCarregando] = useState(false)
   const [aberto, setAberto] = useState(false)
+  const [idsContactaveis, setIdsContactaveis] = useState<Set<string>>(new Set())
   const contentor = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -68,6 +70,22 @@ export function PesquisaGlobal() {
       clearTimeout(temporizador)
     }
   }, [termo])
+
+  // Uma única verificação em lote para os resultados de empresas apresentados.
+  useEffect(() => {
+    const ids = resultados.empresas.map((empresa) => empresa.id)
+    if (ids.length === 0) {
+      setIdsContactaveis(new Set())
+      return
+    }
+    let ativo = true
+    verificarPodeContactarEmpresas(ids).then((resultado) => {
+      if (ativo) setIdsContactaveis(new Set(resultado.success ? resultado.ids : []))
+    })
+    return () => {
+      ativo = false
+    }
+  }, [resultados.empresas])
 
   const total =
     resultados.empresas.length +
@@ -119,6 +137,7 @@ export function PesquisaGlobal() {
                   </button>
                   <BotaoContactarEmpresa
                     empresaId={empresa.id}
+                    visivel={idsContactaveis.has(empresa.id)}
                     aoIniciar={() => {
                       setAberto(false)
                       setTermo('')

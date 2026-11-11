@@ -355,6 +355,58 @@ export async function verificarPodeContactar(
 }
 
 /**
+ * Verificação em lote para listagens de empresas: uma única chamada ao servidor.
+ * Devolve apenas os ids para os quais a sessão atual pode iniciar contacto (sessão, empresa aprovada,
+ * não ser a própria empresa). Não devolve dados das empresas.
+ */
+export async function verificarPodeContactarEmpresas(
+  ids: string[]
+): Promise<{ success: true; ids: string[] } | { success: false; error: string }> {
+  const idsValidos = Array.from(new Set(ids)).filter((id) => UUID_REGEX.test(id)).slice(0, 100)
+  if (idsValidos.length === 0) return { success: true, ids: [] }
+
+  const supabase = await createSupabaseServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: true, ids: [] }
+
+  const { data: minhas, error: erroMinhas } = await supabase
+    .from('companies')
+    .select('id')
+    .eq('user_id', user.id)
+  if (erroMinhas) {
+    console.error('Erro ao verificar empresas do utilizador. Código:', erroMinhas.code)
+    return { success: false, error: 'Não foi possível verificar o contacto.' }
+  }
+  const proprias = new Set((minhas ?? []).map((empresa) => empresa.id))
+
+  // Confirmação do dono no servidor (chave de serviço, só no servidor), quando configurada.
+  const admin = criarClienteServico()
+  const donas = new Set<string>()
+  if (admin) {
+    const { data: destinos } = await admin.from('companies').select('id, user_id').in('id', idsValidos)
+    for (const destino of (destinos ?? []) as { id: string; user_id: string | null }[]) {
+      if (destino.user_id === user.id) donas.add(destino.id)
+    }
+  }
+
+  const { data: aprovadas, error: erroAprovadas } = await supabase
+    .from('empresas_publicas')
+    .select('id')
+    .in('id', idsValidos)
+    .eq('is_approved', true)
+  if (erroAprovadas) {
+    console.error('Erro ao verificar empresas aprovadas. Código:', erroAprovadas.code)
+    return { success: false, error: 'Não foi possível verificar o contacto.' }
+  }
+  const aprovadasSet = new Set((aprovadas ?? []).map((empresa) => empresa.id))
+
+  return {
+    success: true,
+    ids: idsValidos.filter((id) => aprovadasSet.has(id) && !proprias.has(id) && !donas.has(id)),
+  }
+}
+
+/**
  * Abre (ou reutiliza) a conversa do utilizador, na função de cliente, com uma empresa aprovada.
  * Usada pelo candidato a partir das suas candidaturas. A RLS impede conversas com a própria empresa.
  * Não é bloqueada para contas de profissional: o contacto com empresas mantém-se.

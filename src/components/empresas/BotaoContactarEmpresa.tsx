@@ -3,41 +3,27 @@
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
-import { iniciarConversaComEmpresa, verificarPodeContactar } from '@/lib/actions/conversas'
+import { iniciarConversaComEmpresa } from '@/lib/actions/conversas'
 
 type Props = {
   empresaId: string
+  /** Decidido pelo contentor, a partir da verificação em lote. Sem permissão, o botão não é renderizado. */
+  visivel?: boolean
   /** Chamado antes de navegar, para que o contentor (ex.: pesquisa global) possa fechar-se. */
   aoIniciar?: () => void
   className?: string
 }
 
 /**
- * Botão "Contactar" para uma empresa aprovada. Só aparece se a sessão atual puder contactar a empresa
- * (verificado no servidor: sessão, aprovação e não ser a própria empresa).
- * Ao clicar, abre ou reutiliza a conversa e redireciona para ela.
+ * Botão "Contactar" para uma empresa. Abre ou reutiliza a conversa e redireciona para ela.
+ * A permissão é verificada no servidor, em lote, pelo contentor; a ação volta a validá-la.
  */
-export function BotaoContactarEmpresa({ empresaId, aoIniciar, className }: Props) {
+export function BotaoContactarEmpresa({ empresaId, visivel = true, aoIniciar, className }: Props) {
   const router = useRouter()
-  const [podeContactar, setPodeContactar] = React.useState(false)
   const [erro, setErro] = React.useState<string | null>(null)
   const [pending, startTransition] = React.useTransition()
 
-  React.useEffect(() => {
-    let ativo = true
-    verificarPodeContactar({ tipo: 'empresa', id: empresaId })
-      .then((resultado) => {
-        if (ativo) setPodeContactar(resultado.pode)
-      })
-      .catch(() => {
-        if (ativo) setPodeContactar(false)
-      })
-    return () => {
-      ativo = false
-    }
-  }, [empresaId])
-
-  if (!podeContactar) return null
+  if (!visivel) return null
 
   function contactar() {
     setErro(null)
