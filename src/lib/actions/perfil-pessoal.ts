@@ -54,28 +54,67 @@ export async function actualizarPerfilPessoal(input: PerfilInput) {
 
 export async function escolherTipoConta(tipo: unknown) {
   try {
-    if (tipo !== 'cliente' && tipo !== 'profissional' && tipo !== 'empresa') return { ok: false, message: 'Tipo de conta inválido.' }
-    const { supabase, user } = await sessao()
-    const { data: perfil, error } = await supabase.from('profiles').select('account_type').eq('id', user.id).maybeSingle()
-    if (error) return { ok: false, message: 'Não foi possível verificar a conta.' }
-    if (perfil?.account_type) return { ok: false, message: 'O tipo de conta já foi escolhido e não pode ser alterado nesta fase.' }
+    if (tipo !== 'cliente' && tipo !== 'profissional' && tipo !== 'empresa') {
+      return { ok: false, message: 'Tipo de conta inválido.' }
+    }
+
+    // A sessão é sempre validada com o cliente autenticado. A chave privilegiada
+    // só é lida e utilizada neste módulo server-only, nunca enviada ao browser.
+    const { user } = await sessao()
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+    if (!url || !key) {
+      return { ok: false, message: 'A escolha segura do tipo de conta não está configurada neste ambiente.' }
+    }
+
+    const admin = createClient(url, key, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    })
+
+    const { data: perfil, error: leituraError } = await admin
+      .from('profiles')
+      .select('account_type')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    if (leituraError) {
+      console.error('Erro ao verificar o tipo de conta. Código:', leituraError.code)
+      return { ok: false, message: 'Não foi possível verificar a conta.' }
+    }
+    if (perfil?.account_type !== null && perfil?.account_type !== undefined) {
+      return { ok: false, message: 'O tipo de conta já foi escolhido e não pode ser alterado nesta fase.' }
+    }
+
     if (perfil) {
-      const { data, error: updateError } = await supabase.from('profiles').update({ account_type: tipo }).eq('id', user.id).is('account_type', null).select('id').maybeSingle()
-      if (updateError || !data) return { ok: false, message: 'A escolha já foi efectuada ou não pôde ser guardada.' }
+      // A condição account_type IS NULL torna a operação de escolha única:
+      // pedidos concorrentes não conseguem substituir uma escolha já gravada.
+      const { data, error: updateError } = await admin
+        .from('profiles')
+        .update({ account_type: tipo })
+        .eq('id', user.id)
+        .is('account_type', null)
+        .select('id')
+        .maybeSingle()
+
+      if (updateError || !data) {
+        return { ok: false, message: 'A escolha já foi efectuada ou não pôde ser guardada.' }
+      }
     } else {
-      const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-      const key = process.env.SUPABASE_SERVICE_ROLE_KEY
-      if (!url || !key) return { ok: false, message: 'A criação segura do perfil não está configurada neste ambiente.' }
-      // A chave privilegiada é server-side; o ID é sempre obtido da sessão validada.
-      const admin = createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } })
-      const { error: insertError } = await admin.from('profiles').insert({ id: user.id, account_type: tipo })
+      // O perfil é criado apenas quando está ausente. Uma colisão concorrente
+      // falha sem substituir o registo que outro pedido possa ter criado.
+      const { error: insertError } = await admin
+        .from('profiles')
+        .insert({ id: user.id, account_type: tipo })
+
       if (insertError) {
-        const { data: actual } = await supabase.from('profiles').select('account_type').eq('id', user.id).maybeSingle()
-        return { ok: false, message: actual?.account_type ? 'O tipo de conta já foi escolhido e não pode ser alterado.' : 'Não foi possível criar o perfil pessoal.' }
+        console.error('Erro ao criar perfil pessoal. Código:', insertError.code)
+        return { ok: false, message: 'Não foi possível criar o perfil pessoal. Actualize a página e tente novamente.' }
       }
     }
+
     revalidatePath('/', 'layout')
     revalidatePath('/perfil')
+    revalidatePath('/escolher-tipo')
     return { ok: true, message: 'Tipo de conta guardado.' }
   } catch (e) {
     return { ok: false, message: e instanceof Error ? e.message : 'Erro ao guardar a escolha.' }
