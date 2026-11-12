@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 }
 
 export default async function CadastrarProfissionalPage() {
-  // Leitura só das categorias ativas. Nada é gravado nesta versão.
+  // Carrega categorias activas; a gravação é feita pela Server Action no envio.
   const categorias = await getActiveCategories()
 
   return (
