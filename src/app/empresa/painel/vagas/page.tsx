@@ -1,7 +1,7 @@
 import { Metadata } from "next"
 import { redirect } from "next/navigation"
 import Link from "next/link"
-import { getUserCompany, getUserVagas, type VagaListItem } from "@/lib/actions/vagas"
+import { getUserCompany, getUserVagas } from "@/lib/actions/vagas"
 import { MainLayout } from "@/components/layout/MainLayout"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/Card"
 import { Button } from "@/components/ui/Button"
@@ -10,16 +10,6 @@ import { formatDate } from "@/lib/utils"
 export const metadata: Metadata = {
   title: "As Minhas Vagas | Painel da Empresa | NegóMapa",
   description: "Gerencie as vagas da sua empresa no NegóMapa.",
-}
-
-async function getCompany() {
-  const company = await getUserCompany()
-  if (!company) return null
-  return company
-}
-
-async function getVagas(): Promise<VagaListItem[]> {
-  return await getUserVagas()
 }
 
 function getEstadoBadge(estado: string) {
@@ -31,14 +21,15 @@ function getEstadoBadge(estado: string) {
   return variants[estado] || variants.pendente
 }
 
-export default async function EmpresaVagasPage() {
-  const company = await getCompany()
+export default async function EmpresaVagasPage({ searchParams }: { searchParams: Promise<{ empresa?: string }> }) {
+  const { empresa } = await searchParams
+  const company = await getUserCompany(empresa)
 
   if (!company) {
     redirect('/login?redirectTo=/empresa/painel/vagas')
   }
 
-  const vagas = await getVagas()
+  const vagas = await getUserVagas(company.id)
 
   return (
     <MainLayout>
@@ -53,7 +44,7 @@ export default async function EmpresaVagasPage() {
                 Empresa: <span className="font-medium text-ink dark:text-cream">{company.name}</span>
               </p>
             </div>
-            <Link href="/empresa/painel/vagas/nova">
+            <Link href={`/empresa/painel/vagas/nova?empresa=${encodeURIComponent(company.id)}`}>
               <Button size="lg">
                 Publicar nova vaga
               </Button>
