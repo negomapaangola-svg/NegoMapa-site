@@ -70,8 +70,7 @@ const CLASSE_FICHEIRO =
   "w-full rounded-[4px] border border-neutral-300 bg-white px-4 py-3 text-base text-neutral-900 file:mr-3 file:rounded-[4px] file:border-0 file:bg-neutral-100 file:px-3 file:py-2 file:text-sm file:font-semibold dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-50 dark:file:bg-neutral-800"
 
 /**
- * As seis etapas do cadastro de profissional.
- * Só interface: nada é enviado nem guardado na base de dados.
+ * As seis etapas do cadastro de profissional. Os ficheiros escolhidos permanecem locais e não são enviados.
  */
 export function buildEtapasProfissional(
   categorias: ReadonlyArray<CategoriaOpcao>
