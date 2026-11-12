@@ -4,10 +4,9 @@ import { createClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 
-type TipoConta = 'cliente' | 'profissional' | 'empresa'
 type PerfilInput = { nome: string; telefone: string; whatsapp: string; avatar_url: string }
 const emailValido = (v: string) => v.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)
-const contactoValido = (v: string) => !v || (v.length <= 20 && /^\+?[0-9\s().-]{7,20}$/.test(v) && v.replace(/\D/g, '').length >= 7 && v.replace(/\D/g, '').length <= 15)
+function contactoValido(v: string) { return !v || (v.length <= 20 && /^\+?[0-9\s().-]{7,20}$/.test(v) && v.replace(/\D/g, '').length >= 7 && v.replace(/\D/g, '').length <= 15) }
 
 async function sessao() {
   const supabase = await createSupabaseServerClient()
@@ -18,9 +17,7 @@ async function sessao() {
 
 export async function obterPerfilPessoal() {
   const { supabase, user } = await sessao()
-  const { data, error } = await supabase.from('profiles')
-    .select('id,nome,telefone,whatsapp,avatar_url,account_type,updated_at')
-    .eq('id', user.id).maybeSingle()
+  const { data, error } = await supabase.from('profiles').select('id,nome,telefone,whatsapp,avatar_url,account_type,updated_at').eq('id', user.id).maybeSingle()
   if (error) throw new Error('Não foi possível carregar o perfil pessoal.')
   return {
     email: user.email!, nome: data?.nome ?? '', telefone: data?.telefone ?? '',
@@ -43,14 +40,10 @@ export async function actualizarPerfilPessoal(input: PerfilInput) {
       let url: URL
       try { url = new URL(avatar) } catch { return { ok: false, message: 'O endereço do avatar não é válido.' } }
       const base = process.env.NEXT_PUBLIC_SUPABASE_URL
-      if (avatar.length > 2048 || !base || url.protocol !== 'https:' || url.origin !== new URL(base).origin || !url.pathname.startsWith('/storage/v1/object/public/')) {
-        return { ok: false, message: 'O avatar deve ser um ficheiro HTTPS do armazenamento da NegóMapa.' }
-      }
+      if (avatar.length > 2048 || !base || url.protocol !== 'https:' || url.origin !== new URL(base).origin || !url.pathname.startsWith('/storage/v1/object/public/')) return { ok: false, message: 'O avatar deve ser um ficheiro HTTPS do armazenamento da NegóMapa.' }
       avatar_url = url.toString()
     }
-    const { data, error } = await supabase.from('profiles')
-      .update({ nome, telefone: telefone || null, whatsapp: whatsapp || null, avatar_url })
-      .eq('id', user.id).select('id').maybeSingle()
+    const { data, error } = await supabase.from('profiles').update({ nome, telefone: telefone || null, whatsapp: whatsapp || null, avatar_url }).eq('id', user.id).select('id').maybeSingle()
     if (error || !data) return { ok: false, message: 'Não foi possível guardar o perfil. Verifique a sessão e tente novamente.' }
     revalidatePath('/perfil')
     return { ok: true, message: 'Perfil pessoal actualizado.' }
@@ -67,14 +60,13 @@ export async function escolherTipoConta(tipo: unknown) {
     if (error) return { ok: false, message: 'Não foi possível verificar a conta.' }
     if (perfil?.account_type) return { ok: false, message: 'O tipo de conta já foi escolhido e não pode ser alterado nesta fase.' }
     if (perfil) {
-      const { data, error: updateError } = await supabase.from('profiles').update({ account_type: tipo })
-        .eq('id', user.id).is('account_type', null).select('id').maybeSingle()
+      const { data, error: updateError } = await supabase.from('profiles').update({ account_type: tipo }).eq('id', user.id).is('account_type', null).select('id').maybeSingle()
       if (updateError || !data) return { ok: false, message: 'A escolha já foi efectuada ou não pôde ser guardada.' }
     } else {
       const url = process.env.NEXT_PUBLIC_SUPABASE_URL
       const key = process.env.SUPABASE_SERVICE_ROLE_KEY
       if (!url || !key) return { ok: false, message: 'A criação segura do perfil não está configurada neste ambiente.' }
-      // Credencial privilegiada estritamente server-side; id obtido da sessão validada.
+      // A chave privilegiada é server-side; o ID é sempre obtido da sessão validada.
       const admin = createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } })
       const { error: insertError } = await admin.from('profiles').insert({ id: user.id, account_type: tipo })
       if (insertError) {
@@ -89,4 +81,3 @@ export async function escolherTipoConta(tipo: unknown) {
     return { ok: false, message: e instanceof Error ? e.message : 'Erro ao guardar a escolha.' }
   }
 }
-function contactoValido(v: string) { return !v || (v.length <= 20 && /^\+?[0-9\s().-]{7,20}$/.test(v) && v.replace(/\D/g, '').length >= 7 && v.replace(/\D/g, '').length <= 15) }
