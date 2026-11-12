@@ -13,6 +13,7 @@ import { formatDate } from '@/lib/utils'
 
 type Props = {
   candidaturas: CandidaturaEmpresa[]
+  empresaId: string
 }
 
 const ESTADOS: { valor: EstadoCandidatura; rotulo: string }[] = [
@@ -37,7 +38,7 @@ const ESTADO_ESTILO: Record<string, string> = {
   arquivada: 'bg-neutral-200 text-neutral-600 dark:bg-neutral-600 dark:text-neutral-300',
 }
 
-export function CandidaturasEmpresa({ candidaturas }: Props) {
+export function CandidaturasEmpresa({ candidaturas, empresaId }: Props) {
   const router = useRouter()
   const [pending, startTransition] = React.useTransition()
   const [feedback, setFeedback] = React.useState<{ tipo: 'sucesso' | 'erro'; texto: string } | null>(null)
@@ -47,7 +48,7 @@ export function CandidaturasEmpresa({ candidaturas }: Props) {
     if (!window.confirm(`Alterar o estado desta candidatura para "${rotulo}"?`)) return
     setFeedback(null)
     startTransition(async () => {
-      const resultado = await atualizarEstadoCandidatura(candidatura.id, estado)
+      const resultado = await atualizarEstadoCandidatura(candidatura.id, estado, empresaId)
       if (resultado.success) {
         setFeedback({ tipo: 'sucesso', texto: `Estado alterado para ${rotulo}.` })
         router.refresh()
