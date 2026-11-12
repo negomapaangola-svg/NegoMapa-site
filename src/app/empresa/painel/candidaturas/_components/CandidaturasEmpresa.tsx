@@ -104,7 +104,7 @@ export function CandidaturasEmpresa({ candidaturas, empresaId }: Props) {
           <div className="flex flex-wrap items-center gap-3 pt-1 text-sm">
             {candidatura.conversa_id ? (
               <Link
-                href={`/empresa/painel/mensagens?conversa=${encodeURIComponent(candidatura.conversa_id)}`}
+                href={`/empresa/painel/mensagens?empresa=${encodeURIComponent(empresaId)}&conversa=${encodeURIComponent(candidatura.conversa_id)}`}
                 className="inline-flex items-center px-3 py-1.5 rounded-[4px] border border-orange-500 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors"
               >
                 Ver conversa
