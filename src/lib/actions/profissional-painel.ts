@@ -2,6 +2,7 @@
 
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { revalidatePath } from 'next/cache'
+import { createHash } from 'node:crypto'
 
 export type PerfilProfissionalProprio = {
   id: string
@@ -53,9 +54,9 @@ const UUID_CATEGORIA = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f
 const EXPERIENCIAS_VALIDAS = ['menos_1', '1_3', '3_5', 'mais_5']
 const DISPONIBILIDADES_VALIDAS = ['disponivel', 'ocupado', 'indisponivel']
 
-function slugCadastroProfissional(nome: string, userId: string): string {
-  const base = nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'profissional'
-  return `${base}-${userId.slice(0, 8)}`
+function slugCadastroProfissional(userId: string): string {
+  const identificador = createHash('sha256').update(userId).digest('hex').slice(0, 32)
+  return `profissional-${identificador}`
 }
 
 export async function criarPerfilProfissional(dados: DadosCadastroProfissional): Promise<ResultadoCadastroProfissional> {
@@ -117,7 +118,7 @@ export async function criarPerfilProfissional(dados: DadosCadastroProfissional):
   const { error } = await supabase.from('profissionais').insert({
     user_id: user.id,
     nome,
-    slug: slugCadastroProfissional(nome, user.id),
+    slug: slugCadastroProfissional(user.id),
     provincia,
     municipio,
     bairro: bairro || null,
