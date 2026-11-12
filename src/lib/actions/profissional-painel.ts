@@ -1,6 +1,7 @@
 'use server'
 
 import { createSupabaseServerClient } from '@/lib/supabase-server'
+import { revalidatePath } from 'next/cache'
 
 export type PerfilProfissionalProprio = {
   id: string
