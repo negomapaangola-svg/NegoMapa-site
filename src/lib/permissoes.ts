@@ -22,19 +22,19 @@ export async function obterContextoUtilizador(): Promise<ContextoUtilizador> {
 
   const [profissionalResult, empresaResult, administrador] = await Promise.all([
     supabase.from('profissionais').select('id, estado').eq('user_id', user.id).maybeSingle(),
-    supabase.from('companies').select('id, is_approved').eq('user_id', user.id).maybeSingle(),
+    supabase.from('companies').select('id, is_approved').eq('user_id', user.id),
     isAdmin(),
   ])
 
   const profissional = profissionalResult.data
-  const empresa = empresaResult.data
+  const empresas = empresaResult.data ?? []
   return {
     autenticado: true,
     userId: user.id,
     profissional: Boolean(profissional),
     estadoProfissional: profissional?.estado ?? null,
-    empresa: Boolean(empresa),
-    empresaAprovada: empresa?.is_approved === true,
+    empresa: empresas.length > 0,
+    empresaAprovada: empresas.some((empresa) => empresa.is_approved === true),
     administrador,
   }
 }
