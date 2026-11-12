@@ -27,18 +27,28 @@ export async function obterPerfilProfissionalDoUtilizador(): Promise<PerfilProfi
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
 
-  const { data, error } = await supabase
-    .from('profissionais')
-    .select('id, estado, nome, slug, avatar_url, motivo_rejeicao, avaliado_em, categoria_id, provincia, municipio, portfolio')
-    .eq('user_id', user.id)
-    .maybeSingle()
-
+  const { data, error } = await supabase.rpc('get_my_profissional_profile')
   if (error) {
     console.error('Erro ao obter perfil de profissional. Código:', error.code)
     return null
   }
+  const row = Array.isArray(data) ? data[0] : data
+  if (!row) return null
 
-  return (data ?? null) as PerfilProfissionalProprio | null
+  // Mantém a leitura através da função existente e devolve apenas campos de apresentação.
+  return {
+    id: String(row.id ?? ''),
+    estado: String(row.estado ?? ''),
+    nome: String(row.nome ?? ''),
+    slug: String(row.slug ?? ''),
+    avatar_url: typeof row.avatar_url === 'string' ? row.avatar_url : null,
+    motivo_rejeicao: typeof row.motivo_rejeicao === 'string' ? row.motivo_rejeicao : null,
+    avaliado_em: typeof row.avaliado_em === 'string' ? row.avaliado_em : null,
+    categoria_id: typeof row.categoria_id === 'string' ? row.categoria_id : null,
+    provincia: typeof row.provincia === 'string' ? row.provincia : null,
+    municipio: typeof row.municipio === 'string' ? row.municipio : null,
+    portfolio: row.portfolio ?? [],
+  }
 }
 
 

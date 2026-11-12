@@ -23,10 +23,24 @@ export default async function PerfilPage() {
 
   const supabase = await createSupabaseServerClient()
   const [profissionalResult, empresasResult] = await Promise.all([
-    supabase.from('profissionais').select('id,nome,avatar_url,estado,motivo_rejeicao,avaliado_em,categoria_id,provincia,municipio,telefone,whatsapp').eq('user_id', user.id).maybeSingle(),
+    supabase.rpc('get_my_profissional_profile'),
     supabase.from('companies').select('id,name,is_approved').eq('user_id', user.id).order('name', { ascending: true }),
   ])
-  const profissional = profissionalResult.data
+  const linhaProfissional = Array.isArray(profissionalResult.data) ? profissionalResult.data[0] : profissionalResult.data
+  // A leitura do próprio perfil usa a função existente e autorizada; só são expostos campos de apresentação.
+  const profissional = linhaProfissional ? {
+    id: String(linhaProfissional.id ?? ''),
+    nome: String(linhaProfissional.nome ?? ''),
+    avatar_url: typeof linhaProfissional.avatar_url === 'string' ? linhaProfissional.avatar_url : null,
+    estado: typeof linhaProfissional.estado === 'string' ? linhaProfissional.estado : null,
+    motivo_rejeicao: typeof linhaProfissional.motivo_rejeicao === 'string' ? linhaProfissional.motivo_rejeicao : null,
+    avaliado_em: typeof linhaProfissional.avaliado_em === 'string' ? linhaProfissional.avaliado_em : null,
+    categoria_id: typeof linhaProfissional.categoria_id === 'string' ? linhaProfissional.categoria_id : null,
+    provincia: typeof linhaProfissional.provincia === 'string' ? linhaProfissional.provincia : null,
+    municipio: typeof linhaProfissional.municipio === 'string' ? linhaProfissional.municipio : null,
+    telefone: typeof linhaProfissional.telefone === 'string' ? linhaProfissional.telefone : null,
+    whatsapp: typeof linhaProfissional.whatsapp === 'string' ? linhaProfissional.whatsapp : null,
+  } : null
   const empresas = empresasResult.data ?? []
   let categoriaNome: string | null = null
   if (profissional?.categoria_id) {
