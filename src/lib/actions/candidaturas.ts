@@ -184,27 +184,31 @@ export async function criarCandidatura(vagaId: string, formData: FormData): Prom
   return { success: true }
 }
 
-export async function listarCandidaturasDaEmpresa(): Promise<Resultado<CandidaturaEmpresa[]>> {
+export async function listarCandidaturasDaEmpresa(empresaActivaId?: string): Promise<Resultado<CandidaturaEmpresa[]>> {
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Sessão expirada. Inicie sessão novamente.' }
 
-  const { data: empresa, error: erroEmpresa } = await supabase
+  const { data: empresas, error: erroEmpresa } = await supabase
     .from('companies')
     .select('id')
     .eq('user_id', user.id)
-    .maybeSingle()
 
   if (erroEmpresa) {
-    console.error('Erro ao verificar empresa do utilizador. Código:', erroEmpresa.code)
+    console.error('Erro ao verificar empresas do utilizador. Código:', erroEmpresa.code)
     return { success: false, error: 'Não foi possível carregar as candidaturas.' }
   }
-  if (!empresa) return { success: true, data: [] }
+  const idsEmpresas = (empresas ?? []).map((empresa) => empresa.id)
+  if (empresaActivaId && !idsEmpresas.includes(empresaActivaId)) {
+    return { success: false, error: 'Empresa não encontrada ou sem permissão.' }
+  }
+  const idsEmpresasActivas = empresaActivaId ? [empresaActivaId] : idsEmpresas
+  if (idsEmpresasActivas.length === 0) return { success: true, data: [] }
 
   const { data: vagas, error: erroVagas } = await supabase
     .from('vagas')
     .select('id')
-    .eq('company_id', empresa.id)
+    .in('company_id', idsEmpresasActivas)
 
   if (erroVagas) {
     console.error('Erro ao listar vagas da empresa. Código:', erroVagas.code)
@@ -227,11 +231,11 @@ export async function listarCandidaturasDaEmpresa(): Promise<Resultado<Candidatu
   const linhas = (data ?? []) as Array<Record<string, unknown> & { user_id: string }>
 
   const conversaPorCliente = new Map<string, string>()
-  if (empresa?.id) {
+  if (idsEmpresasActivas.length > 0) {
     const { data: conversas, error: erroConversas } = await supabase
       .from('conversas')
       .select('id, cliente_id')
-      .eq('empresa_id', empresa.id)
+      .in('empresa_id', idsEmpresasActivas)
 
     if (erroConversas) {
       console.error('Erro ao ligar candidaturas a conversas. Código:', erroConversas.code)
@@ -252,7 +256,8 @@ export async function listarCandidaturasDaEmpresa(): Promise<Resultado<Candidatu
 
 export async function atualizarEstadoCandidatura(
   candidaturaId: string,
-  estado: EstadoCandidatura
+  estado: EstadoCandidatura,
+  empresaActivaId?: string
 ): Promise<{ success: boolean; error?: string }> {
   if (!UUID_REGEX.test(candidaturaId)) return { success: false, error: 'Candidatura inválida.' }
 
@@ -260,8 +265,10 @@ export async function atualizarEstadoCandidatura(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Sessão expirada. Inicie sessão novamente.' }
 
-  const { data: empresa, error: erroEmpresa } = await supabase.from('companies').select('id').eq('user_id', user.id).maybeSingle()
-  if (erroEmpresa || !empresa) return { success: false, error: 'Acesso não autorizado.' }
+  const { data: empresas, error: erroEmpresa } = await supabase.from('companies').select('id').eq('user_id', user.id)
+  if (erroEmpresa || !empresas || empresas.length === 0) return { success: false, error: 'Acesso não autorizado.' }
+  const idsEmpresas = empresas.map((empresa) => empresa.id)
+  if (empresaActivaId && !idsEmpresas.includes(empresaActivaId)) return { success: false, error: 'Acesso não autorizado.' }
 
   if (!ESTADOS_CANDIDATURA.includes(estado)) {
     return { success: false, error: 'Estado inválido.' }
@@ -278,7 +285,7 @@ export async function atualizarEstadoCandidatura(
   }
   const vagaEmbed = candidatura.vaga as unknown as { company_id?: string } | { company_id?: string }[] | null
   const vagaEmpresaId = Array.isArray(vagaEmbed) ? vagaEmbed[0]?.company_id : vagaEmbed?.company_id
-  if (vagaEmpresaId !== empresa.id) return { success: false, error: 'Acesso não autorizado.' }
+  if (!vagaEmpresaId || !idsEmpresas.includes(vagaEmpresaId) || (empresaActivaId && vagaEmpresaId !== empresaActivaId)) return { success: false, error: 'Acesso não autorizado.' }
 
   const { data, error } = await supabase
     .from('candidaturas')
