@@ -80,7 +80,7 @@ async function criarNotificacao(
   })
 }
 
-export async function createVaga(formData: VagaFormData): Promise<ActionResult> {
+export async function createVaga(formData: VagaFormData, companyId: string): Promise<ActionResult> {
   const supabase = await createSupabaseServerClient()
 
   const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -97,11 +97,16 @@ export async function createVaga(formData: VagaFormData): Promise<ActionResult> 
     return { success: false, error: 'Dados inválidos', fieldErrors }
   }
 
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(companyId)) {
+    return { success: false, error: 'Empresa inválida.' }
+  }
+
   const { data: company, error: companyError } = await supabase
     .from('companies')
     .select('id, is_approved')
+    .eq('id', companyId)
     .eq('user_id', user.id)
-    .single()
+    .maybeSingle()
 
   if (companyError || !company) {
     return { success: false, error: 'Empresa não encontrada. Cadastre a sua empresa primeiro.' }
@@ -160,19 +165,43 @@ export async function createVaga(formData: VagaFormData): Promise<ActionResult> 
   redirect('/empresa/painel/vagas?cadastro=sucesso')
 }
 
-export async function getUserCompany() {
-  const supabase = await createSupabaseServerClient()
+export type EmpresaPainel = {
+  id: string
+  name: string
+  slug: string
+  sector: string | null
+  province: string | null
+  city: string | null
+  is_approved: boolean
+  description: string | null
+}
 
+export async function getUserCompanies(): Promise<EmpresaPainel[] | null> {
+  const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
 
-  const { data: company } = await supabase
+  const { data, error } = await supabase
     .from('companies')
-    .select('id, name, slug, sector, province, city, phone, email, is_approved, description')
+    .select('id, name, slug, sector, province, city, is_approved, description')
     .eq('user_id', user.id)
-    .single()
+    .order('name', { ascending: true })
 
-  return company
+  if (error) {
+    console.error('Erro ao listar empresas do utilizador. Código:', error.code)
+    return null
+  }
+  return (data ?? []) as EmpresaPainel[]
+}
+
+export async function getUserCompany(companyId?: string): Promise<EmpresaPainel | null> {
+  const empresas = await getUserCompanies()
+  if (!empresas) return null
+  if (companyId) {
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(companyId)) return null
+    return empresas.find((empresa) => empresa.id === companyId) ?? null
+  }
+  return empresas[0] ?? null
 }
 
 export type VagaListItem = {
@@ -185,20 +214,11 @@ export type VagaListItem = {
   created_at: string
 }
 
-export async function getUserVagas(): Promise<VagaListItem[]> {
-  const supabase = await createSupabaseServerClient()
-
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return []
-
-  const { data: company } = await supabase
-    .from('companies')
-    .select('id')
-    .eq('user_id', user.id)
-    .single()
-
+export async function getUserVagas(companyId?: string): Promise<VagaListItem[]> {
+  const company = await getUserCompany(companyId)
   if (!company) return []
 
+  const supabase = await createSupabaseServerClient()
   const { data, error } = await supabase
     .from('vagas')
     .select('id, titulo, slug, estado, categoria, provincia, created_at')
@@ -206,11 +226,10 @@ export async function getUserVagas(): Promise<VagaListItem[]> {
     .order('created_at', { ascending: false })
 
   if (error) {
-    console.error('Erro ao buscar vagas:', error)
+    console.error('Erro ao buscar vagas da empresa. Código:', error.code)
     return []
   }
-
-  return data as VagaListItem[]
+  return (data ?? []) as VagaListItem[]
 }
 
 export type VagaAdminItem = {
