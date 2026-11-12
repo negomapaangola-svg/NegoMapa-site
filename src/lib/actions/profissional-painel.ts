@@ -7,6 +7,15 @@ import { createHash } from 'node:crypto'
 export type PerfilProfissionalProprio = {
   id: string
   estado: string
+  nome: string
+  slug: string
+  avatar_url: string | null
+  motivo_rejeicao: string | null
+  avaliado_em: string | null
+  categoria_id: string | null
+  provincia: string | null
+  municipio: string | null
+  portfolio: unknown
 }
 
 /**
@@ -20,7 +29,7 @@ export async function obterPerfilProfissionalDoUtilizador(): Promise<PerfilProfi
 
   const { data, error } = await supabase
     .from('profissionais')
-    .select('id, estado')
+    .select('id, estado, nome, slug, avatar_url, motivo_rejeicao, avaliado_em, categoria_id, provincia, municipio, portfolio')
     .eq('user_id', user.id)
     .maybeSingle()
 

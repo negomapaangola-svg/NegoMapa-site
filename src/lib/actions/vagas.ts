@@ -170,6 +170,9 @@ export type EmpresaPainel = {
   name: string
   slug: string
   is_approved: boolean
+  sector: string | null
+  province: string | null
+  city: string | null
 }
 
 export async function getUserCompanies(): Promise<EmpresaPainel[] | null> {
@@ -179,7 +182,7 @@ export async function getUserCompanies(): Promise<EmpresaPainel[] | null> {
 
   const { data, error } = await supabase
     .from('companies')
-    .select('id, name, slug, is_approved')
+    .select('id, name, slug, is_approved, sector, province, city')
     .eq('user_id', user.id)
     .order('name', { ascending: true })
 
