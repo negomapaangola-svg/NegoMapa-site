@@ -56,7 +56,7 @@ export function LocalizacaoPreferenciasForm({
         setMunicipio('')
         setBairro('')
         setConsentimentoActual(false)
-        setDataConsentimentoEstado(resultado.consentimentoActualizadoEm ?? null)
+        setDataConsentimentoEstado(null)
       }
       setMensagemLocal(resultado.message)
       setOkLocal(resultado.ok)

@@ -101,13 +101,12 @@ export async function removerLocalizacaoCliente() {
     // Uma única instrução UPDATE limpa todos os campos de localização e consentimento.
     // O filtro por user.id, a política RLS e os privilégios de coluna limitados
     // impedem que esta acção altere perfis de terceiros ou account_type.
-    const consentimentoActualizadoEm = new Date().toISOString();
     const { data: actualizado, error } = await supabase.from('profiles').update({
       localizacao_provincia: null,
       localizacao_municipio: null,
       localizacao_bairro: null,
       consentimento_localizacao: false,
-      consentimento_actualizado_em: consentimentoActualizadoEm,
+      consentimento_actualizado_em: null,
       latitude_aproximada: null,
       longitude_aproximada: null,
     }).eq('id', user.id).select('id').maybeSingle();
@@ -116,7 +115,7 @@ export async function removerLocalizacaoCliente() {
       return { ok: false, message: 'Não foi possível remover a localização. Verifique as permissões da conta e tente novamente.' };
     }
     revalidatePath('/perfil'); revalidatePath('/servicos'); revalidatePath('/descobrir'); revalidatePath('/profissionais'); revalidatePath('/empresas');
-    return { ok: true, message: 'Localização e consentimento removidos.', consentimentoActualizadoEm };
+    return { ok: true, message: 'Localização e consentimento removidos.' };
   } catch (e) { return { ok: false, message: e instanceof Error ? e.message : 'Erro ao remover a localização.' }; }
 }
 
