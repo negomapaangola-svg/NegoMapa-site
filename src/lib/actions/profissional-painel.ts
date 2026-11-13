@@ -84,6 +84,31 @@ export async function criarPerfilProfissional(dados: DadosCadastroProfissional):
   if (erroAuth || !user) return { success: false, error: 'A sessão expirou. Inicie sessão novamente.' }
   if (!dados || typeof dados !== 'object') return { success: false, error: 'Os dados enviados são inválidos.' }
 
+  // A conversão só é permitida a contas cliente sem qualquer perfil associado.
+  const { data: perfilConta, error: erroConta } = await supabase
+    .from('profiles')
+    .select('account_type')
+    .eq('id', user.id)
+    .maybeSingle()
+  if (erroConta) {
+    console.error('Erro ao validar tipo de conta para cadastro profissional. Código:', erroConta.code)
+    return { success: false, error: 'Não foi possível validar a sua conta. Tente novamente.' }
+  }
+  if (perfilConta?.account_type !== 'cliente') {
+    return { success: false, error: 'Apenas contas de cliente sem perfil associado podem criar um perfil profissional.' }
+  }
+  const { data: empresaExistente, error: erroEmpresa } = await supabase
+    .from('companies')
+    .select('id')
+    .eq('user_id', user.id)
+    .limit(1)
+    .maybeSingle()
+  if (erroEmpresa) {
+    console.error('Erro ao verificar empresa associada. Código:', erroEmpresa.code)
+    return { success: false, error: 'Não foi possível validar os perfis associados. Tente novamente.' }
+  }
+  if (empresaExistente) return { success: false, error: 'Esta conta já tem uma empresa associada e não pode criar um perfil profissional.' }
+
   const nome = typeof dados.nome === 'string' ? dados.nome.trim() : ''
   const provincia = typeof dados.provincia === 'string' ? dados.provincia.trim() : ''
   const municipio = typeof dados.municipio === 'string' ? dados.municipio.trim() : ''
