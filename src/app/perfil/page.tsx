@@ -45,19 +45,30 @@ export default async function PerfilPage() {
     : [{ data: [] }, { data: [] }]
   let categoriaNome:string|null=null
   if(profissional?.categoria_id){const {data}=await supabase.from('categorias').select('nome').eq('id',profissional.categoria_id).maybeSingle();categoriaNome=data?.nome??null}
+  const corTipoConta = pessoal.account_type === 'profissional'
+    ? 'border-teal-200 bg-teal-50 text-teal-800 dark:border-teal-900 dark:bg-teal-950/40 dark:text-teal-200'
+    : pessoal.account_type === 'empresa'
+      ? 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200'
+      : 'border-sky-200 bg-sky-50 text-sky-800 dark:border-sky-900 dark:bg-sky-950/40 dark:text-sky-200'
   const acessos=[
     ...(profissional?[{href:'/editar-perfil',label:'Editar perfil profissional'},{href:'/profissional/painel',label:'Painel profissional'}]:[]),
     ...(empresas.length?[{href:'/empresa/painel',label:'Painel empresarial'}]:[]),
     {href:'/pedidos',label:'Pedidos'},{href:'/candidaturas',label:'Candidaturas'},
-    {href:'/mensagens',label:'Mensagens'},{href:'/preferencias-notificacoes',label:'Preferências de notificações'},
+    {href:'/mensagens',label:'Mensagens'},{href:'/configuracoes',label:'Configurações'},
   ]
   return <MainLayout><main id="main-content" className="min-h-[60vh] bg-cream px-4 py-10 dark:bg-navy-dark sm:py-14">
-    <div className="mx-auto max-w-4xl space-y-6">
-      <Card variant="liquid" padding="lg">
+    <div className="mx-auto max-w-4xl space-y-5">
+      <nav aria-label="Secções do perfil" className="flex flex-wrap gap-2 text-xs">
+        <a href="#dados-pessoais" className="rounded-full border border-card-border px-3 py-2 font-medium hover:border-orange-500">Dados pessoais</a>
+        {pessoal.account_type === 'cliente' && <a href="#localizacao-preferencias" className="rounded-full border border-card-border px-3 py-2 font-medium hover:border-orange-500">Localização e preferências</a>}
+        <a href="#perfis-associados" className="rounded-full border border-card-border px-3 py-2 font-medium hover:border-orange-500">Perfis associados</a>
+        <a href="#acessos-conta" className="rounded-full border border-card-border px-3 py-2 font-medium hover:border-orange-500">Acessos</a>
+      </nav>
+      <Card id="dados-pessoais" variant="liquid" padding="md">
         <CardHeader><CardTitle as="h1" className="text-2xl sm:text-3xl">O meu perfil</CardTitle><p className="text-sm text-neutral-600 dark:text-cream-text">Edite os seus dados pessoais. O email e o tipo de conta são protegidos.</p></CardHeader>
         <CardContent><PerfilPessoalForm email={pessoal.email} nome={pessoal.nome} telefone={pessoal.telefone} whatsapp={pessoal.whatsapp} avatarUrl={pessoal.avatar_url}/></CardContent>
       </Card>
-      {pessoal.account_type === 'cliente' && <Card variant="liquid" padding="lg">
+      {pessoal.account_type === 'cliente' && <Card id="localizacao-preferencias" variant="liquid" padding="md">
         <CardHeader><CardTitle as="h2">Localização e preferências</CardTitle><p className="text-sm text-neutral-600 dark:text-cream-text">Defina a sua localização administrativa e as categorias de interesse.</p></CardHeader>
         <CardContent><LocalizacaoPreferenciasForm
           provinciaInicial={pessoal.localizacao_provincia}
@@ -69,14 +80,14 @@ export default async function PerfilPage() {
           preferenciasIniciais={(preferenciasCliente.data ?? []).map((item: { categoria_id: string }) => item.categoria_id)}
         /></CardContent>
       </Card>}
-      <Card variant="liquid" padding="lg">
-        <CardHeader><CardTitle as="h2">Perfis associados</CardTitle><p className="text-sm text-neutral-600 dark:text-cream-text">Tipo de conta: <strong className="capitalize">{pessoal.account_type}</strong>. Esta escolha não pode ser alterada nesta fase.</p></CardHeader>
+      <Card id="perfis-associados" variant="liquid" padding="md">
+        <CardHeader><CardTitle as="h2">Perfis associados</CardTitle><p className="text-sm text-neutral-600 dark:text-cream-text">Tipo de conta: <strong className={"ml-1 inline-flex rounded-full border px-2 py-0.5 text-xs font-semibold capitalize " + corTipoConta}>{pessoal.account_type}</strong>. Esta escolha não pode ser alterada nesta fase.</p></CardHeader>
         <CardContent className="space-y-6">
           {profissional?<section className="border-t border-card-border pt-5">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
               <Avatar src={profissional.avatar_url} alt={profissional.nome} name={profissional.nome} width={64} height={64}/>
               <div className="min-w-0 flex-1"><h3 className="font-semibold text-ink dark:text-cream">{profissional.nome}</h3><span className="mt-2 inline-flex rounded-full border border-card-border px-3 py-1 text-sm">{profissional.estado?estados[profissional.estado]??profissional.estado:'Estado não disponível'}</span></div>
-              <Link href="/editar-perfil" className="inline-flex min-h-11 items-center justify-center rounded-xl border border-orange-500 px-5 py-3 text-sm font-bold text-orange-700 dark:text-orange-300">Editar perfil profissional</Link>
+              <Link href="/editar-perfil" className="inline-flex min-h-9 items-center justify-center rounded-lg border border-orange-500 px-3 py-1.5 text-sm font-semibold text-orange-700 dark:text-orange-300">Editar perfil profissional</Link>
             </div>
             <dl className="mt-4 grid gap-4 sm:grid-cols-2">
               <div><dt className="text-xs text-neutral-500">Categoria</dt><dd className="text-sm">{categoriaNome??'Não indicada'}</dd></div>
@@ -101,7 +112,7 @@ export default async function PerfilPage() {
           <Link href="/cadastrar-empresa" className="inline-flex min-h-12 items-center justify-center rounded-xl border border-orange-500 bg-white/60 px-5 py-3 text-sm font-semibold text-orange-800 transition-colors hover:bg-orange-50 dark:bg-white/5 dark:text-orange-300 dark:hover:bg-orange-950/30">Criar empresa</Link>
         </CardContent>
       </Card>}
-      <Card variant="liquid" padding="lg"><CardHeader><CardTitle as="h2">Acessos da conta</CardTitle></CardHeader><CardContent><ul className="grid gap-3 sm:grid-cols-2">{acessos.map(a=><li key={a.href}><Link href={a.href} className="flex min-h-11 items-center rounded-xl border border-card-border bg-white/60 px-4 text-sm font-medium text-ink hover:border-orange-500 dark:bg-white/5 dark:text-cream">{a.label}</Link></li>)}</ul></CardContent></Card>
+      <Card id="acessos-conta" variant="liquid" padding="md"><CardHeader><CardTitle as="h2">Acessos da conta</CardTitle></CardHeader><CardContent><ul className="grid gap-3 sm:grid-cols-2">{acessos.map(a=><li key={a.href}><Link href={a.href} className="flex min-h-9 items-center rounded-lg border border-card-border bg-white/60 px-3 py-1.5 text-sm font-medium text-ink hover:border-orange-500 dark:bg-white/5 dark:text-cream">{a.label}</Link></li>)}</ul></CardContent></Card>
     </div>
   </main></MainLayout>
 }
