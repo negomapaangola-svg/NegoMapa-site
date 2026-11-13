@@ -288,6 +288,51 @@ $function$;
 REVOKE ALL ON FUNCTION public.admin_dashboard_stats() FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.admin_dashboard_stats() TO authenticated;
 
+CREATE OR REPLACE FUNCTION public.admin_list_messages(p_filter text DEFAULT 'all')
+RETURNS TABLE (
+  id uuid,
+  sender_id uuid,
+  subject text,
+  body text,
+  created_at timestamptz,
+  read_at timestamptz,
+  archived_at timestamptz,
+  sender_name text
+)
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path TO ''
+AS $function$
+BEGIN
+  IF NOT public.is_admin() THEN
+    RAISE EXCEPTION 'Acesso negado' USING ERRCODE = '42501';
+  END IF;
+
+  IF p_filter NOT IN ('all', 'unread', 'read', 'archived') THEN
+    RAISE EXCEPTION 'Filtro inválido' USING ERRCODE = '22023';
+  END IF;
+
+  RETURN QUERY
+    SELECT m.id, m.sender_id, m.subject, m.body, m.created_at, m.read_at, m.archived_at,
+           COALESCE(NULLIF(btrim(p.nome), ''), 'Utilizador')::text
+      FROM public.admin_messages AS m
+      LEFT JOIN public.profiles AS p ON p.id = m.sender_id
+     WHERE m.recipient_id IS NULL
+       AND (
+         p_filter = 'all'
+         OR (p_filter = 'unread' AND m.read_at IS NULL AND m.archived_at IS NULL)
+         OR (p_filter = 'read' AND m.read_at IS NOT NULL AND m.archived_at IS NULL)
+         OR (p_filter = 'archived' AND m.archived_at IS NOT NULL)
+       )
+     ORDER BY m.created_at DESC
+     LIMIT 100;
+END;
+$function$;
+
+REVOKE ALL ON FUNCTION public.admin_list_messages(text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.admin_list_messages(text) TO authenticated;
+
 COMMIT;
 
 -- Verificações pós-aplicação (a executar em ambiente de teste):
