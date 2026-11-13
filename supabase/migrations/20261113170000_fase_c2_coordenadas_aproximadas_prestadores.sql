@@ -29,7 +29,9 @@ begin
       check (
         (latitude_aproximada is null and longitude_aproximada is null)
         or (
-          latitude_aproximada between -90 and 90
+          latitude_aproximada is not null
+          and longitude_aproximada is not null
+          and latitude_aproximada between -90 and 90
           and longitude_aproximada between -180 and 180
         )
       );
