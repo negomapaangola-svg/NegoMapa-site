@@ -197,3 +197,6 @@ As três vistas usam security_barrier=true; a migração revoga privilégios ger
 ### Limites de validação
 
 A revisão acima é estática. A criação de uma branch Supabase isolada foi tentada, mas a API respondeu que branching só é suportado no plano Pro ou superior. Nenhuma migração foi aplicada à produção. As permissões e as políticas ainda precisam de ser confirmadas por execução numa branch isolada elegível, com sessões anon/authenticated representativas.
+
+
+A migração também fixa search_path vazio nas RPCs administrativas SECURITY DEFINER relevantes e nas funções de trigger com objectos qualificados, reduzindo risco de resolução de objectos maliciosos em schemas graváveis. Os built-ins continuam disponíveis via pg_catalog.
