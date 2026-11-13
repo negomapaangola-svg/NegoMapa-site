@@ -1,6 +1,7 @@
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import type { ParamsDescobrir } from './params';
-import { ordenarPorLocalizacaoAdministrativa, type LocalizacaoAdministrativa } from '@/lib/localizacao/ordenar-resultados';
+import { ordenarPorDistanciaEAdministrativa, type LocalizacaoAdministrativa } from '@/lib/localizacao/ordenar-resultados';
+import { obterDistanciasAproximadas } from '@/lib/actions/proximidade';
 
 export const RESULTADOS_POR_PAGINA = 12;
 
@@ -16,6 +17,7 @@ export type ProdutoDescobrir = {
   municipio: string | null;
   estado_produto: string;
   imagem: string | null;
+  distancia_km?: number | null;
 };
 
 export type ResultadoProdutos = {
@@ -150,7 +152,10 @@ export async function buscarProdutosDescobrir(params: ParamsDescobrir, localizac
     return vazio;
   }
 
-  const ordenadas = ordenarPorLocalizacaoAdministrativa((data ?? []) as LinhaProduto[], localizacao);
+  const linhasOriginais = (data ?? []) as LinhaProduto[];
+  const distancias = await obterDistanciasAproximadas('produto', linhasOriginais.map((linha) => linha.id));
+  const linhasComDistancias = linhasOriginais.map((linha) => ({ ...linha, distancia_km: distancias[linha.id] ?? null }));
+  const ordenadas = ordenarPorDistanciaEAdministrativa(linhasComDistancias, localizacao);
   const linhas = ordenadas.slice(inicio, inicio + RESULTADOS_POR_PAGINA);
   const ids = linhas.map((linha) => linha.id);
   const { data: imagens } = ids.length
@@ -170,7 +175,7 @@ export async function buscarProdutosDescobrir(params: ParamsDescobrir, localizac
     produtos.push({
       id: linha.id, slug: linha.slug, titulo: linha.titulo, preco: linha.preco,
       preco_tipo: linha.preco_tipo, provincia: linha.provincia, municipio: linha.municipio,
-      estado_produto: linha.estado_produto, imagem,
+      estado_produto: linha.estado_produto, imagem, distancia_km: linha.distancia_km,
     });
   }
   return { produtos, total: count ?? 0 };
