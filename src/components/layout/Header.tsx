@@ -33,7 +33,7 @@ export const Header = forwardRef<HTMLElement, { className?: string; hideGlobalSe
     }, [])
 
     const estaActivo = (href: string) => pathname === href || pathname.startsWith(`${href}/`)
-    const linksCabecalho = ['inicio','descobrir','servicos','empresas','vagas'].map((id) => ITENS_NAVEGACAO.find((item) => item.id === id)!).filter(Boolean)
+    const linksCabecalho = ['inicio','descobrir','servicos','profissionais','empresas','produtos','vagas'].map((id) => ITENS_NAVEGACAO.find((item) => item.id === id)!).filter(Boolean)
     const publicar = contexto?.administrador ? null : contexto && contexto.profissional && contexto.estadoProfissional === 'aprovado'
       ? { href:'/cadastrar-servico', label:'Publicar serviço' }
       : contexto?.empresa && contexto.empresaAprovada ? { href:'/empresa/painel/vagas/nova', label:'Publicar vaga' } : null
@@ -45,8 +45,8 @@ export const Header = forwardRef<HTMLElement, { className?: string; hideGlobalSe
           <div className="flex h-16 items-center justify-between gap-2 sm:gap-4">
             <div className="flex min-w-0 items-center gap-2">
               <Link href="/" aria-label="NegóMapa - Página inicial" className="inline-flex min-h-11 items-center rounded-full px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"><img src={isDark ? '/identidade/logo-negomapa-fundo-escuro.svg' : '/identidade/logo-negomapa-fundo-claro.svg'} alt="NegóMapa" className="h-8 w-auto max-w-[120px] object-contain sm:h-10 sm:max-w-[180px]" width="560" height="120" /></Link>
-              <nav aria-label="Navegação principal" className="hidden items-center gap-1 lg:flex xl:gap-2">
-                {linksCabecalho.map((item) => <Link key={item.id} href={item.rota} aria-current={estaActivo(item.rota) ? 'page' : undefined} className={cn('inline-flex min-h-11 items-center whitespace-nowrap rounded-full px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500', estaActivo(item.rota) ? 'bg-orange-500/10 text-orange-700 dark:text-orange-400' : 'text-neutral-800 hover:bg-white/50 hover:text-orange-600 dark:text-cream-text dark:hover:bg-white/10 dark:hover:text-orange-400')}>{item.rotulo}</Link>)}
+              <nav aria-label="Navegação principal" className="hidden items-center gap-0.5 lg:flex xl:gap-1">
+                {linksCabecalho.map((item) => <Link key={item.id} href={item.rota} aria-current={estaActivo(item.rota) ? 'page' : undefined} className={cn('inline-flex min-h-11 items-center whitespace-nowrap rounded-full px-2 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500', estaActivo(item.rota) ? 'bg-orange-500/10 text-orange-700 dark:text-orange-400' : 'text-neutral-800 hover:bg-white/50 hover:text-orange-600 dark:text-cream-text dark:hover:bg-white/10 dark:hover:text-orange-400')}>{item.rotulo}</Link>)}
               </nav>
             </div>
             <div className="flex min-w-0 items-center gap-1 sm:gap-2">

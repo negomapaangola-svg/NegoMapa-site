@@ -49,7 +49,8 @@ export function AuthUserMenu({ variante = 'cabecalho', onNavigate }: { variante?
       {aberto && <div aria-label="Menu da conta" className="absolute right-0 top-14 z-[250] w-64 rounded-2xl border border-card-border bg-white p-3 shadow-xl dark:bg-neutral-900">
         <div className="px-3 pb-2 text-xs text-neutral-500">A minha conta</div>
         <div className="space-y-1">
-          <Link href={itemPerfil.rota} onClick={() => setAberto(false)} className="block rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-cream dark:hover:bg-white/10">Perfil</Link>
+          <Link href={itemPerfil.rota} onClick={() => setAberto(false)} className="block rounded-lg px-3 py-2 text-sm font-medium hover:bg-cream dark:hover:bg-white/10">Perfil</Link>
+          <Link href="/configuracoes" onClick={() => setAberto(false)} className="block rounded-lg px-3 py-2 text-sm font-medium hover:bg-cream dark:hover:bg-white/10">Configurações</Link>
           {contexto.profissional && <Link role="menuitem" href="/profissional/painel" onClick={() => setAberto(false)} className="block rounded-lg px-3 py-2.5 text-sm hover:bg-cream dark:hover:bg-white/10">Painel profissional</Link>}
           {contexto.empresa && <Link role="menuitem" href="/empresa/painel" onClick={() => setAberto(false)} className="block rounded-lg px-3 py-2.5 text-sm hover:bg-cream dark:hover:bg-white/10">Painel empresarial</Link>}
           <Link role="menuitem" href="/mensagens" onClick={() => setAberto(false)} className="block rounded-lg px-3 py-2.5 text-sm hover:bg-cream dark:hover:bg-white/10">Mensagens</Link>

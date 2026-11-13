@@ -15,9 +15,10 @@ export function EscolhaTipoConta({tipo,sigla}:{tipo:Tipo;sigla:string}) {
       if(r.ok){router.replace('/perfil');router.refresh()} else setErro(r.message)
     })
   }
+  const cores = { cliente: 'bg-sky-100 text-sky-800 dark:bg-sky-900/60 dark:text-sky-200', profissional: 'bg-teal-100 text-teal-800 dark:bg-teal-900/60 dark:text-teal-200', empresa: 'bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-200' }
   return <div>
-    <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-100 font-heading font-bold text-orange-700 dark:bg-orange-950/50 dark:text-orange-200">{sigla}</div>
-    <Button type="button" fullWidth onClick={escolher} loading={pendente} disabled={pendente}>Continuar</Button>
+    <div className={"mb-4 flex h-10 w-10 items-center justify-center rounded-xl font-heading text-sm font-bold " + cores[tipo]}>{sigla}</div>
+    <Button type="button" size="sm" fullWidth onClick={escolher} loading={pendente} disabled={pendente}>Continuar</Button>
     {erro&&<p role="alert" className="mt-3 text-sm text-red-700 dark:text-red-300">{erro}</p>}
   </div>
 }
