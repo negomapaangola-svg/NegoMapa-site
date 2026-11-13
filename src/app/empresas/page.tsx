@@ -20,6 +20,7 @@ type Empresa = {
   bairro: string | null
   slug: string
   description: string | null
+  distancia_km?: number | null
 }
 
 function EmpresasContent() {
@@ -32,6 +33,7 @@ function EmpresasContent() {
   const [idsContactaveis, setIdsContactaveis] = React.useState<Set<string>>(new Set())
   const [carregando, setCarregando] = React.useState(true)
   const [localizacao, setLocalizacao] = React.useState<LocalizacaoAdministrativa>(null)
+  const [distancias, setDistancias] = React.useState<Record<string, number>>({})
 
   React.useEffect(() => {
     let activo = true
@@ -51,6 +53,8 @@ function EmpresasContent() {
       } else {
         const lista = (data ?? []) as Empresa[]
         setEmpresas(lista)
+        const distanciasCalculadas = await obterDistanciasAproximadas('empresa', lista.map((item) => item.id))
+        if (activo) setDistancias(distanciasCalculadas)
         setSetores(Array.from(new Set(lista.map((item) => item.sector).filter((v): v is string => Boolean(v)))).sort())
         setProvincias(Array.from(new Set(lista.map((item) => item.province).filter((v): v is string => Boolean(v)))).sort())
       }
@@ -77,11 +81,11 @@ function EmpresasContent() {
     return () => { activo = false }
   }, [empresas])
 
-  const filtradas = ordenarPorLocalizacaoAdministrativa(empresas.filter((empresa) =>
+  const filtradas = ordenarPorDistanciaEAdministrativa(empresas.filter((empresa) =>
     (!setor || empresa.sector === setor) &&
     (!provincia || empresa.province === provincia) &&
     (!nome || empresa.name.toLocaleLowerCase().includes(nome.trim().toLocaleLowerCase()))
-  ).map((empresa) => ({ ...empresa, municipio: empresa.city })), localizacao)
+  ).map((empresa) => ({ ...empresa, municipio: empresa.city, distancia_km: distancias[empresa.id] ?? null })), localizacao)
 
   const limpar = () => {
     setSetor("")
@@ -142,6 +146,7 @@ function EmpresasContent() {
                       <span className="block break-words text-base font-semibold text-ink dark:text-cream">{empresa.name}</span>
                       <span className="mt-1 block text-sm text-neutral-600 dark:text-cream-text">{empresa.sector || "Sector não indicado"}</span>
                       <span className="mt-1 block text-xs text-neutral-500 dark:text-cream-text/70">{empresa.province || "Província não indicada"}</span>
+                      {typeof empresa.distancia_km === 'number' && <span className="mt-1 block text-sm font-medium text-orange-700 dark:text-orange-300">≈ {empresa.distancia_km} km</span>}
                       {empresa.description && <span className="mt-3 line-clamp-3 block text-sm leading-relaxed text-neutral-600 dark:text-cream-text">{empresa.description}</span>}
                     </span>
                   </Link>
