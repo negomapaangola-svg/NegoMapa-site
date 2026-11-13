@@ -73,7 +73,7 @@ export async function criarEmpresaPendente(dados: DadosEmpresaPendente) {
   if (nome.length < 2 || nome.length > 160 || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) || slug.length > 190 ||
       !setor || setor.length > 100 || !provincia || provincia.length > 80 || !municipio || municipio.length > 100 ||
       telefone.length < 5 || telefone.length > 32 || whatsapp.length < 5 || whatsapp.length > 32 ||
-      email.length > 254 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$/.test(email)) {
+      email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
     return { success: false, error: 'Verifique os campos obrigatórios do registo.' }
   }
   if ((dados.bairro ?? '').length > 120 || (dados.descricao ?? '').length > 2000 || (dados.website ?? '').length > 500 ||
