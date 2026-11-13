@@ -9,6 +9,9 @@ import {
 } from '@/lib/actions/profissionais-publicos';
 import { ProfissionalCard } from './_components/ProfissionalCard';
 import { FiltrosProfissionais } from './_components/FiltrosProfissionais';
+import { obterLocalizacaoCliente } from '@/lib/actions/perfil-pessoal';
+import { ordenarPorDistanciaEAdministrativa } from '@/lib/localizacao/ordenar-resultados'
+import { obterDistanciasAproximadas } from '@/lib/actions/proximidade';
 
 export const metadata: Metadata = {
   title: 'Profissionais | NegóMapa',
@@ -59,8 +62,12 @@ export default async function ProfissionaisPage({ searchParams }: { searchParams
   };
 
   // A vista pública já devolve só profissionais aprovados.
-  const todos = await listarProfissionaisPublicos();
-  const profissionais = filtrarProfissionais(todos, filtros);
+  const [todos, localizacao] = await Promise.all([listarProfissionaisPublicos(), obterLocalizacaoCliente()]);
+  const filtrados = filtrarProfissionais(todos, filtros);
+  const distancias = await obterDistanciasAproximadas('profissional', filtrados.map((p) => p.id));
+  const profissionais = ordenarPorDistanciaEAdministrativa(
+    filtrados.map((p) => ({ ...p, distancia_km: distancias[p.id] ?? null })), localizacao,
+  );
   const temFiltros = Boolean(filtros.q || filtros.categoria || filtros.provincia);
 
   return (

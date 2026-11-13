@@ -108,10 +108,9 @@ async function DetalheEmpresaContent({ id }: { id: string }) {
             <EmpresaAdminActions
               empresaId={empresa.id}
               isApproved={empresa.is_approved}
-              redirectAfterReject="/admin/empresas"
             />
             <p className="mt-4 text-xs text-neutral-500 dark:text-cream-text/60">
-              Suspensa e pendente são guardadas do mesmo modo (is_approved = falso). Uma empresa rejeitada é apagada e deixa de aparecer nesta página.
+              Suspensa e pendente usam o mesmo indicador (is_approved = falso). A rejeição está desactivada até existir um estado próprio; o registo empresarial é preservado.
             </p>
           </Card>
 

@@ -87,6 +87,7 @@ export async function getAllEmpresasAdmin(): Promise<EmpresasAdminResult> {
 }
 
 export async function aprovarEmpresa(empresaId: string): Promise<ActionResult> {
+  if (!UUID_RE.test(empresaId)) return { success: false, error: 'Empresa não encontrada.' }
   const adminCheck = await isAdmin()
   if (!adminCheck) {
     return { success: false, error: 'Acesso negado. Privilégios de administrador necessários.' }
@@ -135,49 +136,24 @@ export async function aprovarEmpresa(empresaId: string): Promise<ActionResult> {
 }
 
 export async function rejeitarEmpresa(empresaId: string): Promise<ActionResult> {
+  if (!UUID_RE.test(empresaId)) return { success: false, error: 'Empresa não encontrada.' }
+
   const adminCheck = await isAdmin()
   if (!adminCheck) {
     return { success: false, error: 'Acesso negado. Privilégios de administrador necessários.' }
   }
 
-  const supabase = await createSupabaseServerClient()
-
-  const { data: empresa, error: leituraError } = await supabase
-    .from('companies')
-    .select('id, name, user_id')
-    .eq('id', empresaId)
-    .maybeSingle()
-
-  if (leituraError || !empresa) {
-    return { success: false, error: 'Empresa não encontrada.' }
+  // O esquema actual só tem is_approved (booleano), que não distingue rejeição
+  // de pendência/suspensão. Não apagar nem reutilizar esse estado com outro significado.
+  // A operação fica desactivada até existir um estado de rejeição próprio.
+  return {
+    success: false,
+    error: 'A rejeição está temporariamente desactivada para proteger o registo da empresa. Use a suspensão enquanto não existir um estado de rejeição próprio.',
   }
-
-  const { error } = await supabase
-    .from('companies')
-    .delete()
-    .eq('id', empresaId)
-
-  if (error) {
-    console.error('Erro ao rejeitar empresa. Código:', error?.code)
-    return { success: false, error: 'Erro ao rejeitar empresa. Tente novamente.' }
-  }
-
-  if (empresa.user_id) {
-    await criarNotificacao(
-      supabase,
-      empresa.user_id,
-      'empresa_rejeitada',
-      'Empresa rejeitada',
-      `O cadastro da empresa “${empresa.name}” foi rejeitado. Reveja os dados e torne a submeter, se necessário.`,
-      null
-    )
-  }
-
-  revalidatePath('/admin/empresas')
-  return { success: true }
 }
 
 export async function suspenderEmpresa(empresaId: string): Promise<ActionResult> {
+  if (!UUID_RE.test(empresaId)) return { success: false, error: 'Empresa não encontrada.' }
   const adminCheck = await isAdmin()
   if (!adminCheck) {
     return { success: false, error: 'Acesso negado. Privilégios de administrador necessários.' }

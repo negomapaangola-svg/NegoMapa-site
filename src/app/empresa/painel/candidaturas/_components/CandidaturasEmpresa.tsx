@@ -13,6 +13,7 @@ import { formatDate } from '@/lib/utils'
 
 type Props = {
   candidaturas: CandidaturaEmpresa[]
+  empresaId: string
 }
 
 const ESTADOS: { valor: EstadoCandidatura; rotulo: string }[] = [
@@ -37,7 +38,7 @@ const ESTADO_ESTILO: Record<string, string> = {
   arquivada: 'bg-neutral-200 text-neutral-600 dark:bg-neutral-600 dark:text-neutral-300',
 }
 
-export function CandidaturasEmpresa({ candidaturas }: Props) {
+export function CandidaturasEmpresa({ candidaturas, empresaId }: Props) {
   const router = useRouter()
   const [pending, startTransition] = React.useTransition()
   const [feedback, setFeedback] = React.useState<{ tipo: 'sucesso' | 'erro'; texto: string } | null>(null)
@@ -47,7 +48,7 @@ export function CandidaturasEmpresa({ candidaturas }: Props) {
     if (!window.confirm(`Alterar o estado desta candidatura para "${rotulo}"?`)) return
     setFeedback(null)
     startTransition(async () => {
-      const resultado = await atualizarEstadoCandidatura(candidatura.id, estado)
+      const resultado = await atualizarEstadoCandidatura(candidatura.id, estado, empresaId)
       if (resultado.success) {
         setFeedback({ tipo: 'sucesso', texto: `Estado alterado para ${rotulo}.` })
         router.refresh()
@@ -103,7 +104,7 @@ export function CandidaturasEmpresa({ candidaturas }: Props) {
           <div className="flex flex-wrap items-center gap-3 pt-1 text-sm">
             {candidatura.conversa_id ? (
               <Link
-                href={`/empresa/painel/mensagens?conversa=${encodeURIComponent(candidatura.conversa_id)}`}
+                href={`/empresa/painel/mensagens?empresa=${encodeURIComponent(empresaId)}&conversa=${encodeURIComponent(candidatura.conversa_id)}`}
                 className="inline-flex items-center px-3 py-1.5 rounded-[4px] border border-orange-500 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors"
               >
                 Ver conversa

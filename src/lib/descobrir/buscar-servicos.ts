@@ -4,6 +4,8 @@ import {
   obterIdsProfissionaisPublicosPorNome,
 } from '@/lib/actions/profissionais-publicos';
 import type { ParamsDescobrir } from './params';
+import { ordenarPorDistanciaEAdministrativa, type LocalizacaoAdministrativa } from '@/lib/localizacao/ordenar-resultados';
+import { obterDistanciasAproximadas } from '@/lib/actions/proximidade';
 
 export const RESULTADOS_POR_PAGINA = 12;
 const LIMITE_AVALIACAO = 300;
@@ -20,6 +22,7 @@ export type ServicoDescobrir = {
   provincia: string | null;
   municipio: string | null;
   avaliacao: AvaliacaoResumo | null;
+  distancia_km?: number | null;
 };
 
 export type ResultadoDescobrir = {
@@ -95,7 +98,7 @@ export async function obterMunicipiosDescobrir(provincia: string): Promise<strin
   return [...new Set((data ?? []).map((linha) => linha.municipio).filter((m): m is string => Boolean(m)))].sort();
 }
 
-export async function buscarServicosDescobrir(params: ParamsDescobrir): Promise<ResultadoDescobrir> {
+export async function buscarServicosDescobrir(params: ParamsDescobrir, localizacao: LocalizacaoAdministrativa = null): Promise<ResultadoDescobrir> {
   const vazio: ResultadoDescobrir = { servicos: [], total: 0 };
   const [idsProfissionais, categorias] = await Promise.all([
     obterIdsProfissionaisPublicos(),
@@ -143,10 +146,7 @@ export async function buscarServicosDescobrir(params: ParamsDescobrir): Promise<
 
   const comFiltroAvaliacao = Boolean(params.avaliacao);
   const inicio = (params.pagina - 1) * RESULTADOS_POR_PAGINA;
-  const { data, error, count } = await query.range(
-    comFiltroAvaliacao ? 0 : inicio,
-    comFiltroAvaliacao ? LIMITE_AVALIACAO - 1 : inicio + RESULTADOS_POR_PAGINA - 1,
-  );
+  const { data, error, count } = await query.limit(comFiltroAvaliacao ? LIMITE_AVALIACAO : 1000);
 
   if (error) {
     console.error('Erro ao buscar serviços para Descobrir. Código:', error.code);
@@ -166,6 +166,7 @@ export async function buscarServicosDescobrir(params: ParamsDescobrir): Promise<
   }
   const resumos = resumirAvaliacoes(validarAvaliacoes(avaliacoes));
 
+  const distancias = await obterDistanciasAproximadas('servico', linhas.map((linha) => linha.id));
   let resultados: ServicoDescobrir[] = linhas.map((linha) => ({
     id: linha.id,
     slug: linha.slug,
@@ -175,18 +176,21 @@ export async function buscarServicosDescobrir(params: ParamsDescobrir): Promise<
     provincia: linha.provincia,
     municipio: linha.municipio,
     avaliacao: resumos.get(linha.id) ?? null,
+    distancia_km: distancias[linha.id] ?? null,
   }));
 
   if (comFiltroAvaliacao) {
     const minimo = Number(params.avaliacao);
     resultados = resultados.filter((item) => (item.avaliacao?.media ?? 0) >= minimo);
     const totalFiltrado = resultados.length;
+    const ordenados = ordenarPorDistanciaEAdministrativa(resultados, localizacao);
     return {
-      servicos: resultados.slice(inicio, inicio + RESULTADOS_POR_PAGINA),
+      servicos: ordenados.slice(inicio, inicio + RESULTADOS_POR_PAGINA),
       total: totalFiltrado,
       limitado: (count ?? 0) > LIMITE_AVALIACAO,
     };
   }
 
-  return { servicos: resultados, total: count ?? 0 };
+  const ordenados = ordenarPorDistanciaEAdministrativa(resultados, localizacao);
+  return { servicos: ordenados.slice(inicio, inicio + RESULTADOS_POR_PAGINA), total: count ?? 0 };
 }

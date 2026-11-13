@@ -31,6 +31,7 @@ export type ProfissionalPublico = {
   municipio: string | null
   anos_experiencia: number | null
   bio: string | null
+  distancia_km?: number | null
 }
 
 /** Dados do profissional necessários à página de serviço. Sem bairro, created_at nem telefone. */

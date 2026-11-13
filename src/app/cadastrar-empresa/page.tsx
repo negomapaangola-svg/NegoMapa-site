@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button"
 import { MainLayout } from "@/components/layout/MainLayout"
 import { MultiStepForm } from "@/components/forms/multi-step/MultiStepForm"
 import { buildEtapas, dadosVazios, type CategoriaOpcao, type DadosEmpresa } from "./_components/etapas"
+import { criarEmpresaPendente, verificarPodeCriarEmpresa } from "@/lib/actions/conversao-conta"
 
 // Limites e tipos dos ficheiros (alinhados com src/lib/actions/upload.ts)
 const LOGOTIPO = {
@@ -169,6 +170,12 @@ export default function CadastrarEmpresaPage() {
     const supabase = createBrowserSupabaseClient()
 
     try {
+      // Pré-validação no servidor antes de qualquer upload; a criação volta a validar.
+      const elegibilidade = await verificarPodeCriarEmpresa()
+      if (!elegibilidade.success) {
+        setSubmitError(elegibilidade.error ?? "Esta conta não pode criar uma empresa.")
+        return
+      }
       const slug = await gerarSlugUnico(d.nome, supabase)
 
       let logoPath: string | null = null
@@ -198,38 +205,27 @@ export default function CadastrarEmpresaPage() {
         docPath = path
       }
 
-      const { error } = await supabase
-        .from("companies")
-        .insert({
-          user_id: user.id,
-          name: d.nome,
-          slug,
-          sector: d.setor,
-          province: d.provincia,
-          city: d.municipio,
-          bairro: d.bairro || null,
-          description: d.descricao || null,
-          phone: d.telefone,
-          whatsapp: d.mesmoNumeroWhatsapp ? d.telefone : d.whatsapp,
-          email: d.email,
-          website: d.website || null,
-          logo_url: logoPath,
-          nif: legalizada ? d.nif : null,
-          estado_legalizacao: legalizada ? "legalizada" : null,
-          documento_legalizacao_path: docPath,
-          is_approved: false,
-        })
-        .select("id")
-
-      if (error) {
-        if (error.code === "23505" && error.message.includes("slug")) {
-          setSubmitError("Já existe uma empresa com um nome muito semelhante. Ajuste o nome e tente novamente.")
-        } else {
-          setSubmitError("Não foi possível registar a empresa. Os seus dados foram mantidos; tente novamente. (" + error.message + ")")
-        }
+      const resultado = await criarEmpresaPendente({
+        nome: d.nome,
+        slug,
+        setor: d.setor,
+        provincia: d.provincia,
+        municipio: d.municipio,
+        bairro: d.bairro || null,
+        descricao: d.descricao || null,
+        telefone: d.telefone,
+        whatsapp: d.mesmoNumeroWhatsapp ? d.telefone : d.whatsapp,
+        email: d.email,
+        website: d.website || null,
+        logoPath,
+        nif: legalizada ? d.nif : null,
+        legalizada,
+        documentoPath: docPath,
+      })
+      if (!resultado.success) {
+        setSubmitError(resultado.error ?? "Não foi possível registar a empresa. Tente novamente.")
         return
       }
-
       setSubmitted(true)
     } finally {
       setSubmitting(false)

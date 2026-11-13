@@ -43,6 +43,13 @@ export type MediaAvaliacoes = {
   total: number
 }
 
+const UUID_ALVO_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const TIPOS_ALVO = ['profissional', 'empresa', 'servico', 'vaga'] as const
+
+function alvoValido(alvo: AlvoAvaliacao): boolean {
+  return Boolean(alvo && TIPOS_ALVO.includes(alvo.tipo) && UUID_ALVO_RE.test(alvo.id))
+}
+
 export type ActionResult = {
   success: boolean
   error?: string
@@ -52,15 +59,15 @@ export type ActionResult = {
 function validateAvaliacao(input: AvaliacaoInput): Record<string, string> {
   const errors: Record<string, string> = {}
 
-  if (!input.alvo || !input.alvo.tipo || !input.alvo.id) {
-    errors.alvo = 'Alvo da avaliação é obrigatório'
+  if (!alvoValido(input.alvo)) {
+    errors.alvo = 'Alvo da avaliação inválido'
   }
 
   if (!Number.isInteger(input.nota) || input.nota < 1 || input.nota > 5) {
     errors.nota = 'Nota deve ser um número inteiro entre 1 e 5'
   }
 
-  if (input.comentario && input.comentario.length > 1000) {
+  if (input.comentario !== undefined && (typeof input.comentario !== 'string' || input.comentario.trim().length > 1000)) {
     errors.comentario = 'Comentário deve ter no máximo 1000 caracteres'
   }
 
@@ -70,7 +77,7 @@ function validateAvaliacao(input: AvaliacaoInput): Record<string, string> {
 function validateUpdate(input: AvaliacaoUpdateInput): Record<string, string> {
   const errors: Record<string, string> = {}
 
-  if (!input.avaliacaoId) {
+  if (!UUID_ALVO_RE.test(input.avaliacaoId)) {
     errors.avaliacaoId = 'ID da avaliação é obrigatório'
   }
 
@@ -88,20 +95,20 @@ function validateUpdate(input: AvaliacaoUpdateInput): Record<string, string> {
 async function verificarAlvoAprovado(supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>, alvo: AlvoAvaliacao): Promise<boolean> {
   switch (alvo.tipo) {
     case 'profissional': {
-      const { data } = await supabase
-        .from('profissionais')
-        .select('estado')
+      const { data, error } = await supabase
+        .from('profissionais_publicos')
+        .select('id')
         .eq('id', alvo.id)
-        .single()
-      return data?.estado === 'aprovado'
+        .maybeSingle()
+      return !error && Boolean(data)
     }
     case 'empresa': {
-      const { data } = await supabase
-        .from('companies')
-        .select('is_approved')
+      const { data, error } = await supabase
+        .from('empresas_publicas')
+        .select('id')
         .eq('id', alvo.id)
-        .single()
-      return data?.is_approved === true
+        .maybeSingle()
+      return !error && Boolean(data)
     }
     case 'servico': {
       const { data } = await supabase
@@ -131,11 +138,16 @@ function getAlvoColumns(alvo: AlvoAvaliacao): Record<string, string | null> {
     servico_id: null,
     vaga_id: null,
   }
-  columns[`${alvo.tipo}_id`] = alvo.id
+  const coluna = alvo.tipo === 'empresa' ? 'company_id' : `${alvo.tipo}_id`
+  columns[coluna] = alvo.id
   return columns
 }
 
 export async function criarAvaliacao(input: AvaliacaoInput): Promise<ActionResult> {
+  if (!input || typeof input !== 'object') {
+    return { success: false, error: 'Dados da avaliação inválidos.' }
+  }
+
   const supabase = await createSupabaseServerClient()
 
   const user = await getUser()
@@ -153,6 +165,22 @@ export async function criarAvaliacao(input: AvaliacaoInput): Promise<ActionResul
     return { success: false, error: 'Não é possível avaliar este alvo. Apenas alvos aprovados podem ser avaliados.' }
   }
 
+  const colunaAlvo = input.alvo.tipo === 'empresa' ? 'company_id' : `${input.alvo.tipo}_id`
+  const { data: existente, error: erroExistente } = await supabase
+    .from('avaliacoes')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq(colunaAlvo, input.alvo.id)
+    .maybeSingle()
+
+  if (erroExistente) {
+    console.error('Erro ao verificar avaliação existente. Código:', erroExistente.code)
+    return { success: false, error: 'Não foi possível verificar se já existe uma avaliação.' }
+  }
+  if (existente) {
+    return { success: false, error: 'Já existe uma avaliação sua para este alvo.' }
+  }
+
   const alvoColumns = getAlvoColumns(input.alvo)
 
   const { error } = await supabase
@@ -168,12 +196,15 @@ export async function criarAvaliacao(input: AvaliacaoInput): Promise<ActionResul
     if (error.code === '23505') {
       return { success: false, error: 'Já existe uma avaliação sua para este alvo' }
     }
-    console.error('Erro ao criar avaliação:', error)
-    return { success: false, error: 'Erro ao criar avaliação. Tente novamente.' }
+    console.error('Erro ao criar avaliação. Código:', error.code)
+    return { success: false, error: 'Não foi possível enviar a avaliação. Tente novamente.' }
   }
 
-  const path = `/${input.alvo.tipo === 'empresa' ? 'empresa' : input.alvo.tipo}/${input.alvo.id}`
-  revalidatePath(path)
+  if (input.alvo.tipo === 'profissional') {
+    revalidatePath('/profissional/[slug]', 'page')
+  } else {
+    revalidatePath(`/${input.alvo.tipo}/${input.alvo.id}`)
+  }
 
   return { success: true }
 }
@@ -243,7 +274,7 @@ export async function removerAvaliacao(avaliacaoId: string): Promise<ActionResul
     return { success: false, error: 'Utilizador não autenticado' }
   }
 
-  if (!avaliacaoId) {
+  if (!UUID_ALVO_RE.test(avaliacaoId)) {
     return { success: false, error: 'ID da avaliação é obrigatório' }
   }
 
@@ -284,9 +315,10 @@ export async function removerAvaliacao(avaliacaoId: string): Promise<ActionResul
 }
 
 export async function getAvaliacoesPorAlvo(alvo: AlvoAvaliacao): Promise<AvaliacaoWithUser[]> {
+  if (!alvoValido(alvo)) return []
   const supabase = await createSupabaseServerClient()
 
-  const column = `${alvo.tipo}_id`
+  const column = alvo.tipo === 'empresa' ? 'company_id' : `${alvo.tipo}_id`
   const { data, error } = await supabase
     .from('avaliacoes')
     .select(`
@@ -313,9 +345,10 @@ export async function getAvaliacoesPorAlvo(alvo: AlvoAvaliacao): Promise<Avaliac
 }
 
 export async function getMediaAvaliacoes(alvo: AlvoAvaliacao): Promise<MediaAvaliacoes> {
+  if (!alvoValido(alvo)) return { media: 0, total: 0 }
   const supabase = await createSupabaseServerClient()
 
-  const column = `${alvo.tipo}_id`
+  const column = alvo.tipo === 'empresa' ? 'company_id' : `${alvo.tipo}_id`
   const { data, error } = await supabase
     .from('avaliacoes')
     .select('nota')
@@ -338,9 +371,13 @@ export async function getMediaAvaliacoes(alvo: AlvoAvaliacao): Promise<MediaAval
 }
 
 export async function getAvaliacaoDoUsuario(alvo: AlvoAvaliacao, userId: string): Promise<AvaliacaoWithUser | null> {
+  const user = await getUser()
+  const tiposValidos = ['profissional', 'empresa', 'servico', 'vaga']
+  if (!user || user.id !== userId || !alvo || !tiposValidos.includes(alvo.tipo) || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(alvo.id)) return null
+
   const supabase = await createSupabaseServerClient()
 
-  const column = `${alvo.tipo}_id`
+  const column = alvo.tipo === 'empresa' ? 'company_id' : `${alvo.tipo}_id`
   const { data, error } = await supabase
     .from('avaliacoes')
     .select(`

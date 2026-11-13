@@ -79,11 +79,13 @@ async function ConversasDoProfissional({
   const conversas = resultado.data.filter((conversa) => conversa.papel === 'profissional')
 
   return (
-    <MensagensPainel
-      conversas={conversas}
-      userId={userId}
-      basePath="/profissional/painel/mensagens"
-      conversaInicial={conversaInicial}
-    />
+    <div className="h-[calc(100dvh-12rem)] min-h-[520px]">
+      <MensagensPainel
+        conversas={conversas}
+        userId={userId}
+        basePath="/profissional/painel/mensagens"
+        conversaInicial={conversaInicial}
+      />
+    </div>
   )
 }

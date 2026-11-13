@@ -17,6 +17,7 @@ interface Service {
   whatsapp: string | null;
   provincia: string | null;
   municipio: string | null;
+  distancia_km?: number | null;
   imagem_url?: string | null;
   categoria: {
     id: string;
@@ -95,6 +96,7 @@ export function ServiceCard({ service }: { service: Service }) {
         </CardDescription>
       </CardHeader>
       <CardContent className="flex-1 space-y-3">
+        {typeof service.distancia_km === 'number' && <p className="text-sm font-medium text-orange-700 dark:text-orange-300">≈ {service.distancia_km} km de distância</p>}
         <div className="flex flex-wrap items-center gap-2 text-sm text-neutral-600 dark:text-cream-text/80">
           {service.provincia && (
             <span className="flex items-center gap-1">

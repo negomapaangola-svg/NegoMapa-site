@@ -1,14 +1,17 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { BotaoContactarEmpresa } from '@/components/empresas/BotaoContactarEmpresa'
+import { verificarPodeContactarEmpresas } from '@/lib/actions/conversas'
+
+type Categoria = { nome: string } | null
 
 type Resultados = {
   empresas: Array<{ id: string; name: string; slug: string; sector: string | null; province: string | null }>
-  profissionais: Array<{ id: string; nome: string; profissao: string | null; provincia: string | null }>
-  servicos: Array<{ id: string; titulo: string; categoria: string | null; provincia: string | null }>
-  vagas: Array<{ id: string; titulo: string; categoria: string | null; provincia: string | null }>
+  profissionais: Array<{ id: string; nome: string; slug: string; provincia: string | null; categoria: Categoria }>
+  servicos: Array<{ id: string; titulo: string; slug: string; provincia: string | null; categoria: Categoria }>
+  vagas: Array<{ id: string; titulo: string; slug: string; categoria: string | null; provincia: string | null }>
 }
 
 const VAZIO: Resultados = { empresas: [], profissionais: [], servicos: [], vagas: [] }
@@ -18,25 +21,24 @@ export function PesquisaGlobal() {
   const [termo, setTermo] = useState('')
   const [resultados, setResultados] = useState<Resultados>(VAZIO)
   const [carregando, setCarregando] = useState(false)
+  const [erro, setErro] = useState<string | null>(null)
   const [aberto, setAberto] = useState(false)
+  const [idsContactaveis, setIdsContactaveis] = useState<Set<string>>(new Set())
   const contentor = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     function aoClicarFora(evento: MouseEvent) {
-      if (!contentor.current?.contains(evento.target as Node)) {
-        setAberto(false)
-      }
+      if (!contentor.current?.contains(evento.target as Node)) setAberto(false)
     }
-
     document.addEventListener('mousedown', aoClicarFora)
     return () => document.removeEventListener('mousedown', aoClicarFora)
   }, [])
 
   useEffect(() => {
     const consulta = termo.trim()
-
     if (consulta.length < 2) {
       setResultados(VAZIO)
+      setErro(null)
       setAberto(false)
       return
     }
@@ -44,21 +46,21 @@ export function PesquisaGlobal() {
     const controlador = new AbortController()
     const temporizador = setTimeout(async () => {
       setCarregando(true)
+      setErro(null)
       try {
-        const resposta = await fetch(`/api/pesquisa?q=${encodeURIComponent(consulta)}`, {
-          signal: controlador.signal,
-        })
-        const dados = (await resposta.json()) as Resultados
-        setResultados(dados)
+        const resposta = await fetch(`/api/pesquisa?q=${encodeURIComponent(consulta)}`, { signal: controlador.signal })
+        const dados = await resposta.json()
+        if (!resposta.ok) throw new Error(typeof dados?.error === 'string' ? dados.error : 'Não foi possível concluir a pesquisa.')
+        setResultados(dados as Resultados)
         setAberto(true)
-      } catch {
+      } catch (falha) {
         if (!controlador.signal.aborted) {
           setResultados(VAZIO)
+          setErro(falha instanceof Error ? falha.message : 'Não foi possível concluir a pesquisa. Tente novamente.')
+          setAberto(true)
         }
       } finally {
-        if (!controlador.signal.aborted) {
-          setCarregando(false)
-        }
+        if (!controlador.signal.aborted) setCarregando(false)
       }
     }, 300)
 
@@ -68,11 +70,20 @@ export function PesquisaGlobal() {
     }
   }, [termo])
 
-  const total =
-    resultados.empresas.length +
-    resultados.profissionais.length +
-    resultados.servicos.length +
-    resultados.vagas.length
+  useEffect(() => {
+    const ids = resultados.empresas.map((empresa) => empresa.id)
+    if (!ids.length) {
+      setIdsContactaveis(new Set())
+      return
+    }
+    let ativo = true
+    verificarPodeContactarEmpresas(ids).then((resultado) => {
+      if (ativo) setIdsContactaveis(new Set(resultado.success ? resultado.ids : []))
+    })
+    return () => { ativo = false }
+  }, [resultados.empresas])
+
+  const total = resultados.empresas.length + resultados.profissionais.length + resultados.servicos.length + resultados.vagas.length
 
   function selecionar(destino: string) {
     setAberto(false)
@@ -95,72 +106,53 @@ export function PesquisaGlobal() {
       {aberto && (
         <div className="absolute inset-x-0 top-full z-300 mt-2 max-h-[70vh] overflow-y-auto rounded-md border border-card-border bg-white p-2 shadow-xl dark:bg-navy-dark">
           {carregando && <p className="px-3 py-2 text-sm text-neutral-500">A pesquisar…</p>}
+          {!carregando && erro && <p role="alert" className="px-3 py-2 text-sm text-red-700 dark:text-red-300">{erro}</p>}
+          {!carregando && !erro && total === 0 && <p className="px-3 py-2 text-sm text-neutral-500">Nenhum resultado encontrado.</p>}
 
-          {!carregando && total === 0 && (
-            <p className="px-3 py-2 text-sm text-neutral-500">Nenhum resultado encontrado.</p>
-          )}
-
-          {!carregando && resultados.empresas.length > 0 && (
+          {!carregando && !erro && resultados.empresas.length > 0 && (
             <div className="mb-2">
               <p className="px-3 py-1 text-xs font-semibold uppercase text-neutral-500">Empresas</p>
               {resultados.empresas.map((empresa) => (
-                <button
-                  key={empresa.id}
-                  type="button"
-                  onClick={() => selecionar(`/empresa/${empresa.slug}`)}
-                  className="flex w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-left hover:bg-cream dark:hover:bg-white/5"
-                >
-                  <span className="text-sm font-medium text-navy dark:text-cream">{empresa.name}</span>
-                  <span className="text-xs text-neutral-500">{empresa.sector ?? empresa.province ?? ''}</span>
-                </button>
+                <div key={empresa.id} className="flex items-center gap-2 rounded-md pr-2 hover:bg-cream dark:hover:bg-white/5">
+                  <button type="button" onClick={() => selecionar(`/empresa/${empresa.slug}`)} className="flex min-w-0 flex-1 items-center justify-between gap-3 rounded-md px-3 py-2 text-left">
+                    <span className="truncate text-sm font-medium text-navy dark:text-cream">{empresa.name}</span>
+                    <span className="shrink-0 text-xs text-neutral-500">{empresa.sector ?? empresa.province ?? ''}</span>
+                  </button>
+                  <BotaoContactarEmpresa empresaId={empresa.id} visivel={idsContactaveis.has(empresa.id)} aoIniciar={() => { setAberto(false); setTermo('') }} />
+                </div>
               ))}
             </div>
           )}
 
-          {!carregando && resultados.profissionais.length > 0 && (
+          {!carregando && !erro && resultados.profissionais.length > 0 && (
             <div className="mb-2">
               <p className="px-3 py-1 text-xs font-semibold uppercase text-neutral-500">Profissionais</p>
               {resultados.profissionais.map((profissional) => (
-                <button
-                  key={profissional.id}
-                  type="button"
-                  onClick={() => selecionar(`/profissional/${profissional.id}`)}
-                  className="flex w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-left hover:bg-cream dark:hover:bg-white/5"
-                >
+                <button key={profissional.id} type="button" onClick={() => selecionar(`/profissional/${profissional.slug}`)} className="flex w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-left hover:bg-cream dark:hover:bg-white/5">
                   <span className="text-sm font-medium text-navy dark:text-cream">{profissional.nome}</span>
-                  <span className="text-xs text-neutral-500">{profissional.profissao ?? profissional.provincia ?? ''}</span>
+                  <span className="text-xs text-neutral-500">{profissional.categoria?.nome ?? profissional.provincia ?? ''}</span>
                 </button>
               ))}
             </div>
           )}
 
-          {!carregando && resultados.servicos.length > 0 && (
+          {!carregando && !erro && resultados.servicos.length > 0 && (
             <div className="mb-2">
               <p className="px-3 py-1 text-xs font-semibold uppercase text-neutral-500">Serviços</p>
               {resultados.servicos.map((servico) => (
-                <button
-                  key={servico.id}
-                  type="button"
-                  onClick={() => selecionar(`/servico/${servico.id}`)}
-                  className="flex w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-left hover:bg-cream dark:hover:bg-white/5"
-                >
+                <button key={servico.id} type="button" onClick={() => selecionar(`/servico/${servico.slug}`)} className="flex w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-left hover:bg-cream dark:hover:bg-white/5">
                   <span className="text-sm font-medium text-navy dark:text-cream">{servico.titulo}</span>
-                  <span className="text-xs text-neutral-500">{servico.categoria ?? servico.provincia ?? ''}</span>
+                  <span className="text-xs text-neutral-500">{servico.categoria?.nome ?? servico.provincia ?? ''}</span>
                 </button>
               ))}
             </div>
           )}
 
-          {!carregando && resultados.vagas.length > 0 && (
+          {!carregando && !erro && resultados.vagas.length > 0 && (
             <div>
               <p className="px-3 py-1 text-xs font-semibold uppercase text-neutral-500">Vagas</p>
               {resultados.vagas.map((vaga) => (
-                <button
-                  key={vaga.id}
-                  type="button"
-                  onClick={() => selecionar(`/vaga/${vaga.id}`)}
-                  className="flex w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-left hover:bg-cream dark:hover:bg-white/5"
-                >
+                <button key={vaga.id} type="button" onClick={() => selecionar(`/vaga/${vaga.slug}`)} className="flex w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-left hover:bg-cream dark:hover:bg-white/5">
                   <span className="text-sm font-medium text-navy dark:text-cream">{vaga.titulo}</span>
                   <span className="text-xs text-neutral-500">{vaga.categoria ?? vaga.provincia ?? ''}</span>
                 </button>

@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { MainLayout } from '@/components/layout/MainLayout';
@@ -9,7 +8,6 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Rating } from '@/components/avaliacoes/Rating';
-import { IMAGENS } from '@/lib/imagens';
 import { formatCurrency } from '@/lib/utils';
 import { getUser } from '@/lib/auth';
 import {
@@ -25,8 +23,8 @@ import { getAvaliacoesPublicasPorProfissional, getMediaAvaliacoes } from '@/lib/
 import { EnviarMensagemButton } from './_components/EnviarMensagemButton';
 import { ProfissionalWhatsApp } from './_components/ProfissionalWhatsApp';
 import { AvaliacoesProfissional } from './_components/AvaliacoesProfissional';
+import { ReviewForm } from '@/components/avaliacoes/ReviewForm';
 import { PortfolioProfissional } from './_components/PortfolioProfissional';
-import { MENSAGEM_BLOQUEIO_PROFISSIONAL } from '@/lib/mensagens-bloqueio';
 
 type Params = Promise<{ slug: string }>;
 
@@ -104,11 +102,9 @@ export default async function ProfissionalPublicoPage({ params }: { params: Para
   );
 
   let eDono = false;
-  let ehProfissional = false;
   if (user) {
     const perfilProprio = await obterPerfilProfissionalDoUtilizador();
     eDono = perfilProprio?.id === dados.id;
-    ehProfissional = !!perfilProprio;
   }
 
   const localizacao = [dados.municipio, dados.provincia].filter(Boolean).join(', ');
@@ -131,22 +127,12 @@ export default async function ProfissionalPublicoPage({ params }: { params: Para
           </nav>
 
           <Card variant="liquid" padding="none" className="overflow-hidden border border-white/70 shadow-xl shadow-slate-900/5 dark:border-white/10 dark:shadow-black/20">
-            <div className="relative h-36 overflow-hidden bg-orange-50 dark:bg-neutral-900 sm:h-48 lg:h-56">
-              <Image
-                src={IMAGENS.profissionalCapaPadrao}
-                alt=""
-                fill
-                priority
-                sizes="(max-width: 1024px) 100vw, 1152px"
-                className="object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-r from-slate-950/55 via-slate-950/15 to-transparent" aria-hidden="true" />
-              <div className="absolute bottom-4 left-5 sm:bottom-6 sm:left-8">
-                {dados.categoria && <Badge variant="primary">{dados.categoria}</Badge>}
-              </div>
-            </div>
-
             <div className="p-5 sm:p-8">
+              {dados.categoria && (
+                <div className="mb-4">
+                  <Badge variant="primary">{dados.categoria}</Badge>
+                </div>
+              )}
               <div className="flex min-w-0 flex-col gap-5 sm:flex-row sm:items-end">
                 <Avatar
                   src={dados.avatar_url}
@@ -189,14 +175,9 @@ export default async function ProfissionalPublicoPage({ params }: { params: Para
                 >
                   Ver serviços
                 </a>
-                {user && !eDono && !ehProfissional && <EnviarMensagemButton profissionalId={dados.id} />}
+                {user && !eDono && <EnviarMensagemButton profissionalId={dados.id} />}
               </div>
 
-              {user && !eDono && ehProfissional && (
-                <p role="status" className="mt-4 text-sm text-neutral-600 dark:text-cream-text">
-                  {MENSAGEM_BLOQUEIO_PROFISSIONAL}
-                </p>
-              )}
               {!user && (
                 <div className="mt-4 rounded-2xl border border-card-border bg-neutral-50/80 p-4 dark:bg-white/5 sm:flex sm:items-center sm:justify-between sm:gap-4">
                   <p className="text-sm text-neutral-700 dark:text-cream-text">
@@ -245,6 +226,12 @@ export default async function ProfissionalPublicoPage({ params }: { params: Para
                     <Rating media={resumo.media} total={resumo.total} size="lg" />
                   </div>
                   <AvaliacoesProfissional avaliacoes={avaliacoes} resumo={resumo} />
+                  <div className="mt-6 border-t border-card-border pt-6">
+                    <ReviewForm
+                      alvo={{ tipo: 'profissional', id: dados.id }}
+                      userId={user?.id}
+                    />
+                  </div>
                 </section>
               </Card>
 

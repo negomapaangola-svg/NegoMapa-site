@@ -24,6 +24,7 @@ export async function listarNotificacoes(): Promise<Resultado<Notificacao[]>> {
   const { data, error } = await supabase
     .from('notificacoes')
     .select('id, tipo, titulo, corpo, canal, referencia_id, lida, criada_em')
+    .eq('user_id', user.id)
     .order('criada_em', { ascending: false })
     .limit(100)
 
@@ -43,6 +44,7 @@ export async function contarNotificacoesNaoLidas(): Promise<number> {
   const { count, error } = await supabase
     .from('notificacoes')
     .select('id', { count: 'exact', head: true })
+    .eq('user_id', user.id)
     .eq('lida', false)
 
   if (error) {
@@ -58,10 +60,13 @@ export async function marcarNotificacaoLida(notificacaoId: string): Promise<{ su
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Sessão expirada. Inicie sessão novamente.' }
 
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(notificacaoId)) return { success: false, error: 'Notificação inválida.' }
+
   const { error } = await supabase
     .from('notificacoes')
     .update({ lida: true })
     .eq('id', notificacaoId)
+    .eq('user_id', user.id)
 
   if (error) {
     console.error('Erro ao marcar notificação. Código:', error.code)
@@ -80,6 +85,7 @@ export async function marcarTodasLidas(): Promise<{ success: boolean; error?: st
   const { error } = await supabase
     .from('notificacoes')
     .update({ lida: true })
+    .eq('user_id', user.id)
     .eq('lida', false)
 
   if (error) {

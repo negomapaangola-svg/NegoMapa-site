@@ -129,6 +129,10 @@ export async function avaliarProfissional(
       return { success: false, error: 'Acesso negado. Privilégios de administrador necessários.' }
     }
 
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(profissionalId)) {
+      return { success: false, error: 'Identificador de profissional inválido.' }
+    }
+
     if (!ESTADOS_AVALIACAO.includes(estado)) {
       return { success: false, error: 'Estado inválido.' }
     }

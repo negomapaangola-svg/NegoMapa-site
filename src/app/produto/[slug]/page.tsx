@@ -10,6 +10,7 @@ import { IMAGENS } from '@/lib/imagens';
 
 interface ProdutoRaw {
   id: string;
+  categoria_id: string;
   slug: string;
   titulo: string;
   descricao: string | null;
@@ -19,51 +20,37 @@ interface ProdutoRaw {
   entrega: string;
   provincia: string;
   municipio: string | null;
-  whatsapp: string | null;
-  categoria: { id: string; nome: string; slug: string } | null;
-  companies: { id: string; nome: string; slug: string; whatsapp: string | null } | null;
-  produto_imagens: { url: string; ordem: number }[] | null;
 }
 
 async function obterProduto(slug: string) {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
-    .from('produtos')
-    .select(
-      'id, slug, titulo, descricao, preco, preco_tipo, estado_produto, entrega, provincia, municipio, whatsapp, categoria:categoria_id(id, nome, slug), companies(id, nome, slug, whatsapp), produto_imagens(url, ordem)',
-    )
+    .from('produtos_publicos')
+    .select('id, categoria_id, slug, titulo, descricao, preco, preco_tipo, estado_produto, entrega, provincia, municipio')
     .eq('slug', slug)
-    .eq('estado_aprovacao', 'aprovado')
-    .eq('companies.is_approved', true)
-    .single();
+    .maybeSingle();
 
-  if (error) {
-    console.error('Erro ao buscar produto. Código:', error.code);
+  if (error || !data) {
+    if (error) console.error('Erro ao buscar produto público. Código:', error.code);
     return null;
   }
 
-  const produto = data as unknown as ProdutoRaw;
-  const imagens = [...(produto.produto_imagens ?? [])].sort((a, b) => a.ordem - b.ordem);
+  const produto = data as ProdutoRaw;
+  const [{ data: categoria }, { data: imagens }] = await Promise.all([
+    supabase.from('categorias').select('id,nome,slug').eq('id', produto.categoria_id).maybeSingle(),
+    supabase.from('produto_imagens_publicas').select('url,ordem').eq('produto_id', produto.id).order('ordem'),
+  ]);
   const urls: string[] = [];
-
-  for (const imagem of imagens) {
+  for (const imagem of imagens ?? []) {
     const { data: assinada } = await supabase.storage.from('produtos').createSignedUrl(imagem.url, 60 * 60);
     if (assinada?.signedUrl) urls.push(assinada.signedUrl);
   }
-
-  return { ...produto, imagens: urls };
-}
-
-function whatsappLimpo(telefone: string | null | undefined): string | null {
-  const digitos = (telefone ?? '').replace(/\D/g, '');
-  if (!digitos) return null;
-  return digitos.startsWith('244') ? digitos : `244${digitos}`;
+  return { ...produto, categoria, imagens: urls };
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const produto = await obterProduto(slug);
-
   return {
     title: produto?.titulo ?? 'Produto não encontrado',
     description: produto?.descricao ?? 'Produto disponível no NegóMapa.',
@@ -79,11 +66,8 @@ const rotulosEntrega: Record<string, string> = {
 export default async function ProdutoPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const produto = await obterProduto(slug);
-
   if (!produto) notFound();
 
-  const whatsapp = whatsappLimpo(produto.whatsapp ?? produto.companies?.whatsapp);
-  const mensagem = encodeURIComponent(`Olá, tenho interesse no produto “${produto.titulo}” no NegóMapa.`);
   const localizacao = [produto.provincia, produto.municipio].filter(Boolean).join(', ') || 'Angola';
   const precoTexto = produto.preco_tipo === 'sob_consulta' ? 'Sob consulta' : `${formatCurrency(produto.preco ?? 0)} Kz`;
 
@@ -94,22 +78,12 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
           <Link href="/descobrir?tipo=produtos" className="inline-flex items-center gap-1 text-sm text-neutral-500 hover:text-orange-500 dark:text-cream-text/70 dark:hover:text-orange-300">
             ← Voltar aos produtos
           </Link>
-
           <Card variant="liquid" padding="lg" className="mt-6 border-card-border">
             <div className="grid gap-8 md:grid-cols-2">
               <div className="space-y-3">
                 <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-neutral-100 dark:bg-neutral-700">
-                  <Image
-                    src={produto.imagens[0] ?? IMAGENS.servicoPadrao}
-                    alt={produto.titulo}
-                    width={1200}
-                    height={900}
-                    priority
-                    sizes="(max-width: 768px) 100vw, 50vw"
-                    className="h-full w-full object-cover"
-                  />
+                  <Image src={produto.imagens[0] ?? IMAGENS.servicoPadrao} alt={produto.titulo} width={1200} height={900} priority sizes="(max-width: 768px) 100vw, 50vw" className="h-full w-full object-cover" />
                 </div>
-
                 {produto.imagens.length > 1 && (
                   <div className="grid grid-cols-3 gap-3">
                     {produto.imagens.slice(1, 6).map((url, indice) => (
@@ -120,50 +94,19 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
                   </div>
                 )}
               </div>
-
               <div>
-                {produto.categoria && (
-                  <span className="inline-flex rounded-full bg-orange-100 px-3 py-1 text-sm font-medium text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
-                    {produto.categoria.nome}
-                  </span>
-                )}
-
-                <h1 id="produto-titulo" className="mt-3 text-3xl font-bold text-ink dark:text-cream">
-                  {produto.titulo}
-                </h1>
-
+                {produto.categoria && <span className="inline-flex rounded-full bg-orange-100 px-3 py-1 text-sm font-medium text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">{produto.categoria.nome}</span>}
+                <h1 id="produto-titulo" className="mt-3 text-3xl font-bold text-ink dark:text-cream">{produto.titulo}</h1>
                 <p className="mt-3 text-2xl font-bold text-orange-600 dark:text-orange-400">{precoTexto}</p>
-
                 <dl className="mt-6 space-y-3 text-sm">
                   <div><dt className="font-semibold text-ink dark:text-cream">Localização</dt><dd className="text-neutral-600 dark:text-cream-text">{localizacao}</dd></div>
                   <div><dt className="font-semibold text-ink dark:text-cream">Estado</dt><dd className="text-neutral-600 dark:text-cream-text">{produto.estado_produto === 'novo' ? 'Novo' : 'Usado'}</dd></div>
                   <div><dt className="font-semibold text-ink dark:text-cream">Entrega</dt><dd className="text-neutral-600 dark:text-cream-text">{rotulosEntrega[produto.entrega] ?? 'A combinar'}</dd></div>
-                  <div><dt className="font-semibold text-ink dark:text-cream">Empresa</dt><dd className="text-neutral-600 dark:text-cream-text">{produto.companies?.nome ?? 'Empresa'}</dd></div>
                 </dl>
-
-                {produto.descricao && (
-                  <div className="mt-6">
-                    <h2 className="text-lg font-semibold text-ink dark:text-cream">Descrição</h2>
-                    <p className="mt-2 whitespace-pre-wrap text-neutral-700 dark:text-neutral-300">{produto.descricao}</p>
-                  </div>
-                )}
-
-                <div className="mt-8">
-                  {whatsapp ? (
-                    <a
-                      href={`https://wa.me/${whatsapp}?text=${mensagem}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex min-h-[52px] items-center justify-center rounded-xl bg-orange-500 px-6 font-bold text-ink shadow-sm hover:bg-orange-600"
-                    >
-                      Contactar pelo WhatsApp
-                    </a>
-                  ) : (
-                    <p className="rounded-xl border border-card-border bg-white/70 p-4 text-sm text-neutral-600 dark:bg-neutral-800/70 dark:text-cream-text">
-                      Esta empresa ainda não disponibilizou um contacto WhatsApp para este produto.
-                    </p>
-                  )}
-                </div>
+                {produto.descricao && <div className="mt-6"><h2 className="text-lg font-semibold text-ink dark:text-cream">Descrição</h2><p className="mt-2 whitespace-pre-wrap text-neutral-700 dark:text-neutral-300">{produto.descricao}</p></div>}
+                <p className="mt-8 rounded-xl border border-card-border bg-white/70 p-4 text-sm text-neutral-600 dark:bg-neutral-800/70 dark:text-cream-text">
+                  Os contactos privados do anunciante não são disponibilizados nesta ficha pública.
+                </p>
               </div>
             </div>
           </Card>

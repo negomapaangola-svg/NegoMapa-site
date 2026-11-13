@@ -11,31 +11,34 @@ export type ContextoUtilizador = {
   empresa: boolean
   empresaAprovada: boolean
   administrador: boolean
+  accountType: string | null
 }
 
 export async function obterContextoUtilizador(): Promise<ContextoUtilizador> {
   const supabase = await createSupabaseServerClient()
   const { data: { user }, error } = await supabase.auth.getUser()
   if (error || !user) {
-    return { autenticado: false, userId: null, profissional: false, estadoProfissional: null, empresa: false, empresaAprovada: false, administrador: false }
+    return { autenticado: false, userId: null, profissional: false, estadoProfissional: null, empresa: false, empresaAprovada: false, administrador: false, accountType: null }
   }
 
-  const [profissionalResult, empresaResult, administrador] = await Promise.all([
+  const [profissionalResult, empresaResult, perfilResult, administrador] = await Promise.all([
     supabase.from('profissionais').select('id, estado').eq('user_id', user.id).maybeSingle(),
-    supabase.from('companies').select('id, is_approved').eq('user_id', user.id).maybeSingle(),
+    supabase.from('companies').select('id, is_approved').eq('user_id', user.id),
+    supabase.from('profiles').select('account_type').eq('id', user.id).maybeSingle(),
     isAdmin(),
   ])
 
   const profissional = profissionalResult.data
-  const empresa = empresaResult.data
+  const empresas = empresaResult.data ?? []
   return {
     autenticado: true,
     userId: user.id,
     profissional: Boolean(profissional),
     estadoProfissional: profissional?.estado ?? null,
-    empresa: Boolean(empresa),
-    empresaAprovada: empresa?.is_approved === true,
+    empresa: empresas.length > 0,
+    empresaAprovada: empresas.some((empresa) => empresa.is_approved === true),
     administrador,
+    accountType: perfilResult.data?.account_type ?? null,
   }
 }
 

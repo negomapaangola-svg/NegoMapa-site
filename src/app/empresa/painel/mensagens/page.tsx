@@ -15,19 +15,19 @@ export const metadata: Metadata = {
 export default async function EmpresaMensagensPage({
   searchParams,
 }: {
-  searchParams: Promise<{ conversa?: string }>
+  searchParams: Promise<{ conversa?: string; empresa?: string }>
 }) {
   const user = await getUser()
-  const company = user ? await getUserCompany() : null
+  const { conversa, empresa } = await searchParams
+  const company = user ? await getUserCompany(empresa) : null
   if (!user || !company) {
     redirect('/login?redirectTo=/empresa/painel/mensagens')
   }
 
-  const { conversa } = await searchParams
   const resultado = await listarConversas()
   // Só as conversas em que atua como empresa; as de cliente ficam em /mensagens.
   const conversasEmpresa = resultado.success
-    ? resultado.data.filter((conversa) => conversa.papel === 'empresa')
+    ? resultado.data.filter((item) => item.papel === 'empresa' && item.empresa_id === company.id)
     : []
 
   return (
@@ -43,12 +43,14 @@ export default async function EmpresaMensagensPage({
             </CardHeader>
             <CardContent className="mt-6">
               {resultado.success ? (
-                <MensagensPainel
-                  conversas={conversasEmpresa}
-                  userId={user.id}
-                  basePath="/empresa/painel/mensagens"
-                  conversaInicial={conversa ?? null}
-                />
+                <div className="h-[calc(100dvh-12rem)] min-h-[520px]">
+                  <MensagensPainel
+                    conversas={conversasEmpresa}
+                    userId={user.id}
+                    basePath="/empresa/painel/mensagens"
+                    conversaInicial={conversa ?? null}
+                  />
+                </div>
               ) : (
                 <p role="alert" className="text-red-700 dark:text-red-300">{resultado.error}</p>
               )}

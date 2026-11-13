@@ -72,7 +72,7 @@ const tiposContrato = [
   "Freelance",
 ]
 
-export function NovaVagaForm() {
+export function NovaVagaForm({ companyId }: { companyId: string }) {
   const [formData, setFormData] = React.useState<FormData>(initialFormData)
   const [errors, setErrors] = React.useState<Record<string, string>>({})
   const [status, setStatus] = React.useState<"idle" | "submitting" | "success" | "error">("idle")
@@ -100,13 +100,14 @@ export function NovaVagaForm() {
         .from("companies")
         .select("id, name, is_approved")
         .eq("user_id", authUser.id)
-        .single()
+        .eq("id", companyId)
+        .maybeSingle()
 
       setCompany(companyData)
       setLoading(false)
     }
     fetchData()
-  }, [])
+  }, [companyId])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -146,7 +147,7 @@ export function NovaVagaForm() {
     setStatus("submitting")
     setErrorMessage("")
 
-    const result = await createVaga(formData)
+    const result = await createVaga(formData, companyId)
 
     if (!result.success) {
       setStatus("error")
@@ -264,7 +265,7 @@ export function NovaVagaForm() {
             <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-[4px] text-green-700 dark:text-green-400">
               Vaga criada com sucesso! Estado: <strong>pendente</strong> (aguarda aprovação).
               <br />
-              <a href="/empresa/painel/vagas" className="mt-2 inline-block text-orange-500 hover:underline">
+              <a href={`/empresa/painel/vagas?empresa=${encodeURIComponent(companyId)}`} className="mt-2 inline-block text-orange-500 hover:underline">
                 Ver as minhas vagas
               </a>
             </div>

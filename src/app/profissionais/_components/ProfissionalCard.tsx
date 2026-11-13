@@ -16,6 +16,7 @@ export function ProfissionalCard({ profissional }: { profissional: ProfissionalP
           )}
         </CardHeader>
         <CardContent className="mt-auto">
+          {typeof profissional.distancia_km === 'number' && <p className="mt-1 text-sm font-medium text-orange-700 dark:text-orange-300">≈ {profissional.distancia_km} km</p>}
           {localizacao && (
             <p className="text-sm text-neutral-600 dark:text-cream-text">{localizacao}</p>
           )}

@@ -1,45 +1,35 @@
 /**
  * Tema claro/escuro do NegóMapa.
- * - A classe `dark` no <html> define o tema. O script inline (TEMA_SCRIPT) aplica-a antes da pintura.
- * - Sem escolha guardada, segue a preferência do sistema operativo.
- * - A escolha do utilizador fica em localStorage (CHAVE_TEMA).
+ * Sem escolha guardada, acompanha a preferência do sistema operativo.
  */
 export const CHAVE_TEMA = 'negomapa-tema';
 
-/** Executado no <body> antes do conteúdo, para evitar flash de tema errado. */
 export const TEMA_SCRIPT = `(function(){try{var g=localStorage.getItem('${CHAVE_TEMA}');var e=g?g==='escuro':window.matchMedia('(prefers-color-scheme: dark)').matches;var r=document.documentElement;r.classList.toggle('dark',e);r.classList.toggle('light',!!g&&!e);r.style.colorScheme=e?'dark':'light';}catch(x){}})();`;
 
-function ler(): string | null {
-  try {
-    return localStorage.getItem(CHAVE_TEMA);
-  } catch {
-    return null;
-  }
+function aplicarTema(escuro: boolean) {
+  const raiz = document.documentElement;
+  raiz.classList.toggle('dark', escuro);
+  raiz.classList.toggle('light', !escuro);
+  raiz.style.colorScheme = escuro ? 'dark' : 'light';
 }
 
-/** Alterna o tema, aplica-o de imediato e guarda a escolha. */
+export function definirTema(preferencia: 'claro' | 'escuro' | 'sistema'): void {
+  try {
+    if (preferencia === 'sistema') localStorage.removeItem(CHAVE_TEMA);
+    else localStorage.setItem(CHAVE_TEMA, preferencia);
+  } catch { /* O tema continua aplicável nesta visita. */ }
+  aplicarTema(preferencia === 'sistema' ? window.matchMedia('(prefers-color-scheme: dark)').matches : preferencia === 'escuro');
+}
+
 export function alternarTema(): void {
-  const r = document.documentElement;
-  const escuro = !r.classList.contains('dark');
-  r.classList.toggle('dark', escuro);
-  r.classList.toggle('light', !escuro);
-  r.style.colorScheme = escuro ? 'dark' : 'light';
-  try {
-    localStorage.setItem(CHAVE_TEMA, escuro ? 'escuro' : 'claro');
-  } catch {
-    /* armazenamento indisponível: o tema aplica-se só nesta visita */
-  }
+  definirTema(document.documentElement.classList.contains('dark') ? 'claro' : 'escuro');
 }
 
-/** Sem escolha guardada, acompanha mudanças do sistema operativo. Devolve a função de limpeza. */
 export function acompanharSistema(): () => void {
   const media = window.matchMedia('(prefers-color-scheme: dark)');
-  const aoMudar = (e: MediaQueryListEvent) => {
-    if (ler()) return;
-    const r = document.documentElement;
-    r.classList.toggle('dark', e.matches);
-    r.classList.remove('light');
-    r.style.colorScheme = e.matches ? 'dark' : 'light';
+  const aoMudar = (evento: MediaQueryListEvent) => {
+    try { if (localStorage.getItem(CHAVE_TEMA)) return; } catch { /* Segue o sistema quando o armazenamento não está disponível. */ }
+    aplicarTema(evento.matches);
   };
   media.addEventListener('change', aoMudar);
   return () => media.removeEventListener('change', aoMudar);

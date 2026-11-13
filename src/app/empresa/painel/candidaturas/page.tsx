@@ -11,13 +11,14 @@ export const metadata: Metadata = {
   description: 'Consulte e acompanhe as candidaturas às vagas da sua empresa.',
 }
 
-export default async function EmpresaCandidaturasPage() {
-  const company = await getUserCompany()
+export default async function EmpresaCandidaturasPage({ searchParams }: { searchParams: Promise<{ empresa?: string }> }) {
+  const { empresa } = await searchParams
+  const company = await getUserCompany(empresa)
   if (!company) {
     redirect('/login?redirectTo=/empresa/painel/candidaturas')
   }
 
-  const resultado = await listarCandidaturasDaEmpresa()
+  const resultado = await listarCandidaturasDaEmpresa(company.id)
 
   return (
     <MainLayout>
@@ -38,7 +39,7 @@ export default async function EmpresaCandidaturasPage() {
               )}
 
               {resultado.success ? (
-                <CandidaturasEmpresa candidaturas={resultado.data} />
+                <CandidaturasEmpresa candidaturas={resultado.data} empresaId={company.id} />
               ) : (
                 <p role="alert" className="text-red-700 dark:text-red-300">{resultado.error}</p>
               )}

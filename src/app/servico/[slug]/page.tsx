@@ -23,7 +23,6 @@ import {
   type ProfissionalContactoPublico,
 } from '@/lib/actions/profissionais-publicos';
 import { obterPerfilProfissionalDoUtilizador } from '@/lib/actions/profissional-painel';
-import { MENSAGEM_BLOQUEIO_PROFISSIONAL } from '@/lib/mensagens-bloqueio';
 import { ServiceWhatsApp } from './__components/ServiceWhatsApp';
 import { BotoesContactoServico } from './_components/BotoesContactoServico';
 
@@ -357,10 +356,8 @@ export default async function ServicoPage({ params }: { params: Promise<{ slug: 
                 </p>
                 {!ehProprio && (
                   <div className="mt-4">
-                    {user && ehProfissional ? (
-                      <p role="status" className="text-sm text-neutral-600 dark:text-cream-text">{MENSAGEM_BLOQUEIO_PROFISSIONAL}</p>
-                    ) : user ? (
-                      <BotoesContactoServico servicoId={service.id} profissionalId={profissional.id} />
+                    {user ? (
+                      <BotoesContactoServico servicoId={service.id} profissionalId={profissional.id} ehProfissional={ehProfissional} />
                     ) : (
                       <div className="space-y-3">
                         <p className="text-sm text-neutral-600 dark:text-cream-text">Entre na sua conta ou crie uma para pedir orçamento ou enviar mensagem.</p>

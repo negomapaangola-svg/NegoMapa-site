@@ -13,6 +13,9 @@ import {
 import { FiltersForm } from './_components/FiltersForm';
 import { ServiceCard } from './_components/ServiceCard';
 import { Pagination } from './_components/Pagination';
+import { obterLocalizacaoCliente } from '@/lib/actions/perfil-pessoal';
+import { ordenarPorDistanciaEAdministrativa, type LocalizacaoAdministrativa } from '@/lib/localizacao/ordenar-resultados';
+import { obterDistanciasAproximadas } from '@/lib/actions/proximidade';
 
 export const metadata: Metadata = {
   title: 'Serviços',
@@ -31,6 +34,7 @@ interface ServiceRaw {
   municipio: string | null;
   created_at: string;
   profissional_id: string;
+  distancia_km?: number | null;
   categoria: {
     id: string;
     nome: string;
@@ -54,6 +58,7 @@ interface Service {
     nome: string;
     slug: string;
   } | null;
+  distancia_km?: number | null;
   profissional: {
     id: string;
     nome: string;
@@ -76,7 +81,7 @@ async function getServices(params: {
   provincia?: string;
   municipio?: string;
   page?: string;
-}) {
+}, localizacao: LocalizacaoAdministrativa) {
   const supabase = await createSupabaseServerClient();
 
   // Profissionais aprovados, pela vista pública. Os serviços filtram-se por estes ids (sem embed).
@@ -119,7 +124,7 @@ async function getServices(params: {
     .in('profissional_id', idsProfissionais)
     .in('categoria_id', idsCategoriasAtivas)
     .order('created_at', { ascending: false })
-    .range(from, to);
+    .limit(1000);
 
   if (termo) {
     // Título do serviço OU nome do profissional aprovado.
@@ -155,28 +160,21 @@ async function getServices(params: {
   }
 
   const rawData = data as ServiceRaw[];
-
-  // Segunda consulta à vista, só para os profissionais desta página.
-  const profissionais = await obterProfissionaisContactoPorIds(rawData.map((item) => item.profissional_id));
-
-  const services: Service[] = rawData.map((item) => {
+  const distancias = await obterDistanciasAproximadas('servico', rawData.map((item) => item.id));
+  const linhasComDistancias = rawData.map((item) => ({ ...item, distancia_km: distancias[item.id] ?? null }));
+  const paginaRaw = ordenarPorDistanciaEAdministrativa(linhasComDistancias, localizacao).slice(from, to + 1);
+  const profissionais = await obterProfissionaisContactoPorIds(paginaRaw.map((item) => item.profissional_id));
+  const services: Service[] = paginaRaw.map((item) => {
     const p = profissionais.get(item.profissional_id);
     return {
-      id: item.id,
-      slug: item.slug,
-      titulo: item.titulo,
-      descricao: item.descricao,
-      preco: item.preco,
-      preco_tipo: item.preco_tipo,
-      whatsapp: item.whatsapp,
-      provincia: item.provincia,
-      municipio: item.municipio,
-      created_at: item.created_at,
+      id: item.id, slug: item.slug, titulo: item.titulo, descricao: item.descricao,
+      preco: item.preco, preco_tipo: item.preco_tipo, whatsapp: item.whatsapp,
+      provincia: item.provincia, municipio: item.municipio, created_at: item.created_at,
+      distancia_km: item.distancia_km,
       categoria: Array.isArray(item.categoria) ? item.categoria[0] ?? null : item.categoria,
       profissional: p ? { id: p.id, nome: p.nome, slug: p.slug, whatsapp: p.whatsapp } : null,
     };
   });
-
   return { services, total: count || 0 };
 }
 
@@ -250,12 +248,10 @@ export default async function ServicosPage({
   const searchParams = await searchParamsPromise;
   const page = parseInt(searchParams.page || '1', 10);
 
-  const [servicesResult, categorias, provincias, municipios] = await Promise.all([
-    getServices(searchParams),
-    getCategories(),
-    getProvincias(),
-    getMunicipios(searchParams.provincia),
+  const [localizacao, categorias, provincias, municipios] = await Promise.all([
+    obterLocalizacaoCliente(), getCategories(), getProvincias(), getMunicipios(searchParams.provincia),
   ]);
+  const servicesResult = await getServices(searchParams, localizacao);
 
   const { services, total } = servicesResult;
   const totalPages = Math.ceil(total / SERVICES_PER_PAGE);

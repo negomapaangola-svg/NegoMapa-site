@@ -14,6 +14,8 @@ import {
 } from '@/lib/descobrir/buscar-produtos';
 import { lerParametros, type SearchParamsRaw } from '@/lib/descobrir/params';
 import { DescobrirPage } from './_components/DescobrirPage';
+import { obterLocalizacaoCliente } from '@/lib/actions/perfil-pessoal';
+import { obterRecomendacoesDescobrir } from '@/lib/descobrir/recomendacoes';
 
 export const metadata: Metadata = {
   title: 'Descobrir',
@@ -23,12 +25,14 @@ export const metadata: Metadata = {
 export default async function Page({ searchParams }: { searchParams: Promise<SearchParamsRaw> }) {
   const raw = await searchParams;
   const params = lerParametros(raw);
+  const localizacao = await obterLocalizacaoCliente();
 
   if (params.tipo === 'produtos') {
-    const [resultado, categorias, municipios] = await Promise.all([
-      buscarProdutosDescobrir(params),
+    const [resultado, categorias, municipios, recomendacoes] = await Promise.all([
+      buscarProdutosDescobrir(params, localizacao),
       obterCategoriasProdutos(),
       obterMunicipiosProdutos(params.provincia),
+      obterRecomendacoesDescobrir({ provincia: params.provincia, municipio: params.municipio }),
     ]);
 
     const totalPaginas = Math.max(1, Math.ceil(resultado.total / RESULTADOS_PRODUTOS));
@@ -41,15 +45,17 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
           municipios={municipios}
           totalPaginas={totalPaginas}
           produtos={resultado}
+          recomendacoes={recomendacoes}
         />
       </MainLayout>
     );
   }
 
-  const [resultado, categorias, municipios] = await Promise.all([
-    buscarServicosDescobrir(params),
+  const [resultado, categorias, municipios, recomendacoes] = await Promise.all([
+    buscarServicosDescobrir(params, localizacao),
     obterCategoriasDescobrir(),
     obterMunicipiosDescobrir(params.provincia),
+    obterRecomendacoesDescobrir({ provincia: params.provincia, municipio: params.municipio }),
   ]);
 
   const totalPaginas = Math.max(1, Math.ceil(resultado.total / RESULTADOS_SERVICOS));
@@ -62,6 +68,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
         municipios={municipios}
         totalPaginas={totalPaginas}
         servicos={resultado}
+        recomendacoes={recomendacoes}
       />
     </MainLayout>
   );
