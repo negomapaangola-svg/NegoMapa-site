@@ -9,6 +9,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { obterPerfilProfissionalDoUtilizador } from '@/lib/actions/profissional-painel'
 import { listarPedidosDoProfissional } from '@/lib/actions/pedidos-profissional'
 import { getMediaAvaliacoes } from '@/lib/actions/avaliacoes'
+import { LocalizacaoPrestadorForm } from '@/components/localizacao/LocalizacaoPrestadorForm'
 
 export const metadata: Metadata = { title: 'Painel do Profissional | NegóMapa', description: 'Resumo do seu perfil, pedidos, avaliações e mensagens.' }
 
@@ -51,6 +52,7 @@ export default async function ProfissionalPainelPage() {
     <Card variant="liquid" padding="lg">
       <CardHeader><CardTitle as="h1" className="text-2xl md:text-3xl">Painel do profissional</CardTitle><p className="text-sm text-neutral-600 dark:text-cream-text">Resumo do seu perfil e actividade na NegóMapa.</p></CardHeader>
       <CardContent className="space-y-7">
+        {perfil.estado === 'aprovado' && <LocalizacaoPrestadorForm tipo="profissional" entidadeId={perfil.id} />}
         <div className="flex flex-col gap-4 border-b border-card-border pb-6 sm:flex-row sm:items-center">
           <Avatar src={perfil.avatar_url} alt={perfil.nome} name={perfil.nome} width={80} height={80} className="h-20 w-20" />
           <div className="min-w-0 flex-1"><h2 className="text-xl font-semibold text-ink dark:text-cream">{perfil.nome}</h2><p className="mt-1 text-sm text-neutral-600 dark:text-cream-text">{[categoriaNome, perfil.provincia, perfil.municipio].filter(Boolean).join(' · ') || 'Dados profissionais'}</p><span className="mt-3 inline-flex rounded-full border border-card-border px-3 py-1 text-sm font-medium">{estado}</span></div>
