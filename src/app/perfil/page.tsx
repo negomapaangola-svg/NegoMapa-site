@@ -75,6 +75,13 @@ export default async function PerfilPage() {
           </section>
         </CardContent>
       </Card>
+      {pessoal.account_type === 'cliente' && !profissional && empresas.length === 0 && <Card variant="liquid" padding="lg">
+        <CardHeader><CardTitle as="h2">Expandir a minha conta</CardTitle><p className="text-sm text-neutral-600 dark:text-cream-text">Como cliente, pode escolher apenas uma opção. O seu pedido ficará pendente de aprovação.</p></CardHeader>
+        <CardContent className="grid gap-3 sm:grid-cols-2">
+          <Link href="/cadastrar-profissional" className="inline-flex min-h-12 items-center justify-center rounded-xl bg-orange-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-orange-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500">Tornar-me profissional</Link>
+          <Link href="/cadastrar-empresa" className="inline-flex min-h-12 items-center justify-center rounded-xl border border-orange-500 bg-white/60 px-5 py-3 text-sm font-semibold text-orange-800 transition-colors hover:bg-orange-50 dark:bg-white/5 dark:text-orange-300 dark:hover:bg-orange-950/30">Criar empresa</Link>
+        </CardContent>
+      </Card>}
       <Card variant="liquid" padding="lg"><CardHeader><CardTitle as="h2">Acessos da conta</CardTitle></CardHeader><CardContent><ul className="grid gap-3 sm:grid-cols-2">{acessos.map(a=><li key={a.href}><Link href={a.href} className="flex min-h-11 items-center rounded-xl border border-card-border bg-white/60 px-4 text-sm font-medium text-ink hover:border-orange-500 dark:bg-white/5 dark:text-cream">{a.label}</Link></li>)}</ul></CardContent></Card>
     </div>
   </main></MainLayout>
