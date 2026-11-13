@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { createClient } from '@supabase/supabase-js';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { obterIdsProfissionaisPublicos } from '@/lib/actions/profissionais-publicos';
 import { obterDistanciasAproximadas } from '@/lib/actions/proximidade';
@@ -138,9 +139,16 @@ export async function obterRecomendacoesDescobrir(
     const produtos = produtosResult.error ? [] : (produtosResult.data ?? []);
     const idsServicos = servicos.map((item) => item.id);
 
+    const urlSupabase = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const chavePrivilegiada = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const clientePrivilegiado = urlSupabase && chavePrivilegiada
+      ? createClient(urlSupabase, chavePrivilegiada, { auth: { autoRefreshToken: false, persistSession: false } })
+      : null;
+
+    // Só lê nota + ID dos serviços já filtrados como públicos; nunca lê comentários ou user_id.
     const [avaliacoesResult, distanciasServicos, distanciasProdutos] = await Promise.all([
-      idsServicos.length
-        ? supabase.from('avaliacoes').select('servico_id,nota').in('servico_id', idsServicos)
+      idsServicos.length && clientePrivilegiado
+        ? clientePrivilegiado.from('avaliacoes').select('servico_id,nota').in('servico_id', idsServicos)
         : Promise.resolve({ data: [], error: null }),
       clienteAutenticado ? obterDistanciasAproximadas('servico', idsServicos) : Promise.resolve({} as Record<string, number>),
       clienteAutenticado ? obterDistanciasAproximadas('produto', produtos.map((item) => item.id)) : Promise.resolve({} as Record<string, number>),
