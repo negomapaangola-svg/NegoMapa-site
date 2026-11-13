@@ -46,67 +46,38 @@ async function countResult(
   return result.count
 }
 
+const METRIC_KEYS: Array<keyof AdminDashboardStats> = [
+  'visitorsTotal', 'visitorsActive', 'accountsTotal', 'accountsClient',
+  'accountsProfessional', 'accountsCompany', 'accountsLast7Days', 'accountsLast30Days',
+  'professionalsTotal', 'professionalsPending', 'professionalsApproved', 'professionalsRejected',
+  'companiesTotal', 'companiesPending', 'companiesApproved', 'companiesRejected',
+  'servicesTotal', 'productsTotal', 'vacanciesTotal', 'applicationsTotal',
+  'requestsTotal', 'messagesTotal', 'messagesUnread', 'alertsTotal',
+]
+
+function emptyDashboardStats(): AdminDashboardStats {
+  return Object.fromEntries(METRIC_KEYS.map((key) => [key, null])) as AdminDashboardStats
+}
+
 export async function getAdminDashboardStats(): Promise<AdminDashboardStats | null> {
   if (!(await isAdmin())) return null
 
   const supabase = await createSupabaseServerClient()
-  const since7 = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
-  const since30 = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+  const { data, error } = await supabase.rpc('admin_dashboard_stats')
 
-  const results = await Promise.all([
-    // Não existe fonte de analytics/visitas na base auditada.
-    Promise.resolve(null),
-    Promise.resolve(null),
-    countResult(supabase.from('profiles').select('id', { count: 'exact', head: true })),
-    countResult(supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('account_type', 'cliente')),
-    countResult(supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('account_type', 'profissional')),
-    countResult(supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('account_type', 'empresa')),
-    countResult(supabase.from('profiles').select('id', { count: 'exact', head: true }).gte('created_at', since7)),
-    countResult(supabase.from('profiles').select('id', { count: 'exact', head: true }).gte('created_at', since30)),
-    countResult(supabase.from('profissionais').select('id', { count: 'exact', head: true })),
-    countResult(supabase.from('profissionais').select('id', { count: 'exact', head: true }).eq('estado', 'pendente')),
-    countResult(supabase.from('profissionais').select('id', { count: 'exact', head: true }).eq('estado', 'aprovado')),
-    countResult(supabase.from('profissionais').select('id', { count: 'exact', head: true }).eq('estado', 'rejeitado')),
-    countResult(supabase.from('companies').select('id', { count: 'exact', head: true })),
-    countResult(supabase.from('companies').select('id', { count: 'exact', head: true }).or('estado.eq.pendente,is_approved.eq.false')),
-    countResult(supabase.from('companies').select('id', { count: 'exact', head: true }).or('estado.eq.aprovado,is_approved.eq.true')),
-    countResult(supabase.from('companies').select('id', { count: 'exact', head: true }).eq('estado', 'rejeitado')),
-    countResult(supabase.from('servicos').select('id', { count: 'exact', head: true })),
-    countResult(supabase.from('produtos').select('id', { count: 'exact', head: true })),
-    countResult(supabase.from('vagas').select('id', { count: 'exact', head: true })),
-    countResult(supabase.from('candidaturas').select('id', { count: 'exact', head: true })),
-    countResult(supabase.from('pedidos_servico').select('id', { count: 'exact', head: true })),
-    countResult(supabase.from('admin_messages').select('id', { count: 'exact', head: true })),
-    countResult(supabase.from('admin_messages').select('id', { count: 'exact', head: true }).is('recipient_id', null).is('read_at', null).is('archived_at', null)),
-    countResult(supabase.from('denuncias').select('id', { count: 'exact', head: true })),
-  ])
-
-  return {
-    visitorsTotal: results[0],
-    visitorsActive: results[1],
-    accountsTotal: results[2],
-    accountsClient: results[3],
-    accountsProfessional: results[4],
-    accountsCompany: results[5],
-    accountsLast7Days: results[6],
-    accountsLast30Days: results[7],
-    professionalsTotal: results[8],
-    professionalsPending: results[9],
-    professionalsApproved: results[10],
-    professionalsRejected: results[11],
-    companiesTotal: results[12],
-    companiesPending: results[13],
-    companiesApproved: results[14],
-    companiesRejected: results[15],
-    servicesTotal: results[16],
-    productsTotal: results[17],
-    vacanciesTotal: results[18],
-    applicationsTotal: results[19],
-    requestsTotal: results[20],
-    messagesTotal: results[21],
-    messagesUnread: results[22],
-    alertsTotal: results[23],
+  if (error || !data || typeof data !== 'object') {
+    console.error('[admin-stats] aggregate unavailable:', error?.code ?? 'migration-pending')
+    return emptyDashboardStats()
   }
+
+  const result = emptyDashboardStats()
+  const values = data as Record<string, unknown>
+  for (const key of METRIC_KEYS) {
+    if (key === 'visitorsTotal' || key === 'visitorsActive') continue
+    const value = values[key]
+    result[key] = typeof value === 'number' && Number.isFinite(value) ? value : null
+  }
+  return result
 }
 
 export type AdminMessageFilter = 'all' | 'unread' | 'read' | 'archived'
