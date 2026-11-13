@@ -333,6 +333,68 @@ $function$;
 REVOKE ALL ON FUNCTION public.admin_list_messages(text) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.admin_list_messages(text) TO authenticated;
 
+
+-- 6. Alinha as políticas administrativas de empresas com a fonte canónica.
+-- profiles.is_admin não concede nem revoga privilégios administrativos.
+DROP POLICY IF EXISTS admin_select_all_companies ON public.companies;
+CREATE POLICY admin_select_all_companies ON public.companies
+  FOR SELECT TO authenticated USING ((SELECT public.is_admin()));
+
+DROP POLICY IF EXISTS admin_update_all_companies ON public.companies;
+CREATE POLICY admin_update_all_companies ON public.companies
+  FOR UPDATE TO authenticated
+  USING ((SELECT public.is_admin()))
+  WITH CHECK ((SELECT public.is_admin()));
+
+DROP POLICY IF EXISTS admin_delete_all_companies ON public.companies;
+CREATE POLICY admin_delete_all_companies ON public.companies
+  FOR DELETE TO authenticated USING ((SELECT public.is_admin()));
+
+-- 7. Funções SECURITY DEFINER exclusivas de triggers/event triggers.
+-- A execução de um trigger não exige EXECUTE do papel que modifica a linha;
+-- a permissão é verificada quando o trigger é criado pelo owner.
+REVOKE ALL ON FUNCTION public.handle_updated_at() FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.handle_new_user_profile_b2() FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.produto_imagens_validar_limite() FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.produto_imagens_validar_minimo() FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.produtos_proteger_estado() FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.validar_servico_pedido() FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.rls_auto_enable() FROM PUBLIC, anon, authenticated;
+
+-- 8. RPC de autorização: apenas authenticated pode consultar o booleano
+-- administrativo; políticas RLS usam esta função em tabelas autenticadas.
+REVOKE ALL ON FUNCTION public.is_admin() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.is_admin() TO authenticated, service_role;
+
+-- As RPCs administrativas abaixo têm verificação interna explícita por
+-- public.is_admin(); removem-se concessões implícitas e mantém-se authenticated.
+REVOKE ALL ON FUNCTION public.admin_avaliar_produto(uuid, text, text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.admin_avaliar_produto(uuid, text, text) TO authenticated;
+REVOKE ALL ON FUNCTION public.admin_avaliar_profissional(uuid, text, text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.admin_avaliar_profissional(uuid, text, text) TO authenticated;
+REVOKE ALL ON FUNCTION public.admin_listar_profissionais() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.admin_listar_profissionais() TO authenticated;
+REVOKE ALL ON FUNCTION public.admin_registar_acesso_bi_foto(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.admin_registar_acesso_bi_foto(uuid) TO authenticated;
+REVOKE ALL ON FUNCTION public.admin_obter_empresa(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.admin_obter_empresa(uuid) TO authenticated;
+
+-- A função Storage de documentos é administrativa; não deve ser invocável por anon.
+REVOKE ALL ON FUNCTION public.caminho_documento_admin_visivel(text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.caminho_documento_admin_visivel(text) TO authenticated;
+
+-- 9. As três vistas são projecções públicas deliberadas, não interfaces
+-- administrativas. Cada uma expõe colunas públicas seleccionadas e filtra
+-- registos aprovados e empresas aprovadas. Mantém-se SECURITY DEFINER para
+-- permitir a leitura destas projecções sem conceder SELECT nas tabelas-base.
+-- SECURITY BARRIER impede a reordenação de predicados externos sobre o filtro.
+REVOKE ALL ON TABLE public.vagas_publicas FROM PUBLIC, anon, authenticated, service_role;
+REVOKE ALL ON TABLE public.produtos_publicos FROM PUBLIC, anon, authenticated, service_role;
+REVOKE ALL ON TABLE public.produto_imagens_publicas FROM PUBLIC, anon, authenticated, service_role;
+GRANT SELECT ON TABLE public.vagas_publicas, public.produtos_publicos,
+  public.produto_imagens_publicas TO anon, authenticated, service_role;
+
+
 COMMIT;
 
 -- Verificações pós-aplicação (a executar em ambiente de teste):
