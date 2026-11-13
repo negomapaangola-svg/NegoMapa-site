@@ -4,7 +4,8 @@ import {
   obterIdsProfissionaisPublicosPorNome,
 } from '@/lib/actions/profissionais-publicos';
 import type { ParamsDescobrir } from './params';
-import { ordenarPorLocalizacaoAdministrativa, type LocalizacaoAdministrativa } from '@/lib/localizacao/ordenar-resultados';
+import { ordenarPorDistanciaEAdministrativa, type LocalizacaoAdministrativa } from '@/lib/localizacao/ordenar-resultados';
+import { obterDistanciasAproximadas } from '@/lib/actions/proximidade';
 
 export const RESULTADOS_POR_PAGINA = 12;
 const LIMITE_AVALIACAO = 300;
@@ -21,6 +22,7 @@ export type ServicoDescobrir = {
   provincia: string | null;
   municipio: string | null;
   avaliacao: AvaliacaoResumo | null;
+  distancia_km?: number | null;
 };
 
 export type ResultadoDescobrir = {
@@ -164,6 +166,7 @@ export async function buscarServicosDescobrir(params: ParamsDescobrir, localizac
   }
   const resumos = resumirAvaliacoes(validarAvaliacoes(avaliacoes));
 
+  const distancias = await obterDistanciasAproximadas('servico', linhas.map((linha) => linha.id));
   let resultados: ServicoDescobrir[] = linhas.map((linha) => ({
     id: linha.id,
     slug: linha.slug,
@@ -173,13 +176,14 @@ export async function buscarServicosDescobrir(params: ParamsDescobrir, localizac
     provincia: linha.provincia,
     municipio: linha.municipio,
     avaliacao: resumos.get(linha.id) ?? null,
+    distancia_km: distancias[linha.id] ?? null,
   }));
 
   if (comFiltroAvaliacao) {
     const minimo = Number(params.avaliacao);
     resultados = resultados.filter((item) => (item.avaliacao?.media ?? 0) >= minimo);
     const totalFiltrado = resultados.length;
-    const ordenados = ordenarPorLocalizacaoAdministrativa(resultados, localizacao);
+    const ordenados = ordenarPorDistanciaEAdministrativa(resultados, localizacao);
     return {
       servicos: ordenados.slice(inicio, inicio + RESULTADOS_POR_PAGINA),
       total: totalFiltrado,
