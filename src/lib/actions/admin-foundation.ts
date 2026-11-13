@@ -35,17 +35,6 @@ export type AdminDashboardStats = {
   alertsTotal: AdminMetric
 }
 
-async function countResult(
-  query: PromiseLike<{ count: number | null; error: { code?: string } | null }>
-): Promise<AdminMetric> {
-  const result = await query
-  if (result.error) {
-    console.error('[admin-stats] count unavailable:', result.error.code ?? 'unknown')
-    return null
-  }
-  return result.count
-}
-
 const METRIC_KEYS: Array<keyof AdminDashboardStats> = [
   'visitorsTotal', 'visitorsActive', 'accountsTotal', 'accountsClient',
   'accountsProfessional', 'accountsCompany', 'accountsLast7Days', 'accountsLast30Days',
