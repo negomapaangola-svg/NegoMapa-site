@@ -245,6 +245,49 @@ CREATE TRIGGER trg_produto_aprovar_apos_primeira_imagem
   FOR EACH ROW
   EXECUTE FUNCTION public.aprovar_produto_apos_primeira_imagem();
 
+-- 5. Agregados administrativos: devolve apenas contagens, nunca linhas pessoais.
+CREATE OR REPLACE FUNCTION public.admin_dashboard_stats()
+RETURNS jsonb
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path TO ''
+AS $function$
+BEGIN
+  IF NOT public.is_admin() THEN
+    RAISE EXCEPTION 'Acesso negado' USING ERRCODE = '42501';
+  END IF;
+
+  RETURN jsonb_build_object(
+    'accountsTotal', (SELECT count(*) FROM public.profiles),
+    'accountsClient', (SELECT count(*) FROM public.profiles WHERE account_type = 'cliente'),
+    'accountsProfessional', (SELECT count(*) FROM public.profiles WHERE account_type = 'profissional'),
+    'accountsCompany', (SELECT count(*) FROM public.profiles WHERE account_type = 'empresa'),
+    'accountsLast7Days', (SELECT count(*) FROM public.profiles WHERE created_at >= now() - interval '7 days'),
+    'accountsLast30Days', (SELECT count(*) FROM public.profiles WHERE created_at >= now() - interval '30 days'),
+    'professionalsTotal', (SELECT count(*) FROM public.profissionais),
+    'professionalsPending', (SELECT count(*) FROM public.profissionais WHERE estado = 'pendente'),
+    'professionalsApproved', (SELECT count(*) FROM public.profissionais WHERE estado = 'aprovado'),
+    'professionalsRejected', (SELECT count(*) FROM public.profissionais WHERE estado = 'rejeitado'),
+    'companiesTotal', (SELECT count(*) FROM public.companies),
+    'companiesPending', (SELECT count(*) FROM public.companies WHERE estado = 'pendente' OR (estado IS NULL AND is_approved = false)),
+    'companiesApproved', (SELECT count(*) FROM public.companies WHERE estado = 'aprovado' OR (estado IS NULL AND is_approved = true)),
+    'companiesRejected', (SELECT count(*) FROM public.companies WHERE estado = 'rejeitado'),
+    'servicesTotal', (SELECT count(*) FROM public.servicos),
+    'productsTotal', (SELECT count(*) FROM public.produtos),
+    'vacanciesTotal', (SELECT count(*) FROM public.vagas),
+    'applicationsTotal', (SELECT count(*) FROM public.candidaturas),
+    'requestsTotal', (SELECT count(*) FROM public.pedidos_servico),
+    'messagesTotal', (SELECT count(*) FROM public.admin_messages),
+    'messagesUnread', (SELECT count(*) FROM public.admin_messages WHERE recipient_id IS NULL AND read_at IS NULL AND archived_at IS NULL),
+    'alertsTotal', (SELECT count(*) FROM public.denuncias)
+  );
+END;
+$function$;
+
+REVOKE ALL ON FUNCTION public.admin_dashboard_stats() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.admin_dashboard_stats() TO authenticated;
+
 COMMIT;
 
 -- Verificações pós-aplicação (a executar em ambiente de teste):
