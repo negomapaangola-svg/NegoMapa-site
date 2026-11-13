@@ -191,6 +191,6 @@ export async function buscarServicosDescobrir(params: ParamsDescobrir, localizac
     };
   }
 
-  const ordenados = ordenarPorLocalizacaoAdministrativa(resultados, localizacao);
+  const ordenados = ordenarPorDistanciaEAdministrativa(resultados, localizacao);
   return { servicos: ordenados.slice(inicio, inicio + RESULTADOS_POR_PAGINA), total: count ?? 0 };
 }
