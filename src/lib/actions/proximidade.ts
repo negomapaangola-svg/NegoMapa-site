@@ -104,6 +104,7 @@ export async function obterDistanciasAproximadas(tipo: TipoResultado, idsRecebid
   try {
     const ctx = await contexto()
     if (!ctx || ctx.perfil.account_type !== 'cliente' || ctx.perfil.consentimento_localizacao !== true) return {}
+    if (ctx.perfil.latitude_aproximada === null || ctx.perfil.longitude_aproximada === null) return {}
     const latCliente = Number(ctx.perfil.latitude_aproximada)
     const lonCliente = Number(ctx.perfil.longitude_aproximada)
     if (!Number.isFinite(latCliente) || !Number.isFinite(lonCliente)) return {}
@@ -136,6 +137,7 @@ export async function obterDistanciasAproximadas(tipo: TipoResultado, idsRecebid
 
     const distanciasPrestador = new Map<string, number>()
     for (const row of prestadores) {
+      if (row.latitude_aproximada === null || row.longitude_aproximada === null) continue
       const lat = Number(row.latitude_aproximada)
       const lon = Number(row.longitude_aproximada)
       if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue
