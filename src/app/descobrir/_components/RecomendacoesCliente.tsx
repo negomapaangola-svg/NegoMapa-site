@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { formatCurrency } from '@/lib/utils';
@@ -46,7 +45,7 @@ export function RecomendacoesCliente({ itens }: { itens: RecomendacaoDescobrir[]
                 <p className="mt-2 font-bold text-orange-600 dark:text-orange-400">
                   {item.preco === null || item.preco_tipo === 'sob_consulta'
                     ? 'Sob consulta'
-                    : `${formatCurrency(item.preco)} Kz`}
+                    : `${formatCurrency(item.preco)}`}
                 </p>
                 <p className="mt-2 text-sm text-neutral-600 dark:text-cream-text">
                   {[item.municipio, item.provincia].filter(Boolean).join(', ') || 'Angola'}
@@ -64,7 +63,7 @@ export function RecomendacoesCliente({ itens }: { itens: RecomendacaoDescobrir[]
                 <div className="mt-auto pt-5">
                   <Button
                     asChild
-                    as={Link}
+                    as="a"
                     size="sm"
                     variant="outline"
                     fullWidth
