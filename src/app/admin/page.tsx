@@ -67,7 +67,7 @@ export default async function AdminDashboardPage() {
               <span className="text-xs text-neutral-500 dark:text-neutral-400">Indicadores principais</span>
             </div>
             <div className="grid grid-cols-2 gap-x-6 gap-y-3 border-y border-neutral-200 py-3 dark:border-neutral-800 sm:grid-cols-3 lg:grid-cols-5">
-              <Metric label="Contas" value={stats.accountsTotal} detail={`+ ${metric(stats.accountsLast7Days)} em 7 dias`} />
+              <Metric label="Contas" value={stats.accountsTotal} detail={`${metric(stats.accountsLast7Days)} novas em 7 dias`} />
               <Metric label="Profissionais" value={stats.professionalsTotal} detail={`${metric(stats.professionalsPending)} pendentes`} />
               <Metric label="Empresas" value={stats.companiesTotal} detail={`${metric(stats.companiesPending)} pendentes`} />
               <Metric label="Serviços" value={stats.servicesTotal} />
@@ -81,6 +81,7 @@ export default async function AdminDashboardPage() {
               <ActionLink href="/admin/profissionais" title="Profissionais" description="Rever, aprovar, rejeitar e consultar perfis." />
               <ActionLink href="/admin/empresas" title="Empresas" description="Consultar e gerir estados de aprovação." />
               <ActionLink href="/admin/mensagens" title="Caixa de entrada" description="Responder, marcar como lida e arquivar contactos." />
+              <ActionLink href="/admin/conteudos" title="Conteúdos" description="Pesquisar produtos, candidaturas e pedidos." />
               <ActionLink href="/admin/servicos" title="Serviços" description="Consultar e moderar serviços publicados." />
               <ActionLink href="/admin/vagas" title="Vagas" description="Consultar vagas e respectivo estado." />
               <ActionLink href="/admin/denuncias" title="Denúncias" description="Consultar alertas e actividade reportada." />
