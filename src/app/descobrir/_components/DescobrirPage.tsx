@@ -7,6 +7,8 @@ import { FiltrosDescobrir } from './FiltrosDescobrir';
 import { ResultadoCard } from './ResultadoCard';
 import { EstadoSemResultados } from './EstadoSemResultados';
 import { PaginacaoDescobrir } from './PaginacaoDescobrir';
+import { RecomendacoesCliente } from './RecomendacoesCliente';
+import type { RecomendacaoDescobrir } from '@/lib/descobrir/recomendacoes';
 
 interface DescobrirPageProps {
   params: ParamsDescobrir;
@@ -15,6 +17,7 @@ interface DescobrirPageProps {
   totalPaginas: number;
   servicos?: ResultadoDescobrir;
   produtos?: ResultadoProdutos;
+  recomendacoes: RecomendacaoDescobrir[];
 }
 
 export function DescobrirPage({
@@ -24,6 +27,7 @@ export function DescobrirPage({
   totalPaginas,
   servicos,
   produtos,
+  recomendacoes,
 }: DescobrirPageProps) {
   const ehProdutos = params.tipo === 'produtos';
   const resultados = ehProdutos ? produtos?.produtos ?? [] : servicos?.servicos ?? [];
@@ -43,6 +47,8 @@ export function DescobrirPage({
               : 'Encontre serviços em Angola por pesquisa, categoria, província, preço e avaliação.'}
           </p>
         </header>
+
+        <RecomendacoesCliente itens={recomendacoes} />
 
         <PesquisaPrincipal key={`${params.tipo}-${params.q}`} params={params} />
         <SeparadoresTipo params={params} />
