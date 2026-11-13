@@ -86,34 +86,13 @@ export async function getAdminMessages(filter: AdminMessageFilter = 'all'): Prom
   if (!(await isAdmin())) return null
 
   const supabase = await createSupabaseServerClient()
-  let query = supabase
-    .from('admin_messages')
-    .select('id,sender_id,subject,body,created_at,read_at,archived_at')
-    .is('recipient_id', null)
-    .order('created_at', { ascending: false })
-    .limit(100)
+  const { data, error } = await supabase.rpc('admin_list_messages', { p_filter: filter })
 
-  if (filter === 'unread') query = query.is('read_at', null).is('archived_at', null)
-  if (filter === 'read') query = query.not('read_at', 'is', null).is('archived_at', null)
-  if (filter === 'archived') query = query.not('archived_at', 'is', null)
-
-  const { data, error } = await query
   if (error) {
     console.error('[admin-messages] list failed:', error.code)
     return null
   }
-
-  const rows = data ?? []
-  const senderIds = Array.from(new Set(rows.map((row) => row.sender_id)))
-  const { data: profiles } = senderIds.length
-    ? await supabase.from('profiles').select('id,nome').in('id', senderIds)
-    : { data: [] as { id: string; nome: string | null }[] }
-
-  const names = new Map((profiles ?? []).map((profile) => [profile.id, profile.nome]))
-  return rows.map((row) => ({
-    ...row,
-    sender_name: names.get(row.sender_id) || 'Utilizador',
-  }))
+  return (data ?? []) as AdminMessage[]
 }
 
 export async function markAdminMessageRead(messageId: string): Promise<{ success: boolean; error?: string }> {
