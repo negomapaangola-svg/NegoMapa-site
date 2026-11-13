@@ -142,8 +142,8 @@ export async function obterRecomendacoesDescobrir(
       idsServicos.length
         ? supabase.from('avaliacoes').select('servico_id,nota').in('servico_id', idsServicos)
         : Promise.resolve({ data: [], error: null }),
-      clienteAutenticado ? obterDistanciasAproximadas('servico', idsServicos) : Promise.resolve({}),
-      clienteAutenticado ? obterDistanciasAproximadas('produto', produtos.map((item) => item.id)) : Promise.resolve({}),
+      clienteAutenticado ? obterDistanciasAproximadas('servico', idsServicos) : Promise.resolve({} as Record<string, number>),
+      clienteAutenticado ? obterDistanciasAproximadas('produto', produtos.map((item) => item.id)) : Promise.resolve({} as Record<string, number>),
     ]);
 
     const acumulado = new Map<string, { soma: number; total: number }>();
