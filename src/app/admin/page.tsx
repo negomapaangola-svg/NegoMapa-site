@@ -1,118 +1,130 @@
-import { Metadata } from 'next'
-import { notFound } from 'next/navigation'
-import { isAdmin } from '@/lib/auth'
-import { MainLayout } from '@/components/layout/MainLayout'
-import { Card, CardContent } from '@/components/ui/Card'
+import type { Metadata } from 'next'
 import Link from 'next/link'
+import { notFound } from 'next/navigation'
+import { MainLayout } from '@/components/layout/MainLayout'
+import { isAdmin } from '@/lib/auth'
+import { getAdminDashboardStats, type AdminMetric } from '@/lib/actions/admin-foundation'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 export const metadata: Metadata = {
-  title: 'Painel Administrativo | NegóMapa Admin',
-  description: 'Painel de administração do NegóMapa',
+  title: 'Painel Administrativo | NegóMapa',
+  description: 'Estatísticas e ferramentas de administração do NegóMapa.',
+}
+
+function metric(value: AdminMetric): string {
+  return value === null ? 'Métrica não disponível nesta versão' : new Intl.NumberFormat('pt-PT').format(value)
+}
+
+function Metric({ label, value, detail }: { label: string; value: AdminMetric; detail?: string }) {
+  return (
+    <div className="min-w-0 py-3">
+      <p className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">{label}</p>
+      <p className={value === null ? 'mt-2 text-sm font-medium text-neutral-500 dark:text-neutral-400' : 'mt-2 text-3xl font-semibold tracking-tight text-neutral-950 dark:text-neutral-50'}>
+        {metric(value)}
+      </p>
+      {detail ? <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">{detail}</p> : null}
+    </div>
+  )
+}
+
+function ActionLink({ href, title, description }: { href: string; title: string; description: string }) {
+  return (
+    <Link
+      href={href}
+      className="group rounded-lg px-3 py-3 transition-colors hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:hover:bg-neutral-900"
+    >
+      <span className="block text-sm font-semibold text-neutral-900 group-hover:text-orange-700 dark:text-neutral-100 dark:group-hover:text-orange-300">{title}</span>
+      <span className="mt-1 block text-xs leading-5 text-neutral-500 dark:text-neutral-400">{description}</span>
+    </Link>
+  )
 }
 
 export default async function AdminDashboardPage() {
-  const adminCheck = await isAdmin()
-  if (!adminCheck) {
-    notFound()
-  }
+  if (!(await isAdmin())) notFound()
+
+  const stats = await getAdminDashboardStats()
+
+  if (!stats) notFound()
 
   return (
     <MainLayout>
-      <div className="p-6 md:p-8 bg-cream dark:bg-navy-dark">
-        <div className="max-w-7xl mx-auto">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-ink dark:text-cream">Painel Administrativo</h1>
-            <p className="text-neutral-500 dark:text-cream-text/70 mt-1">
-              Bem-vindo ao painel de administração do NegóMapa
+      <main className="min-h-screen bg-cream px-4 py-8 dark:bg-navy-dark sm:px-6 lg:py-10">
+        <div className="mx-auto max-w-7xl">
+          <header className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-orange-600 dark:text-orange-400">Área restrita</p>
+              <h1 className="mt-2 text-3xl font-bold tracking-tight text-ink dark:text-cream">Painel administrativo</h1>
+              <p className="mt-2 text-sm text-neutral-600 dark:text-cream-text/70">Visão operacional da plataforma e ferramentas de gestão.</p>
+            </div>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">Dados consultados em tempo real</p>
+          </header>
+
+          <section aria-labelledby="admin-overview" className="mb-10">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 id="admin-overview" className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">Estado geral</h2>
+              <span className="text-xs text-neutral-500 dark:text-neutral-400">Indicadores principais</span>
+            </div>
+            <div className="grid grid-cols-2 gap-x-6 gap-y-3 border-y border-neutral-200 py-3 dark:border-neutral-800 sm:grid-cols-3 lg:grid-cols-5">
+              <Metric label="Contas" value={stats.accountsTotal} detail={`+ ${metric(stats.accountsLast7Days)} em 7 dias`} />
+              <Metric label="Profissionais" value={stats.professionalsTotal} detail={`${metric(stats.professionalsPending)} pendentes`} />
+              <Metric label="Empresas" value={stats.companiesTotal} detail={`${metric(stats.companiesPending)} pendentes`} />
+              <Metric label="Serviços" value={stats.servicesTotal} />
+              <Metric label="Mensagens por ler" value={stats.messagesUnread} />
+            </div>
+          </section>
+
+          <section aria-labelledby="admin-actions" className="mb-10">
+            <h2 id="admin-actions" className="mb-3 text-sm font-semibold text-neutral-800 dark:text-neutral-200">Acções administrativas</h2>
+            <div className="grid grid-cols-1 gap-1 border-y border-neutral-200 py-2 dark:border-neutral-800 sm:grid-cols-2 lg:grid-cols-3">
+              <ActionLink href="/admin/profissionais" title="Profissionais" description="Rever, aprovar, rejeitar e consultar perfis." />
+              <ActionLink href="/admin/empresas" title="Empresas" description="Consultar e gerir estados de aprovação." />
+              <ActionLink href="/admin/mensagens" title="Caixa de entrada" description="Responder, marcar como lida e arquivar contactos." />
+              <ActionLink href="/admin/servicos" title="Serviços" description="Consultar e moderar serviços publicados." />
+              <ActionLink href="/admin/vagas" title="Vagas" description="Consultar vagas e respectivo estado." />
+              <ActionLink href="/admin/denuncias" title="Denúncias" description="Consultar alertas e actividade reportada." />
+            </div>
+          </section>
+
+          <section aria-labelledby="admin-details">
+            <h2 id="admin-details" className="mb-4 text-sm font-semibold text-neutral-800 dark:text-neutral-200">Indicadores detalhados</h2>
+            <div className="grid gap-x-12 gap-y-8 border-t border-neutral-200 pt-5 dark:border-neutral-800 sm:grid-cols-2 lg:grid-cols-3">
+              <div>
+                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Visitas e contas</h3>
+                <Metric label="Visitantes totais" value={stats.visitorsTotal} />
+                <Metric label="Visitantes activos" value={stats.visitorsActive} />
+                <Metric label="Clientes" value={stats.accountsClient} />
+                <Metric label="Profissionais" value={stats.accountsProfessional} />
+                <Metric label="Empresas (contas)" value={stats.accountsCompany} />
+                <Metric label="Novas contas · 7 dias" value={stats.accountsLast7Days} />
+                <Metric label="Novas contas · 30 dias" value={stats.accountsLast30Days} />
+              </div>
+              <div>
+                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Aprovações</h3>
+                <Metric label="Profissionais pendentes" value={stats.professionalsPending} />
+                <Metric label="Profissionais aprovados" value={stats.professionalsApproved} />
+                <Metric label="Profissionais rejeitados" value={stats.professionalsRejected} />
+                <Metric label="Empresas pendentes" value={stats.companiesPending} />
+                <Metric label="Empresas aprovadas" value={stats.companiesApproved} />
+                <Metric label="Empresas rejeitadas" value={stats.companiesRejected} />
+              </div>
+              <div>
+                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Conteúdos e actividade</h3>
+                <Metric label="Produtos" value={stats.productsTotal} />
+                <Metric label="Vagas" value={stats.vacanciesTotal} />
+                <Metric label="Candidaturas" value={stats.applicationsTotal} />
+                <Metric label="Pedidos de serviço" value={stats.requestsTotal} />
+                <Metric label="Mensagens administrativas" value={stats.messagesTotal} />
+                <Metric label="Alertas / denúncias" value={stats.alertsTotal} />
+              </div>
+            </div>
+            <p className="mt-6 text-xs text-neutral-500 dark:text-neutral-400">
+              Visitantes totais e activos não estão disponíveis porque o esquema auditado não contém uma fonte de analytics de visitas. As mensagens contabilizadas são as do canal administrativo, separado das conversas privadas.
             </p>
-          </div>
-
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            <Card variant="default" padding="lg" className="border-card-border hover:border-orange-500 dark:hover:border-orange-400 transition-colors">
-              <Link href="/admin/denuncias" className="block">
-                <div className="flex items-start gap-4">
-                  <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-[4px]">
-                    <svg className="h-6 w-6 text-orange-500 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-ink dark:text-cream">Denúncias</h3>
-                    <p className="text-sm text-neutral-500 dark:text-cream-text/70 mt-1">Moderar denúncias de utilizadores</p>
-                  </div>
-                </div>
-              </Link>
-            </Card>
-
-            <Card variant="default" padding="lg" className="border-card-border hover:border-orange-500 dark:hover:border-orange-400 transition-colors">
-              <Link href="/admin/empresas" className="block">
-                <div className="flex items-start gap-4">
-                  <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-[4px]">
-                    <svg className="h-6 w-6 text-blue-500 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-ink dark:text-cream">Empresas</h3>
-                    <p className="text-sm text-neutral-500 dark:text-cream-text/70 mt-1">Aprovar ou rejeitar empresas pendentes</p>
-                  </div>
-                </div>
-              </Link>
-            </Card>
-
-            <Card variant="default" padding="lg" className="border-card-border hover:border-orange-500 dark:hover:border-orange-400 transition-colors">
-              <Link href="/admin/servicos" className="block">
-                <div className="flex items-start gap-4">
-                  <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-[4px]">
-                    <svg className="h-6 w-6 text-green-500 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-ink dark:text-cream">Serviços</h3>
-                    <p className="text-sm text-neutral-500 dark:text-cream-text/70 mt-1">Gerenciar serviços cadastrados</p>
-                  </div>
-                </div>
-              </Link>
-            </Card>
-
-            <Card variant="default" padding="lg" className="border-card-border hover:border-orange-500 dark:hover:border-orange-400 transition-colors">
-              <Link href="/admin/vagas" className="block">
-                <div className="flex items-start gap-4">
-                  <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-[4px]">
-                    <svg className="h-6 w-6 text-purple-500 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-ink dark:text-cream">Vagas</h3>
-                    <p className="text-sm text-neutral-500 dark:text-cream-text/70 mt-1">Gerenciar vagas de emprego</p>
-                  </div>
-                </div>
-              </Link>
-            </Card>
-
-            <Card variant="default" padding="lg" className="border-card-border hover:border-orange-500 dark:hover:border-orange-400 transition-colors">
-              <Link href="/admin/profissionais" className="block">
-                <div className="flex items-start gap-4">
-                  <div className="p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-[4px]">
-                    <svg className="h-6 w-6 text-indigo-500 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2m12-10a4 4 0 100-8 4 4 0 000 8zM20 21v-2a4 4 0 00-3-3.87M14 3.13a4 4 0 010 7.75" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-ink dark:text-cream">Gestão de profissionais</h3>
-                    <p className="text-sm text-neutral-500 dark:text-cream-text/70 mt-1">Aprovar, rejeitar e consultar profissionais registados</p>
-                  </div>
-                </div>
-              </Link>
-            </Card>
-          </div>
+          </section>
         </div>
-      </div>
+      </main>
     </MainLayout>
   )
 }
