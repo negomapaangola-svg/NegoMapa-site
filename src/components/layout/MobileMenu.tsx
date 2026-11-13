@@ -64,7 +64,7 @@ export function MobileMenu({ aberto, onFechar, pathname }: MobileMenuProps) {
     obterContextoNavegacao()
       .then((valor) => { if (activo) setContexto(valor); })
       .catch(() => {
-        if (activo) setContexto({ autenticado: false, profissional: false, estadoProfissional: null, empresa: false, empresaAprovada: false, administrador: false });
+        if (activo) setContexto({ autenticado: false, profissional: false, estadoProfissional: null, empresa: false, empresaAprovada: false, administrador: false, accountType: null });
       });
     return () => { activo = false; };
   }, [aberto]);
