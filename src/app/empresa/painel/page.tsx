@@ -9,6 +9,7 @@ import { MainLayout } from '@/components/layout/MainLayout'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Avatar } from '@/components/ui/Avatar'
 import { Button } from '@/components/ui/Button'
+import { LocalizacaoPrestadorForm } from '@/components/localizacao/LocalizacaoPrestadorForm'
 
 export const metadata: Metadata = { title: 'Painel da Empresa | NegóMapa', description: 'Resumo das empresas, vagas, candidaturas e actividade.' }
 
@@ -47,6 +48,7 @@ export default async function EmpresaPainelPage({ searchParams }: { searchParams
     <Card variant="liquid" padding="lg">
       <CardHeader className="space-y-2"><CardTitle as="h1" className="text-2xl md:text-3xl">Painel empresarial</CardTitle><p className="text-sm text-neutral-600 dark:text-cream-text">{nomeUtilizador ? `Olá, ${nomeUtilizador}` : 'Conta autenticada'} · {user.email ?? 'Email não disponível'}</p></CardHeader>
       <CardContent className="space-y-6">
+        {company.is_approved && <LocalizacaoPrestadorForm tipo="empresa" entidadeId={company.id} />}
         <div className="grid grid-cols-3 gap-3">
           {[{ label: 'Empresas associadas', value: empresas.length }, { label: 'Aprovadas', value: aprovadas }, { label: 'Não aprovadas', value: empresas.length - aprovadas }].map((item) => <div key={item.label} className="rounded-xl border border-card-border p-3 sm:p-4"><p className="text-2xl font-semibold text-ink dark:text-cream">{item.value}</p><p className="mt-1 text-xs text-neutral-600 dark:text-cream-text sm:text-sm">{item.label}</p></div>)}
         </div>
