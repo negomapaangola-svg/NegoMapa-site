@@ -374,7 +374,7 @@ export function ProfileForm({ initialData, categorias, defaultData }: ProfileFor
               {fieldErrors.anos_experiencia && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{fieldErrors.anos_experiencia}</p>}
             </div>
 
-            <div>
+            <div id="disponibilidade">
               <label className="block text-sm font-medium text-ink dark:text-cream mb-2">
                 Dias de Disponibilidade
               </label>
@@ -420,7 +420,7 @@ export function ProfileForm({ initialData, categorias, defaultData }: ProfileFor
               {fieldErrors.disponibilidade_horarios && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{fieldErrors.disponibilidade_horarios}</p>}
             </div>
 
-            <div>
+            <div id="portfolio">
               <div className="flex items-center justify-between mb-2">
                 <label className="block text-sm font-medium text-ink dark:text-cream">
                   Portfolio
