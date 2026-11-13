@@ -9,7 +9,8 @@ import { MainLayout } from "@/components/layout/MainLayout"
 import { BotaoContactarEmpresa } from "@/components/empresas/BotaoContactarEmpresa"
 import { verificarPodeContactarEmpresas } from "@/lib/actions/conversas"
 import { obterLocalizacaoCliente } from "@/lib/actions/perfil-pessoal"
-import { ordenarPorLocalizacaoAdministrativa, type LocalizacaoAdministrativa } from "@/lib/localizacao/ordenar-resultados"
+import { ordenarPorDistanciaEAdministrativa, type LocalizacaoAdministrativa } from "@/lib/localizacao/ordenar-resultados"
+import { obterDistanciasAproximadas } from "@/lib/actions/proximidade"
 
 type Empresa = {
   id: string
