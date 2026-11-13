@@ -38,7 +38,7 @@ async function obterProduto(slug: string) {
   const produto = data as ProdutoRaw;
   const [{ data: categoria }, { data: imagens }] = await Promise.all([
     supabase.from('categorias').select('id,nome,slug').eq('id', produto.categoria_id).maybeSingle(),
-    supabase.from('produto_imagens').select('url,ordem').eq('produto_id', produto.id).order('ordem'),
+    supabase.from('produto_imagens_publicas').select('url,ordem').eq('produto_id', produto.id).order('ordem'),
   ]);
   const urls: string[] = [];
   for (const imagem of imagens ?? []) {

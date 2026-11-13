@@ -154,7 +154,7 @@ export async function buscarProdutosDescobrir(params: ParamsDescobrir, localizac
   const linhas = ordenadas.slice(inicio, inicio + RESULTADOS_POR_PAGINA);
   const ids = linhas.map((linha) => linha.id);
   const { data: imagens } = ids.length
-    ? await supabase.from('produto_imagens').select('produto_id,url,ordem').in('produto_id', ids).order('ordem')
+    ? await supabase.from('produto_imagens_publicas').select('produto_id,url,ordem').in('produto_id', ids).order('ordem')
     : { data: [] };
   const imagensPorProduto = new Map<string, { url: string; ordem: number }[]>();
   for (const imagem of imagens ?? []) {
