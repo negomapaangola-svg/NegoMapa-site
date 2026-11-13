@@ -361,6 +361,13 @@ REVOKE ALL ON FUNCTION public.produtos_proteger_estado() FROM PUBLIC, anon, auth
 REVOKE ALL ON FUNCTION public.validar_servico_pedido() FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public.rls_auto_enable() FROM PUBLIC, anon, authenticated;
 
+
+-- SECURITY DEFINER sem resolução de objectos através de schemas graváveis.
+ALTER FUNCTION public.admin_avaliar_produto(uuid, text, text) SET search_path = '';
+ALTER FUNCTION public.handle_updated_at() SET search_path = '';
+ALTER FUNCTION public.produto_imagens_validar_limite() SET search_path = '';
+ALTER FUNCTION public.produto_imagens_validar_minimo() SET search_path = '';
+
 -- 8. RPC de autorização: apenas authenticated pode consultar o booleano
 -- administrativo; políticas RLS usam esta função em tabelas autenticadas.
 REVOKE ALL ON FUNCTION public.is_admin() FROM PUBLIC, anon;
