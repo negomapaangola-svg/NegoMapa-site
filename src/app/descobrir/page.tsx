@@ -15,6 +15,7 @@ import {
 import { lerParametros, type SearchParamsRaw } from '@/lib/descobrir/params';
 import { DescobrirPage } from './_components/DescobrirPage';
 import { obterLocalizacaoCliente } from '@/lib/actions/perfil-pessoal';
+import { obterRecomendacoesDescobrir } from '@/lib/descobrir/recomendacoes';
 
 export const metadata: Metadata = {
   title: 'Descobrir',
@@ -31,6 +32,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
       buscarProdutosDescobrir(params, localizacao),
       obterCategoriasProdutos(),
       obterMunicipiosProdutos(params.provincia),
+      obterRecomendacoesDescobrir({ provincia: params.provincia, municipio: params.municipio }),
     ]);
 
     const totalPaginas = Math.max(1, Math.ceil(resultado.total / RESULTADOS_PRODUTOS));
@@ -43,6 +45,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
           municipios={municipios}
           totalPaginas={totalPaginas}
           produtos={resultado}
+          recomendacoes={recomendacoes}
         />
       </MainLayout>
     );
@@ -52,6 +55,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
     buscarServicosDescobrir(params, localizacao),
     obterCategoriasDescobrir(),
     obterMunicipiosDescobrir(params.provincia),
+    obterRecomendacoesDescobrir({ provincia: params.provincia, municipio: params.municipio }),
   ]);
 
   const totalPaginas = Math.max(1, Math.ceil(resultado.total / RESULTADOS_SERVICOS));
@@ -64,6 +68,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
         municipios={municipios}
         totalPaginas={totalPaginas}
         servicos={resultado}
+        recomendacoes={recomendacoes}
       />
     </MainLayout>
   );
