@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
-import { aprovarEmpresa, suspenderEmpresa } from '@/lib/actions/empresas'
+import { aprovarEmpresa, rejeitarEmpresa, suspenderEmpresa } from '@/lib/actions/empresas'
 
 type Props = {
   empresaId: string
@@ -25,12 +25,17 @@ export function EmpresaAdminActions({ empresaId, isApproved }: Props) {
   if (!isApproved) {
     return (
       <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-        <Button variant="primary" size="sm" disabled={pending} onClick={() => run(aprovarEmpresa)} className="w-full sm:w-auto">
-          Aprovar
-        </Button>
-        <Button variant="secondary" size="sm" disabled title="A rejeição requer um estado próprio na base de dados." className="w-full sm:w-auto">
-          Rejeição indisponível
-        </Button>
+        <Button variant="primary" size="sm" disabled={pending} onClick={() => run(aprovarEmpresa)} className="w-full sm:w-auto">Aprovar</Button>
+        <Button variant="secondary" size="sm" disabled={pending} onClick={() => {
+          const motivo = window.prompt('Indique o motivo da rejeição (mínimo 10 caracteres):')
+          if (motivo && motivo.trim().length >= 10) {
+            startTransition(async () => {
+              const result = await rejeitarEmpresa(empresaId, motivo)
+              if (!result.success) alert(result.error)
+              router.refresh()
+            })
+          }
+        }} className="w-full sm:w-auto">Rejeitar</Button>
       </div>
     )
   }
