@@ -7,6 +7,7 @@ import {
   actualizarLocalizacaoCliente,
   removerLocalizacaoCliente,
   guardarPreferenciasCliente,
+  guardarLocalizacaoGpsCliente,
 } from '@/lib/actions/perfil-pessoal'
 
 type Categoria = { id: string; nome: string }
@@ -34,6 +35,7 @@ export function LocalizacaoPreferenciasForm({
   const [mensagemPreferencias, setMensagemPreferencias] = useState('')
   const [okLocal, setOkLocal] = useState(false)
   const [okPreferencias, setOkPreferencias] = useState(false)
+  const [gpsPendente, setGpsPendente] = useState(false)
   const [pendenteLocal, iniciarLocal] = useTransition()
   const [pendentePreferencias, iniciarPreferencias] = useTransition()
 
@@ -61,6 +63,44 @@ export function LocalizacaoPreferenciasForm({
       setMensagemLocal(resultado.message)
       setOkLocal(resultado.ok)
     })
+  }
+
+  function usarLocalizacaoGps() {
+    setMensagemLocal('')
+    if (!('geolocation' in navigator)) {
+      setMensagemLocal('Este navegador não disponibiliza localização GPS. Pode continuar sem GPS.')
+      setOkLocal(false)
+      return
+    }
+    setGpsPendente(true)
+    navigator.geolocation.getCurrentPosition(
+      (posicao) => {
+        iniciarLocal(async () => {
+          const resultado = await guardarLocalizacaoGpsCliente({
+            latitude: posicao.coords.latitude,
+            longitude: posicao.coords.longitude,
+          })
+          if (resultado.ok) {
+            setConsentimentoActual(true)
+            setDataConsentimentoEstado(new Date().toISOString())
+          }
+          setMensagemLocal(resultado.message)
+          setOkLocal(resultado.ok)
+          setGpsPendente(false)
+        })
+      },
+      (erro) => {
+        const mensagem = erro.code === erro.PERMISSION_DENIED
+          ? 'A permissão de localização foi recusada. A pesquisa continua disponível sem GPS.'
+          : erro.code === erro.TIMEOUT
+            ? 'A localização demorou demasiado tempo. Tente novamente ou continue sem GPS.'
+            : 'Não foi possível obter a localização. Pode continuar a pesquisar sem GPS.'
+        setMensagemLocal(mensagem)
+        setOkLocal(false)
+        setGpsPendente(false)
+      },
+      { enableHighAccuracy: false, timeout: 12000, maximumAge: 300000 },
+    )
   }
 
   function alternarCategoria(id: string) {
@@ -99,14 +139,17 @@ export function LocalizacaoPreferenciasForm({
           </label>
           {mensagemLocal && <p role="status" className={okLocal ? 'text-sm text-green-700 dark:text-green-300 sm:col-span-2' : 'text-sm text-red-700 dark:text-red-300 sm:col-span-2'}>{mensagemLocal}</p>}
           <div className="flex flex-wrap gap-3 sm:col-span-2">
-            <Button type="submit" loading={pendenteLocal} disabled={pendenteLocal}>Guardar localização</Button>
-            <Button type="button" variant="outline" disabled={pendenteLocal} onClick={removerLocal}>Remover localização e consentimento</Button>
+            <Button type="submit" loading={pendenteLocal} disabled={pendenteLocal || gpsPendente}>Guardar localização</Button>
+            <Button type="button" variant="outline" disabled={pendenteLocal || gpsPendente} onClick={removerLocal}>Remover localização e consentimento</Button>
           </div>
         </form>
         <div className="mt-4 rounded-xl border border-card-border bg-white/50 p-4 text-sm dark:bg-white/5">
           <p><strong>Consentimento de localização:</strong> {consentimentoActual ? 'Concedido' : 'Não concedido'}</p>
           {dataConsentimentoEstado && <p className="mt-1 text-neutral-500">Actualizado em {new Date(dataConsentimentoEstado).toLocaleDateString('pt-PT')}</p>}
-          <p className="mt-2 text-neutral-600 dark:text-cream-text">O GPS não é solicitado nem utilizado nesta fase. Não são apresentadas coordenadas.</p>
+          <p className="mt-2 text-neutral-600 dark:text-cream-text">O GPS nunca é solicitado automaticamente. Só é consultado depois de carregar no botão abaixo. A localização é arredondada no servidor antes de ser guardada; as coordenadas não são apresentadas nem partilhadas publicamente.</p>
+          <div className="mt-3 flex flex-wrap gap-3">
+            <Button type="button" disabled={pendenteLocal || gpsPendente} loading={gpsPendente || pendenteLocal} onClick={usarLocalizacaoGps}>Usar a minha localização aproximada</Button>
+          </div>
         </div>
       </section>
       <section className="border-t border-card-border pt-6" aria-labelledby="preferencias-cliente-titulo">
