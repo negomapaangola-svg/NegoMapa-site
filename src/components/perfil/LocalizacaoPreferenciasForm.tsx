@@ -27,6 +27,8 @@ export function LocalizacaoPreferenciasForm({
   const [provincia, setProvincia] = useState(provinciaInicial)
   const [municipio, setMunicipio] = useState(municipioInicial)
   const [bairro, setBairro] = useState(bairroInicial)
+  const [consentimentoActual, setConsentimentoActual] = useState(consentimento)
+  const [consentimentoActualizadoEm, setConsentimentoActualizadoEm] = useState(consentimentoActualizadoEm)
   const [seleccionadas, setSeleccionadas] = useState<string[]>(preferenciasIniciais)
   const [mensagemLocal, setMensagemLocal] = useState('')
   const [mensagemPreferencias, setMensagemPreferencias] = useState('')
@@ -49,7 +51,13 @@ export function LocalizacaoPreferenciasForm({
     setMensagemLocal('')
     iniciarLocal(async () => {
       const resultado = await removerLocalizacaoCliente()
-      if (resultado.ok) { setProvincia(''); setMunicipio(''); setBairro('') }
+      if (resultado.ok) {
+        setProvincia('')
+        setMunicipio('')
+        setBairro('')
+        setConsentimentoActual(false)
+        setConsentimentoActualizadoEm(resultado.consentimentoActualizadoEm ?? null)
+      }
       setMensagemLocal(resultado.message)
       setOkLocal(resultado.ok)
     })
@@ -96,7 +104,7 @@ export function LocalizacaoPreferenciasForm({
           </div>
         </form>
         <div className="mt-4 rounded-xl border border-card-border bg-white/50 p-4 text-sm dark:bg-white/5">
-          <p><strong>Consentimento de localização:</strong> {consentimento ? 'Concedido' : 'Não concedido'}</p>
+          <p><strong>Consentimento de localização:</strong> {consentimentoActual ? 'Concedido' : 'Não concedido'}</p>
           {consentimentoActualizadoEm && <p className="mt-1 text-neutral-500">Actualizado em {new Date(consentimentoActualizadoEm).toLocaleDateString('pt-PT')}</p>}
           <p className="mt-2 text-neutral-600 dark:text-cream-text">O GPS não é solicitado nem utilizado nesta fase. Não são apresentadas coordenadas.</p>
         </div>

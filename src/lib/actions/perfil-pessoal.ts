@@ -81,10 +81,13 @@ export async function actualizarLocalizacaoCliente(input: { provincia: unknown; 
     }
     const { data: perfil, error: perfilError } = await supabase.from('profiles').select('account_type').eq('id', user.id).maybeSingle();
     if (perfilError || perfil?.account_type !== 'cliente') return { ok: false, message: 'Esta opção está disponível apenas para contas de cliente.' };
-    const { error } = await supabase.from('profiles').update({
+    const { data: actualizado, error } = await supabase.from('profiles').update({
       localizacao_provincia: provincia || null, localizacao_municipio: municipio || null, localizacao_bairro: bairro || null,
-    }).eq('id', user.id);
-    if (error) return { ok: false, message: 'Não foi possível guardar a localização.' };
+    }).eq('id', user.id).select('id').maybeSingle();
+    if (error || !actualizado) {
+      if (error) console.error('Erro ao guardar localização do cliente. Código:', error.code);
+      return { ok: false, message: 'Não foi possível guardar a localização. Verifique as permissões da conta e tente novamente.' };
+    }
     revalidatePath('/perfil'); revalidatePath('/servicos'); revalidatePath('/descobrir'); revalidatePath('/profissionais'); revalidatePath('/empresas');
     return { ok: true, message: 'Localização administrativa guardada.' };
   } catch (e) { return { ok: false, message: e instanceof Error ? e.message : 'Erro ao guardar a localização.' }; }
@@ -95,14 +98,25 @@ export async function removerLocalizacaoCliente() {
     const { supabase, user } = await sessao();
     const { data: perfil, error: perfilError } = await supabase.from('profiles').select('account_type').eq('id', user.id).maybeSingle();
     if (perfilError || perfil?.account_type !== 'cliente') return { ok: false, message: 'Esta opção está disponível apenas para contas de cliente.' };
-    const { error } = await supabase.from('profiles').update({
-      localizacao_provincia: null, localizacao_municipio: null, localizacao_bairro: null,
-      consentimento_localizacao: false, consentimento_actualizado_em: new Date().toISOString(),
-      latitude_aproximada: null, longitude_aproximada: null,
-    }).eq('id', user.id);
-    if (error) return { ok: false, message: 'Não foi possível remover a localização.' };
+    // Uma única instrução UPDATE limpa todos os campos de localização e consentimento.
+    // O filtro por user.id, a política RLS e os privilégios de coluna limitados
+    // impedem que esta acção altere perfis de terceiros ou account_type.
+    const consentimentoActualizadoEm = new Date().toISOString();
+    const { data: actualizado, error } = await supabase.from('profiles').update({
+      localizacao_provincia: null,
+      localizacao_municipio: null,
+      localizacao_bairro: null,
+      consentimento_localizacao: false,
+      consentimento_actualizado_em: consentimentoActualizadoEm,
+      latitude_aproximada: null,
+      longitude_aproximada: null,
+    }).eq('id', user.id).select('id').maybeSingle();
+    if (error || !actualizado) {
+      if (error) console.error('Erro ao remover localização do cliente. Código:', error.code);
+      return { ok: false, message: 'Não foi possível remover a localização. Verifique as permissões da conta e tente novamente.' };
+    }
     revalidatePath('/perfil'); revalidatePath('/servicos'); revalidatePath('/descobrir'); revalidatePath('/profissionais'); revalidatePath('/empresas');
-    return { ok: true, message: 'Localização e consentimento removidos.' };
+    return { ok: true, message: 'Localização e consentimento removidos.', consentimentoActualizadoEm };
   } catch (e) { return { ok: false, message: e instanceof Error ? e.message : 'Erro ao remover a localização.' }; }
 }
 
