@@ -14,6 +14,7 @@ import {
 } from '@/lib/descobrir/buscar-produtos';
 import { lerParametros, type SearchParamsRaw } from '@/lib/descobrir/params';
 import { DescobrirPage } from './_components/DescobrirPage';
+import { obterLocalizacaoCliente } from '@/lib/actions/perfil-pessoal';
 
 export const metadata: Metadata = {
   title: 'Descobrir',
@@ -23,10 +24,11 @@ export const metadata: Metadata = {
 export default async function Page({ searchParams }: { searchParams: Promise<SearchParamsRaw> }) {
   const raw = await searchParams;
   const params = lerParametros(raw);
+  const localizacao = await obterLocalizacaoCliente();
 
   if (params.tipo === 'produtos') {
     const [resultado, categorias, municipios] = await Promise.all([
-      buscarProdutosDescobrir(params),
+      buscarProdutosDescobrir(params, localizacao),
       obterCategoriasProdutos(),
       obterMunicipiosProdutos(params.provincia),
     ]);
@@ -47,7 +49,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
   }
 
   const [resultado, categorias, municipios] = await Promise.all([
-    buscarServicosDescobrir(params),
+    buscarServicosDescobrir(params, localizacao),
     obterCategoriasDescobrir(),
     obterMunicipiosDescobrir(params.provincia),
   ]);

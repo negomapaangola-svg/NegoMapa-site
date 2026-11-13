@@ -8,6 +8,7 @@ import { MainLayout } from '@/components/layout/MainLayout'
 import { Avatar } from '@/components/ui/Avatar'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { PerfilPessoalForm } from '@/components/perfil/PerfilPessoalForm'
+import { LocalizacaoPreferenciasForm } from '@/components/perfil/LocalizacaoPreferenciasForm'
 
 export const metadata: Metadata = { title: 'O meu perfil | NegóMapa', description: 'Consulte e actualize os dados do seu perfil pessoal NegóMapa.' }
 const estados: Record<string,string> = { pendente:'Pendente', aprovado:'Aprovado', rejeitado:'Rejeitado', suspenso:'Suspenso' }
@@ -36,6 +37,12 @@ export default async function PerfilPage() {
     whatsapp:typeof raw.whatsapp==='string'?raw.whatsapp:null,
   }:null
   const empresas=empresasResult.data??[]
+  const [categoriasCliente, preferenciasCliente] = pessoal.account_type === 'cliente'
+    ? await Promise.all([
+        supabase.from('categorias').select('id,nome').eq('ativo', true).order('nome'),
+        supabase.from('preferencias_cliente').select('categoria_id').eq('user_id', user.id),
+      ])
+    : [{ data: [] }, { data: [] }]
   let categoriaNome:string|null=null
   if(profissional?.categoria_id){const {data}=await supabase.from('categorias').select('nome').eq('id',profissional.categoria_id).maybeSingle();categoriaNome=data?.nome??null}
   const acessos=[
@@ -50,6 +57,18 @@ export default async function PerfilPage() {
         <CardHeader><CardTitle as="h1" className="text-2xl sm:text-3xl">O meu perfil</CardTitle><p className="text-sm text-neutral-600 dark:text-cream-text">Edite os seus dados pessoais. O email e o tipo de conta são protegidos.</p></CardHeader>
         <CardContent><PerfilPessoalForm email={pessoal.email} nome={pessoal.nome} telefone={pessoal.telefone} whatsapp={pessoal.whatsapp} avatarUrl={pessoal.avatar_url}/></CardContent>
       </Card>
+      {pessoal.account_type === 'cliente' && <Card variant="liquid" padding="lg">
+        <CardHeader><CardTitle as="h2">Localização e preferências</CardTitle><p className="text-sm text-neutral-600 dark:text-cream-text">Defina a sua localização administrativa e as categorias de interesse.</p></CardHeader>
+        <CardContent><LocalizacaoPreferenciasForm
+          provinciaInicial={pessoal.localizacao_provincia}
+          municipioInicial={pessoal.localizacao_municipio}
+          bairroInicial={pessoal.localizacao_bairro}
+          consentimento={pessoal.consentimento_localizacao}
+          consentimentoActualizadoEm={pessoal.consentimento_actualizado_em}
+          categorias={(categoriasCliente.data ?? []) as { id: string; nome: string }[]}
+          preferenciasIniciais={(preferenciasCliente.data ?? []).map((item: { categoria_id: string }) => item.categoria_id)}
+        /></CardContent>
+      </Card>}
       <Card variant="liquid" padding="lg">
         <CardHeader><CardTitle as="h2">Perfis associados</CardTitle><p className="text-sm text-neutral-600 dark:text-cream-text">Tipo de conta: <strong className="capitalize">{pessoal.account_type}</strong>. Esta escolha não pode ser alterada nesta fase.</p></CardHeader>
         <CardContent className="space-y-6">

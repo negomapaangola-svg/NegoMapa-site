@@ -3,6 +3,7 @@ import 'server-only'
 import { createClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
+import { PROVINCIAS } from '@/components/home/constants'
 
 type PerfilInput = { nome: string; telefone: string; whatsapp: string; avatar_url: string }
 const emailValido = (v: string) => v.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)
@@ -17,12 +18,17 @@ async function sessao() {
 
 export async function obterPerfilPessoal() {
   const { supabase, user } = await sessao()
-  const { data, error } = await supabase.from('profiles').select('id,nome,telefone,whatsapp,avatar_url,account_type,updated_at').eq('id', user.id).maybeSingle()
+  const { data, error } = await supabase.from('profiles').select('id,nome,telefone,whatsapp,avatar_url,account_type,updated_at,localizacao_provincia,localizacao_municipio,localizacao_bairro,consentimento_localizacao,consentimento_actualizado_em').eq('id', user.id).maybeSingle()
   if (error) throw new Error('Não foi possível carregar o perfil pessoal.')
   return {
     email: user.email!, nome: data?.nome ?? '', telefone: data?.telefone ?? '',
     whatsapp: data?.whatsapp ?? '', avatar_url: data?.avatar_url ?? null,
     account_type: data?.account_type ?? null, updated_at: data?.updated_at ?? null,
+    localizacao_provincia: data?.localizacao_provincia ?? '',
+    localizacao_municipio: data?.localizacao_municipio ?? '',
+    localizacao_bairro: data?.localizacao_bairro ?? '',
+    consentimento_localizacao: data?.consentimento_localizacao ?? false,
+    consentimento_actualizado_em: data?.consentimento_actualizado_em ?? null,
   }
 }
 
@@ -50,6 +56,84 @@ export async function actualizarPerfilPessoal(input: PerfilInput) {
   } catch (e) {
     return { ok: false, message: e instanceof Error ? e.message : 'Erro ao actualizar o perfil.' }
   }
+}
+
+
+export async function obterLocalizacaoCliente(): Promise<{ provincia: string | null; municipio: string | null; bairro: string | null } | null> {
+  try {
+    const { supabase, user } = await sessao();
+    const { data, error } = await supabase.from('profiles')
+      .select('localizacao_provincia,localizacao_municipio,localizacao_bairro')
+      .eq('id', user.id).maybeSingle();
+    if (error || !data) return null;
+    return { provincia: data.localizacao_provincia ?? null, municipio: data.localizacao_municipio ?? null, bairro: data.localizacao_bairro ?? null };
+  } catch { return null; }
+}
+
+export async function actualizarLocalizacaoCliente(input: { provincia: unknown; municipio: unknown; bairro: unknown }) {
+  try {
+    const { supabase, user } = await sessao();
+    const provincia = typeof input?.provincia === 'string' ? input.provincia.trim() : '';
+    const municipio = typeof input?.municipio === 'string' ? input.municipio.trim() : '';
+    const bairro = typeof input?.bairro === 'string' ? input.bairro.trim() : '';
+    if ((provincia && !(PROVINCIAS as readonly string[]).includes(provincia)) || municipio.length > 100 || bairro.length > 100) {
+      return { ok: false, message: 'A localização excede os valores permitidos.' };
+    }
+    const { data: perfil, error: perfilError } = await supabase.from('profiles').select('account_type').eq('id', user.id).maybeSingle();
+    if (perfilError || perfil?.account_type !== 'cliente') return { ok: false, message: 'Esta opção está disponível apenas para contas de cliente.' };
+    const { error } = await supabase.from('profiles').update({
+      localizacao_provincia: provincia || null, localizacao_municipio: municipio || null, localizacao_bairro: bairro || null,
+    }).eq('id', user.id);
+    if (error) return { ok: false, message: 'Não foi possível guardar a localização.' };
+    revalidatePath('/perfil'); revalidatePath('/servicos'); revalidatePath('/descobrir'); revalidatePath('/profissionais'); revalidatePath('/empresas');
+    return { ok: true, message: 'Localização administrativa guardada.' };
+  } catch (e) { return { ok: false, message: e instanceof Error ? e.message : 'Erro ao guardar a localização.' }; }
+}
+
+export async function removerLocalizacaoCliente() {
+  try {
+    const { supabase, user } = await sessao();
+    const { data: perfil, error: perfilError } = await supabase.from('profiles').select('account_type').eq('id', user.id).maybeSingle();
+    if (perfilError || perfil?.account_type !== 'cliente') return { ok: false, message: 'Esta opção está disponível apenas para contas de cliente.' };
+    const { error } = await supabase.from('profiles').update({
+      localizacao_provincia: null, localizacao_municipio: null, localizacao_bairro: null,
+      consentimento_localizacao: false, consentimento_actualizado_em: new Date().toISOString(),
+      latitude_aproximada: null, longitude_aproximada: null,
+    }).eq('id', user.id);
+    if (error) return { ok: false, message: 'Não foi possível remover a localização.' };
+    revalidatePath('/perfil'); revalidatePath('/servicos'); revalidatePath('/descobrir'); revalidatePath('/profissionais'); revalidatePath('/empresas');
+    return { ok: true, message: 'Localização e consentimento removidos.' };
+  } catch (e) { return { ok: false, message: e instanceof Error ? e.message : 'Erro ao remover a localização.' }; }
+}
+
+export async function guardarPreferenciasCliente(categoriaIds: unknown) {
+  try {
+    const { supabase, user } = await sessao();
+    const { data: perfil, error: perfilError } = await supabase.from('profiles').select('account_type').eq('id', user.id).maybeSingle();
+    if (perfilError || perfil?.account_type !== 'cliente') return { ok: false, message: 'As preferências estão disponíveis apenas para contas de cliente.' };
+    if (!Array.isArray(categoriaIds) || categoriaIds.length > 30 ||
+      categoriaIds.some((id) => typeof id !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))) {
+      return { ok: false, message: 'A selecção de categorias é inválida.' };
+    }
+    const ids = [...new Set(categoriaIds as string[])];
+    if (ids.length) {
+      const { data: categorias, error: categoriasError } = await supabase.from('categorias').select('id').eq('ativo', true).in('id', ids);
+      if (categoriasError || (categorias ?? []).length !== ids.length) return { ok: false, message: 'Uma ou mais categorias já não estão disponíveis.' };
+      const { error: upsertError } = await supabase.from('preferencias_cliente').upsert(
+        ids.map((categoria_id) => ({ user_id: user.id, categoria_id })),
+        { onConflict: 'user_id,categoria_id', ignoreDuplicates: true },
+      );
+      if (upsertError) return { ok: false, message: 'Não foi possível guardar as preferências.' };
+      const { error: deleteError } = await supabase.from('preferencias_cliente').delete()
+        .eq('user_id', user.id).not('categoria_id', 'in', `(${ids.join(',')})`);
+      if (deleteError) return { ok: false, message: 'As novas preferências foram guardadas, mas não foi possível remover as anteriores. Tente novamente.' };
+    } else {
+      const { error } = await supabase.from('preferencias_cliente').delete().eq('user_id', user.id);
+      if (error) return { ok: false, message: 'Não foi possível limpar as preferências.' };
+    }
+    revalidatePath('/perfil'); revalidatePath('/descobrir');
+    return { ok: true, message: 'Preferências de categorias guardadas.' };
+  } catch (e) { return { ok: false, message: e instanceof Error ? e.message : 'Erro ao guardar as preferências.' }; }
 }
 
 export async function escolherTipoConta(tipo: unknown) {

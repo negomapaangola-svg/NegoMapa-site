@@ -4,6 +4,7 @@ import {
   obterIdsProfissionaisPublicosPorNome,
 } from '@/lib/actions/profissionais-publicos';
 import type { ParamsDescobrir } from './params';
+import { ordenarPorLocalizacaoAdministrativa, type LocalizacaoAdministrativa } from '@/lib/localizacao/ordenar-resultados';
 
 export const RESULTADOS_POR_PAGINA = 12;
 const LIMITE_AVALIACAO = 300;
@@ -95,7 +96,7 @@ export async function obterMunicipiosDescobrir(provincia: string): Promise<strin
   return [...new Set((data ?? []).map((linha) => linha.municipio).filter((m): m is string => Boolean(m)))].sort();
 }
 
-export async function buscarServicosDescobrir(params: ParamsDescobrir): Promise<ResultadoDescobrir> {
+export async function buscarServicosDescobrir(params: ParamsDescobrir, localizacao: LocalizacaoAdministrativa = null): Promise<ResultadoDescobrir> {
   const vazio: ResultadoDescobrir = { servicos: [], total: 0 };
   const [idsProfissionais, categorias] = await Promise.all([
     obterIdsProfissionaisPublicos(),
@@ -143,10 +144,7 @@ export async function buscarServicosDescobrir(params: ParamsDescobrir): Promise<
 
   const comFiltroAvaliacao = Boolean(params.avaliacao);
   const inicio = (params.pagina - 1) * RESULTADOS_POR_PAGINA;
-  const { data, error, count } = await query.range(
-    comFiltroAvaliacao ? 0 : inicio,
-    comFiltroAvaliacao ? LIMITE_AVALIACAO - 1 : inicio + RESULTADOS_POR_PAGINA - 1,
-  );
+  const { data, error, count } = await query.limit(comFiltroAvaliacao ? LIMITE_AVALIACAO : 1000);
 
   if (error) {
     console.error('Erro ao buscar serviços para Descobrir. Código:', error.code);
@@ -181,12 +179,14 @@ export async function buscarServicosDescobrir(params: ParamsDescobrir): Promise<
     const minimo = Number(params.avaliacao);
     resultados = resultados.filter((item) => (item.avaliacao?.media ?? 0) >= minimo);
     const totalFiltrado = resultados.length;
+    const ordenados = ordenarPorLocalizacaoAdministrativa(resultados, localizacao);
     return {
-      servicos: resultados.slice(inicio, inicio + RESULTADOS_POR_PAGINA),
+      servicos: ordenados.slice(inicio, inicio + RESULTADOS_POR_PAGINA),
       total: totalFiltrado,
       limitado: (count ?? 0) > LIMITE_AVALIACAO,
     };
   }
 
-  return { servicos: resultados, total: count ?? 0 };
+  const ordenados = ordenarPorLocalizacaoAdministrativa(resultados, localizacao);
+  return { servicos: ordenados.slice(inicio, inicio + RESULTADOS_POR_PAGINA), total: count ?? 0 };
 }

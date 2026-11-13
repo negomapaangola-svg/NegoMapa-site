@@ -8,12 +8,16 @@ import { Button } from "@/components/ui/Button"
 import { MainLayout } from "@/components/layout/MainLayout"
 import { BotaoContactarEmpresa } from "@/components/empresas/BotaoContactarEmpresa"
 import { verificarPodeContactarEmpresas } from "@/lib/actions/conversas"
+import { obterLocalizacaoCliente } from "@/lib/actions/perfil-pessoal"
+import { ordenarPorLocalizacaoAdministrativa, type LocalizacaoAdministrativa } from "@/lib/localizacao/ordenar-resultados"
 
 type Empresa = {
   id: string
   name: string
   sector: string | null
   province: string | null
+  city: string | null
+  bairro: string | null
   slug: string
   description: string | null
 }
@@ -27,17 +31,20 @@ function EmpresasContent() {
   const [nome, setNome] = React.useState("")
   const [idsContactaveis, setIdsContactaveis] = React.useState<Set<string>>(new Set())
   const [carregando, setCarregando] = React.useState(true)
+  const [localizacao, setLocalizacao] = React.useState<LocalizacaoAdministrativa>(null)
 
   React.useEffect(() => {
     let activo = true
     async function carregar() {
       const { data, error } = await supabase
         .from("empresas_publicas")
-        .select("id, name, sector, province, slug, description")
+        .select("id, name, sector, province, city, bairro, slug, description")
         .eq("is_approved", true)
         .order("name", { ascending: true })
 
+      const local = await obterLocalizacaoCliente()
       if (!activo) return
+      setLocalizacao(local)
       if (error) {
         console.error("Erro ao carregar empresas públicas. Código:", error.code)
         setEmpresas([])
@@ -70,11 +77,11 @@ function EmpresasContent() {
     return () => { activo = false }
   }, [empresas])
 
-  const filtradas = empresas.filter((empresa) =>
+  const filtradas = ordenarPorLocalizacaoAdministrativa(empresas.filter((empresa) =>
     (!setor || empresa.sector === setor) &&
     (!provincia || empresa.province === provincia) &&
     (!nome || empresa.name.toLocaleLowerCase().includes(nome.trim().toLocaleLowerCase()))
-  )
+  ).map((empresa) => ({ ...empresa, municipio: empresa.city })), localizacao)
 
   const limpar = () => {
     setSetor("")
