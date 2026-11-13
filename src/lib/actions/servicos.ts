@@ -122,6 +122,29 @@ export async function createProfile(formData: ProfileFormData): Promise<ActionRe
     return { success: false, error: 'Utilizador não autenticado' }
   }
 
+  // Impede criação profissional por contas de empresa/profissional e por clientes
+  // que já tenham escolhido uma das duas modalidades.
+  const { data: perfilConta, error: contaError } = await supabase
+    .from('profiles').select('account_type').eq('id', user.id).maybeSingle()
+  if (contaError) {
+    console.error('Erro ao validar tipo de conta. Código:', contaError.code)
+    return { success: false, error: 'Não foi possível validar a sua conta. Tente novamente.' }
+  }
+  if (perfilConta?.account_type !== 'cliente') {
+    return { success: false, error: 'Apenas contas de cliente sem perfil associado podem criar um perfil profissional.' }
+  }
+  const [empresaExistente, profissionalExistente] = await Promise.all([
+    supabase.from('companies').select('id').eq('user_id', user.id).limit(1).maybeSingle(),
+    supabase.from('profissionais').select('id').eq('user_id', user.id).limit(1).maybeSingle(),
+  ])
+  if (empresaExistente.error || profissionalExistente.error) {
+    console.error('Erro ao verificar perfis associados.', empresaExistente.error?.code, profissionalExistente.error?.code)
+    return { success: false, error: 'Não foi possível validar os perfis associados. Tente novamente.' }
+  }
+  if (empresaExistente.data || profissionalExistente.data) {
+    return { success: false, error: 'Esta conta já tem um perfil associado e não pode criar outro tipo de perfil.' }
+  }
+
   const fieldErrors = validateProfile(formData)
   if (Object.keys(fieldErrors).length > 0) {
     return { success: false, error: 'Dados inválidos', fieldErrors }
