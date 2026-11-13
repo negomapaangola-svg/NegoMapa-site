@@ -164,3 +164,36 @@ Antes de uma futura eliminação, será necessário resolver cada referência pa
 - Catálogos do Supabase podem omitir detalhes de relações internas de `auth`; a FK de `admin_users` foi reportada como CASCADE, mas o alvo não foi exposto.
 - As referências em texto/JSON/URLs e caminhos Storage não são integralmente inferíveis por FKs.
 - As políticas e triggers de Storage são extensas e geridas parcialmente pelo serviço; devem ser novamente inspeccionadas antes de qualquer operação destrutiva.
+
+
+## 9. Revisão de segurança adicional — migração de fundação administrativa
+
+Revisão baseada em catálogos e advisors do projecto original (leitura apenas; sem alterações à base de dados de produção).
+
+### Políticas administrativas
+
+As políticas admin_select_all_companies, admin_update_all_companies e admin_delete_all_companies são recriadas na migração para usar exclusivamente (SELECT public.is_admin()). A função consulta admin_users; profiles.is_admin deixa de ser uma fonte de autorização para empresas. A política users_update_own_profile continua a comparar o campo is_admin para impedir que o próprio utilizador altere esse atributo no seu perfil; essa comparação é uma salvaguarda anti-elevação, não uma concessão de privilégios.
+
+As restantes políticas administrativas inventariadas já usam is_admin() (incluindo categorias, avaliações, candidaturas, denúncias, modelos de mensagem, pedidos de serviço, imagens de produto, produtos, profissionais, serviços e vagas). Devem ser verificadas novamente no ambiente isolado após a migração.
+
+### Funções SECURITY DEFINER — classificação de permissões
+
+A migração revoga EXECUTE a PUBLIC, anon e authenticated para funções exclusivamente de trigger/event trigger: handle_updated_at(), handle_new_user_profile_b2(), produto_imagens_validar_limite(), produto_imagens_validar_minimo(), produtos_proteger_estado(), validar_servico_pedido() e rls_auto_enable(). A nova função aprovar_produto_apos_primeira_imagem() também é exclusiva de trigger e tem EXECUTE revogado para os mesmos papéis.
+
+As RPCs administrativas admin_avaliar_produto, admin_avaliar_profissional, admin_listar_profissionais, admin_registar_acesso_bi_foto, admin_obter_empresa, admin_dashboard_stats e admin_list_messages mantêm EXECUTE para authenticated, mas verificam internamente public.is_admin() antes de devolver dados ou executar alterações. A migração remove concessões a PUBLIC e anon nas RPCs explicitamente listadas.
+
+As funções auxiliares usadas em políticas RLS permanecem executáveis pelos papéis necessários: conversa_participante verifica participação pelo utilizador autenticado; empresa_dona_da_vaga e get_my_profissional_profile limitam resultados ao proprietário; obter_minha_empresa, obter_bi_proprio, obter_bi_foto_proprio e profissional_aprovado_id limitam-se ao utilizador actual; empresa_aprovada, perfil_profissional_aprovado, profissional_aprovado e vaga_disponivel_para_candidatura devolvem apenas condições de aprovação; imagem_publica_aprovada verifica apenas se o objecto corresponde a conteúdo aprovado e permanece disponível a anon para a política de Storage. criar_notificacao e purgar_acessos_bi já não concedem EXECUTE a utilizadores comuns (service_role e owner, respectivamente).
+
+### Vistas SECURITY DEFINER
+
+| Vista | Propósito e colunas expostas | Acesso | Decisão |
+|---|---|---|---|
+| vagas_publicas | Projecção pública de título, descrição, requisitos, localização, contrato e salário de vagas aprovadas de empresas aprovadas | SELECT para anon/authenticated | Manter SECURITY DEFINER deliberadamente; não expõe email, contactos privados, documentos ou dados de conta |
+| produtos_publicos | Projecção pública de produto: título, slug, descrição, preço, tipo, entrega e localização, apenas produtos aprovados de empresas aprovadas | SELECT para anon/authenticated | Manter SECURITY DEFINER deliberadamente; não expõe criador, empresa proprietária nem dados de conta |
+| produto_imagens_publicas | ID, produto_id, URL e ordem de imagens de produtos aprovados de empresas aprovadas | SELECT para anon/authenticated | Manter SECURITY DEFINER deliberadamente; só expõe metadados de imagem pública aprovada |
+
+As três vistas usam security_barrier=true; a migração revoga privilégios gerais e volta a conceder apenas SELECT a anon, authenticated e service_role. Mantém-se security_invoker=false intencionalmente: converter para invoker sem conceder privilégios adicionais sobre as tabelas-base quebraria a projecção pública; conceder SELECT amplo às tabelas-base exporia colunas privadas. O advisor security_definer_view pode continuar a reportar estas três vistas; é um aviso conhecido e documentado, não deve ser escondido nem interpretado como ausência de revisão.
+
+### Limites de validação
+
+A revisão acima é estática. A criação de uma branch Supabase isolada foi tentada, mas a API respondeu que branching só é suportado no plano Pro ou superior. Nenhuma migração foi aplicada à produção. As permissões e as políticas ainda precisam de ser confirmadas por execução numa branch isolada elegível, com sessões anon/authenticated representativas.
