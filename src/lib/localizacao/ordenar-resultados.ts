@@ -42,7 +42,7 @@ export function ordenarPorDistanciaEAdministrativa<T extends LinhaLocalizavel & 
   localizacao: LocalizacaoAdministrativa,
 ): T[] {
   const administrativas = ordenarPorLocalizacaoAdministrativa(linhas, localizacao)
-  const prioridade = new Map<T, number>(administrativas.map((linha, indice) => [linha, indice]))
+  const prioridade = new Map<T, number>(administrativas.map((linha, indice) => [linha, indice] as const))
   return [...linhas].sort((a, b) => {
     const da = typeof a.distancia_km === 'number' ? a.distancia_km : null
     const db = typeof b.distancia_km === 'number' ? b.distancia_km : null
