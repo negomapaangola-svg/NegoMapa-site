@@ -28,7 +28,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
   const localizacao = await obterLocalizacaoCliente();
 
   if (params.tipo === 'produtos') {
-    const [resultado, categorias, municipios] = await Promise.all([
+    const [resultado, categorias, municipios, recomendacoes] = await Promise.all([
       buscarProdutosDescobrir(params, localizacao),
       obterCategoriasProdutos(),
       obterMunicipiosProdutos(params.provincia),
@@ -51,7 +51,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
     );
   }
 
-  const [resultado, categorias, municipios] = await Promise.all([
+  const [resultado, categorias, municipios, recomendacoes] = await Promise.all([
     buscarServicosDescobrir(params, localizacao),
     obterCategoriasDescobrir(),
     obterMunicipiosDescobrir(params.provincia),
