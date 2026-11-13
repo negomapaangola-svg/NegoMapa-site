@@ -31,3 +31,24 @@ export function ordenarPorLocalizacaoAdministrativa<T extends LinhaLocalizavel>(
     return { linha, indice, prioridade };
   }).sort((a, b) => a.prioridade - b.prioridade || a.indice - b.indice).map(({ linha }) => linha);
 }
+
+
+/**
+ * Prioriza resultados com distância calculável (mais próximos primeiro).
+ * Os restantes mantêm a prioridade administrativa e nunca são excluídos.
+ */
+export function ordenarPorDistanciaEAdministrativa<T extends LinhaLocalizavel & { distancia_km?: number | null }>(
+  linhas: T[],
+  localizacao: LocalizacaoAdministrativa,
+): T[] {
+  const administrativas = ordenarPorLocalizacaoAdministrativa(linhas, localizacao)
+  const prioridade = new Map<T, number>(administrativas.map((linha, indice) => [linha, indice]))
+  return [...linhas].sort((a, b) => {
+    const da = typeof a.distancia_km === 'number' ? a.distancia_km : null
+    const db = typeof b.distancia_km === 'number' ? b.distancia_km : null
+    if (da !== null && db === null) return -1
+    if (da === null && db !== null) return 1
+    if (da !== null && db !== null && da !== db) return da - db
+    return (prioridade.get(a) ?? 0) - (prioridade.get(b) ?? 0)
+  })
+}
