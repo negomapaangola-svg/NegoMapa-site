@@ -62,10 +62,15 @@ export function RecomendacoesCliente({ itens }: { itens: RecomendacaoDescobrir[]
                   </p>
                 )}
                 <div className="mt-auto pt-5">
-                  <Button asChild as={Link} size="sm" variant="outline" fullWidth>
-                    <Link href={item.tipo === 'produto' ? `/produto/${item.slug}` : `/servico/${item.slug}`}>
-                      Ver detalhes
-                    </Link>
+                  <Button
+                    asChild
+                    as={Link}
+                    size="sm"
+                    variant="outline"
+                    fullWidth
+                    {...({ href: item.tipo === 'produto' ? `/produto/${item.slug}` : `/servico/${item.slug}` } as { href: string })}
+                  >
+                    Ver detalhes
                   </Button>
                 </div>
               </Card>
