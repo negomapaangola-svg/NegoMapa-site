@@ -217,3 +217,45 @@ export async function escolherTipoConta(tipo: unknown) {
     return { ok: false, message: e instanceof Error ? e.message : 'Erro ao guardar a escolha.' }
   }
 }
+
+/** Guarda GPS aproximado do cliente apenas após consentimento explícito no browser. */
+export async function guardarLocalizacaoGpsCliente(input: { latitude: unknown; longitude: unknown }) {
+  try {
+    const { supabase, user } = await sessao();
+    const latitude = Number(input?.latitude);
+    const longitude = Number(input?.longitude);
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude) ||
+      latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+      return { ok: false, message: 'A localização recebida não é válida.' };
+    }
+
+    const { data: perfil, error: perfilError } = await supabase
+      .from('profiles').select('account_type').eq('id', user.id).maybeSingle();
+    if (perfilError || perfil?.account_type !== 'cliente') {
+      return { ok: false, message: 'A localização GPS está disponível apenas para contas de cliente.' };
+    }
+
+    // O arredondamento é feito no servidor antes de qualquer gravação.
+    const latitudeAproximada = Math.round(latitude * 100) / 100;
+    const longitudeAproximada = Math.round(longitude * 100) / 100;
+    const { data, error } = await supabase.from('profiles').update({
+      latitude_aproximada: latitudeAproximada,
+      longitude_aproximada: longitudeAproximada,
+      consentimento_localizacao: true,
+      consentimento_actualizado_em: new Date().toISOString(),
+    }).eq('id', user.id).select('id').maybeSingle();
+
+    if (error || !data) {
+      if (error) console.error('Erro ao guardar GPS aproximado. Código:', error.code);
+      return { ok: false, message: 'Não foi possível guardar a localização. Pode continuar a pesquisar sem GPS.' };
+    }
+    revalidatePath('/perfil');
+    revalidatePath('/servicos');
+    revalidatePath('/descobrir');
+    revalidatePath('/profissionais');
+    revalidatePath('/empresas');
+    return { ok: true, message: 'Localização aproximada guardada com o seu consentimento.' };
+  } catch (e) {
+    return { ok: false, message: e instanceof Error ? e.message : 'Não foi possível guardar a localização.' };
+  }
+}
