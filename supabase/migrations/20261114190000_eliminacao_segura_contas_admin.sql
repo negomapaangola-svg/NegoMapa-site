@@ -689,11 +689,7 @@ CREATE POLICY users_update_own_profile
   WITH CHECK (
     id = auth.uid()
     AND negomapa_private.is_account_active(auth.uid())
-    AND NOT (
-      is_admin IS DISTINCT FROM (
-        SELECT p.is_admin FROM public.profiles p WHERE p.id = auth.uid()
-      )
-    )
+    AND is_admin IS NOT DISTINCT FROM public.is_admin()
   );
 
 DO $policy$
