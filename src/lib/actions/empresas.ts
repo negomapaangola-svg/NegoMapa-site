@@ -196,12 +196,13 @@ export async function suspenderEmpresa(empresaId: string): Promise<ActionResult>
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Sessão expirada.' }
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('companies')
     .update({ is_approved: false, estado: 'suspenso', motivo_decisao: null, decidido_em: new Date().toISOString(), decidido_por: user.id })
     .eq('id', empresaId)
+    .select('id')
 
-  if (error) {
+  if (error || !data?.length) {
     console.error('Erro ao suspender empresa. Código:', error?.code)
     return { success: false, error: 'Erro ao suspender empresa. Tente novamente.' }
   }
