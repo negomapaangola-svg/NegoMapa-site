@@ -1,118 +1,128 @@
-import { Metadata } from 'next'
-import { notFound } from 'next/navigation'
-import { isAdmin } from '@/lib/auth'
-import { MainLayout } from '@/components/layout/MainLayout'
-import { Card, CardContent } from '@/components/ui/Card'
+import type { Metadata } from 'next'
 import Link from 'next/link'
+import { notFound } from 'next/navigation'
+import { MainLayout } from '@/components/layout/MainLayout'
+import { isAdmin } from '@/lib/auth'
+import { getAdminDashboardStats, getAdminActivitySeries, type AdminMetric } from '@/lib/actions/admin-foundation'
+import { AdminActivityCharts } from './_components/AdminActivityCharts'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 export const metadata: Metadata = {
-  title: 'Painel Administrativo | NegóMapa Admin',
-  description: 'Painel de administração do NegóMapa',
+  title: 'Painel Administrativo | NegóMapa',
+  description: 'Indicadores e ferramentas de administração do NegóMapa.',
+}
+
+function number(value: AdminMetric): string {
+  return value === null ? '—' : new Intl.NumberFormat('pt-AO').format(value)
+}
+
+function percentage(part: AdminMetric, total: AdminMetric): string {
+  if (part === null || total === null || total <= 0) return '—'
+  return `${Math.round((part / total) * 100)}%`
+}
+
+function MetricCard({ label, value, detail, href, action, share }: {
+  label: string
+  value: AdminMetric
+  detail: string
+  href: string
+  action: string
+  share?: string
+}) {
+  return (
+    <article className="flex min-h-44 flex-col justify-between rounded-xl bg-white p-5 shadow-sm ring-1 ring-black/5 dark:bg-slate-900 dark:ring-white/10 sm:p-6">
+      <div>
+        <div className="flex items-start justify-between gap-3">
+          <h3 className="text-sm font-semibold text-slate-600 dark:text-slate-300">{label}</h3>
+          {share ? <span className="rounded-full bg-orange-50 px-2.5 py-1 text-xs font-semibold text-orange-800 dark:bg-orange-950/60 dark:text-orange-200">{share}</span> : null}
+        </div>
+        <p className="mt-3 text-4xl font-bold tracking-tight text-slate-950 dark:text-white sm:text-5xl">{number(value)}</p>
+        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{detail}</p>
+      </div>
+      <Link href={href} className="mt-5 inline-flex min-h-10 w-fit items-center rounded-lg bg-orange-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 dark:bg-orange-600 dark:hover:bg-orange-500 dark:focus-visible:ring-offset-slate-900">
+        {action}
+      </Link>
+    </article>
+  )
+}
+
+function Section({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
+  return (
+    <section className="space-y-3">
+      <div>
+        <h2 className="text-lg font-bold text-slate-900 dark:text-white">{title}</h2>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{description}</p>
+      </div>
+      {children}
+    </section>
+  )
 }
 
 export default async function AdminDashboardPage() {
-  const adminCheck = await isAdmin()
-  if (!adminCheck) {
-    notFound()
-  }
+  if (!(await isAdmin())) notFound()
+  const [stats, activity] = await Promise.all([getAdminDashboardStats(), getAdminActivitySeries()])
+  if (!stats || !activity) notFound()
 
   return (
     <MainLayout>
-      <div className="p-6 md:p-8 bg-cream dark:bg-navy-dark">
-        <div className="max-w-7xl mx-auto">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-ink dark:text-cream">Painel Administrativo</h1>
-            <p className="text-neutral-500 dark:text-cream-text/70 mt-1">
-              Bem-vindo ao painel de administração do NegóMapa
-            </p>
-          </div>
+      <main className="min-h-screen bg-cream px-4 py-7 dark:bg-navy-dark sm:px-6 lg:py-9">
+        <div className="mx-auto max-w-7xl space-y-9">
+          <header className="flex flex-col gap-2 border-b border-slate-200 pb-6 dark:border-slate-700 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-orange-700 dark:text-orange-400">Área restrita</p>
+              <h1 className="mt-2 text-3xl font-bold tracking-tight text-ink dark:text-cream sm:text-4xl">Painel administrativo</h1>
+              <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">Estado da plataforma, tarefas prioritárias e acesso aos registos.</p>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Indicadores actualizados na consulta</p>
+          </header>
 
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            <Card variant="default" padding="lg" className="border-card-border hover:border-orange-500 dark:hover:border-orange-400 transition-colors">
-              <Link href="/admin/denuncias" className="block">
-                <div className="flex items-start gap-4">
-                  <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-[4px]">
-                    <svg className="h-6 w-6 text-orange-500 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-ink dark:text-cream">Denúncias</h3>
-                    <p className="text-sm text-neutral-500 dark:text-cream-text/70 mt-1">Moderar denúncias de utilizadores</p>
-                  </div>
-                </div>
-              </Link>
-            </Card>
+          <Section title="Estado prioritário" description="As pendências e mensagens que exigem atenção.">
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              <MetricCard label="Profissionais pendentes" value={stats.professionalsPending} detail={`${number(stats.professionalsTotal)} profissionais registados`} href="/admin/profissionais" action="Rever profissionais" share={percentage(stats.professionalsPending, stats.professionalsTotal)} />
+              <MetricCard label="Empresas pendentes" value={stats.companiesPending} detail={`${number(stats.companiesTotal)} empresas registadas`} href="/admin/empresas" action="Rever empresas" share={percentage(stats.companiesPending, stats.companiesTotal)} />
+              <MetricCard label="Mensagens não lidas" value={stats.messagesUnread} detail={`${number(stats.messagesInboxTotal)} mensagens recebidas`} href="/admin/mensagens" action="Abrir mensagens" share={percentage(stats.messagesUnread, stats.messagesInboxTotal)} />
+            </div>
+          </Section>
 
-            <Card variant="default" padding="lg" className="border-card-border hover:border-orange-500 dark:hover:border-orange-400 transition-colors">
-              <Link href="/admin/empresas" className="block">
-                <div className="flex items-start gap-4">
-                  <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-[4px]">
-                    <svg className="h-6 w-6 text-blue-500 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-ink dark:text-cream">Empresas</h3>
-                    <p className="text-sm text-neutral-500 dark:text-cream-text/70 mt-1">Aprovar ou rejeitar empresas pendentes</p>
-                  </div>
-                </div>
-              </Link>
-            </Card>
+          <Section title="Contas e comunidade" description="Dimensão e composição das contas registadas.">
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              <MetricCard label="Total de contas" value={stats.accountsTotal} detail={`${number(stats.accountsLast7Days)} novas nos últimos 7 dias · ${number(stats.accountsLast30Days)} nos últimos 30 dias`} href="/admin/profissionais" action="Consultar contas" />
+              <MetricCard label="Profissionais" value={stats.professionalsTotal} detail={`${number(stats.professionalsApproved)} aprovados · ${number(stats.professionalsRejected)} rejeitados`} href="/admin/profissionais" action="Gerir profissionais" share={percentage(stats.professionalsApproved, stats.professionalsTotal)} />
+              <MetricCard label="Empresas" value={stats.companiesTotal} detail={`${number(stats.companiesApproved)} aprovadas · ${number(stats.companiesRejected)} rejeitadas`} href="/admin/empresas" action="Gerir empresas" share={percentage(stats.companiesApproved, stats.companiesTotal)} />
+            </div>
+          </Section>
 
-            <Card variant="default" padding="lg" className="border-card-border hover:border-orange-500 dark:hover:border-orange-400 transition-colors">
-              <Link href="/admin/servicos" className="block">
-                <div className="flex items-start gap-4">
-                  <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-[4px]">
-                    <svg className="h-6 w-6 text-green-500 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-ink dark:text-cream">Serviços</h3>
-                    <p className="text-sm text-neutral-500 dark:text-cream-text/70 mt-1">Gerenciar serviços cadastrados</p>
-                  </div>
-                </div>
-              </Link>
-            </Card>
+          <Section title="Gestão de contas" description="Ferramentas administrativas para gerir contas sem apagar os respectivos registos.">
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              <MetricCard label="Desactivação segura" value={stats.accountsTotal} detail="Clientes, profissionais e empresas com histórico preservado" href="/admin/contas" action="Eliminar conta" />
+            </div>
+          </Section>
 
-            <Card variant="default" padding="lg" className="border-card-border hover:border-orange-500 dark:hover:border-orange-400 transition-colors">
-              <Link href="/admin/vagas" className="block">
-                <div className="flex items-start gap-4">
-                  <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-[4px]">
-                    <svg className="h-6 w-6 text-purple-500 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-ink dark:text-cream">Vagas</h3>
-                    <p className="text-sm text-neutral-500 dark:text-cream-text/70 mt-1">Gerenciar vagas de emprego</p>
-                  </div>
-                </div>
-              </Link>
-            </Card>
+          <Section title="Publicações" description="Conteúdos e oportunidades disponíveis na plataforma.">
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              <MetricCard label="Serviços activos" value={stats.servicesActive} detail={`${number(stats.servicesTotal)} serviços registados`} href="/admin/servicos" action="Ver serviços" share={percentage(stats.servicesActive, stats.servicesTotal)} />
+              <MetricCard label="Produtos activos" value={stats.productsActive} detail={`${number(stats.productsTotal)} produtos registados`} href="/admin/conteudos?tipo=produtos" action="Ver produtos" share={percentage(stats.productsActive, stats.productsTotal)} />
+              <MetricCard label="Vagas activas" value={stats.vacanciesActive} detail={`${number(stats.vacanciesTotal)} vagas registadas`} href="/admin/vagas" action="Ver vagas" share={percentage(stats.vacanciesActive, stats.vacanciesTotal)} />
+            </div>
+          </Section>
 
-            <Card variant="default" padding="lg" className="border-card-border hover:border-orange-500 dark:hover:border-orange-400 transition-colors">
-              <Link href="/admin/profissionais" className="block">
-                <div className="flex items-start gap-4">
-                  <div className="p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-[4px]">
-                    <svg className="h-6 w-6 text-indigo-500 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2m12-10a4 4 0 100-8 4 4 0 000 8zM20 21v-2a4 4 0 00-3-3.87M14 3.13a4 4 0 010 7.75" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-ink dark:text-cream">Gestão de profissionais</h3>
-                    <p className="text-sm text-neutral-500 dark:text-cream-text/70 mt-1">Aprovar, rejeitar e consultar profissionais registados</p>
-                  </div>
-                </div>
-              </Link>
-            </Card>
-          </div>
+          <Section title="Actividade e acompanhamento" description="Registos operacionais que podem exigir consulta.">
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              <MetricCard label="Candidaturas" value={stats.applicationsTotal} detail="Candidaturas registadas" href="/admin/conteudos?tipo=candidaturas" action="Ver candidaturas" />
+              <MetricCard label="Pedidos" value={stats.requestsTotal} detail="Pedidos de serviço registados" href="/admin/conteudos?tipo=pedidos" action="Ver pedidos" />
+              <MetricCard label="Denúncias" value={stats.alertsTotal} detail="Denúncias submetidas" href="/admin/denuncias" action="Consultar denúncias" />
+            </div>
+          </Section>
+
+          <AdminActivityCharts series={activity} />
+
+          <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">
+            As percentagens representam a proporção da métrica indicada sobre o total correspondente. Quando não existe denominador válido, é apresentado “—”. Visitantes e analytics não são apresentados porque não existe uma fonte de dados confirmada para essas métricas.
+          </p>
         </div>
-      </div>
+      </main>
     </MainLayout>
   )
 }

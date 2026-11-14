@@ -42,10 +42,10 @@ export function AuthUserMenu({ variante = 'cabecalho', onNavigate }: { variante?
   const link = (item: ItemNavegacao) => <Link key={item.id} href={item.rota} onClick={() => { setAberto(false); onNavigate?.() }} aria-label={item.rotulo} aria-current={pathname === item.rota || (item.rota !== '/' && pathname.startsWith(item.rota + '/')) ? 'page' : undefined} className={classeLink}>{item.rotulo}</Link>
 
   if (!lista) {
-    if (!contexto.autenticado) return <Link href="/login" aria-label="Entrar na conta" title="Entrar" className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-card-border bg-white/70 text-navy transition-colors hover:border-orange-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:bg-navy-dark/70 dark:text-cream"><IconePerfil /></Link>
+    if (!contexto.autenticado) return <Link href="/login" aria-label="Entrar na conta" title="Entrar" className="inline-flex h-11 w-11 min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full border border-card-border bg-white/70 text-navy transition-colors hover:border-orange-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:bg-navy-dark/70 dark:text-cream"><IconePerfil /></Link>
     const itemPerfil = ITENS_NAVEGACAO.find((i) => i.id === 'perfil')!
-    return <div className="relative">
-      <button type="button" onClick={() => setAberto((valor) => !valor)} aria-expanded={aberto} aria-haspopup="true" aria-label="Abrir menu da conta" title="A minha conta" className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-card-border bg-white/70 text-navy transition-colors hover:border-orange-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:bg-navy-dark/70 dark:text-cream"><IconePerfil /></button>
+    return <div className="relative shrink-0">
+      <button type="button" onClick={() => setAberto((valor) => !valor)} aria-expanded={aberto} aria-haspopup="true" aria-label="Abrir menu da conta" title="A minha conta" className="inline-flex h-11 w-11 min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full border border-card-border bg-white/70 text-navy transition-colors hover:border-orange-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:bg-navy-dark/70 dark:text-cream"><IconePerfil /></button>
       {aberto && <div aria-label="Menu da conta" className="absolute right-0 top-14 z-[250] w-64 rounded-2xl border border-card-border bg-white p-3 shadow-xl dark:bg-neutral-900">
         <div className="px-3 pb-2 text-xs text-neutral-500">A minha conta</div>
         <div className="space-y-1">
