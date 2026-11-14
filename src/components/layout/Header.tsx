@@ -40,22 +40,22 @@ export const Header = forwardRef<HTMLElement, { className?: string; hideGlobalSe
 
     return <>
       <a href="#main-content" className="skip-link">Ir para o conteúdo principal</a>
-      <header ref={ref} className={cn('liquid-glass-navbar sticky top-0 z-200 w-full', className)} role="banner">
-        <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8">
+      <header ref={ref} className={cn('liquid-glass-navbar sticky top-0 z-200 w-full min-w-0 overflow-x-clip', className)} role="banner">
+        <div className="mx-auto w-full min-w-0 max-w-7xl px-3 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between gap-2 sm:gap-4">
             <div className="flex min-w-0 items-center gap-2">
-              <Link href="/" aria-label="NegóMapa - Página inicial" className="inline-flex min-h-11 items-center rounded-full px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"><img src={isDark ? '/identidade/logo-negomapa-fundo-escuro.svg' : '/identidade/logo-negomapa-fundo-claro.svg'} alt="NegóMapa" className="h-8 w-auto max-w-[120px] object-contain sm:h-10 sm:max-w-[180px]" width="560" height="120" /></Link>
-              <nav aria-label="Navegação principal" className="hidden items-center gap-0.5 lg:flex xl:gap-1">
+              <Link href="/" aria-label="NegóMapa - Página inicial" className="inline-flex min-h-11 shrink-0 items-center rounded-full px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"><img src={isDark ? '/identidade/logo-negomapa-fundo-escuro.svg' : '/identidade/logo-negomapa-fundo-claro.svg'} alt="NegóMapa" className="site-header-logo block h-8 w-auto max-h-8 max-w-[120px] shrink-0 object-contain sm:h-10 sm:max-h-10 sm:max-w-[160px]" width="560" height="120" /></Link>
+              <nav aria-label="Navegação principal" className="hidden min-w-0 items-center gap-0.5 xl:flex xl:gap-1">
                 {linksCabecalho.map((item) => <Link key={item.id} href={item.rota} aria-current={estaActivo(item.rota) ? 'page' : undefined} className={cn('inline-flex min-h-11 items-center whitespace-nowrap rounded-full px-2 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500', estaActivo(item.rota) ? 'bg-orange-500/10 text-orange-700 dark:text-orange-400' : 'text-neutral-800 hover:bg-white/50 hover:text-orange-600 dark:text-cream-text dark:hover:bg-white/10 dark:hover:text-orange-400')}>{item.rotulo}</Link>)}
               </nav>
             </div>
             <div className="flex min-w-0 items-center gap-1 sm:gap-2">
               {!hideGlobalSearch && <div className="hidden min-w-0 flex-1 justify-end md:flex lg:max-w-xs"><PesquisaGlobal /></div>}
               <Link href="/descobrir" aria-label="Pesquisar" className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-card-border bg-white/70 text-navy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:bg-navy-dark/70 dark:text-cream md:hidden"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></Link>
-              {publicar && <Link href={publicar.href} className="hidden min-h-11 items-center rounded-full bg-orange-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-orange-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 lg:inline-flex">{publicar.label}</Link>}
+              {publicar && <Link href={publicar.href} className="hidden min-h-11 shrink-0 items-center rounded-full bg-orange-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-orange-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 xl:inline-flex">{publicar.label}</Link>}
               <AuthUserMenu />
               {contexto?.autenticado && <NotificacoesBotao />}
-              <button type="button" onClick={() => setMenuAberto(true)} aria-expanded={menuAberto} aria-controls="mobile-menu" aria-label="Abrir menu" className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-card-border bg-white/70 text-navy transition-colors hover:border-orange-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:bg-navy-dark/70 dark:text-cream lg:hidden"><IconeMenu /></button>
+              <button type="button" onClick={() => setMenuAberto(true)} aria-expanded={menuAberto} aria-controls="mobile-menu" aria-label="Abrir menu" className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full border border-card-border bg-white/70 text-navy transition-colors hover:border-orange-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:bg-navy-dark/70 dark:text-cream xl:hidden"><IconeMenu /></button>
             </div>
           </div>
           {!hideGlobalSearch && <div className="pb-3 md:hidden"><PesquisaGlobal /></div>}
