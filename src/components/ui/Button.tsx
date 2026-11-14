@@ -23,8 +23,8 @@ const baseStyles = `
 
 const variants = {
   primary: `
-    bg-orange-500 text-white
-    hover:bg-orange-600
+    bg-orange-700 text-white
+    hover:bg-orange-800 dark:bg-orange-600 dark:hover:bg-orange-500
     shadow-sm hover:shadow-md
   `,
   secondary: `
