@@ -116,7 +116,9 @@ BEGIN
         'avaliacoes', (SELECT count(*) FROM public.avaliacoes av WHERE av.profissional_id = prf.id OR av.user_id = p.id),
         'denuncias', (SELECT count(*) FROM public.denuncias d WHERE d.profissional_id = prf.id OR d.user_id = p.id),
         'candidaturas', (SELECT count(*) FROM public.candidaturas ca WHERE ca.user_id = p.id),
-        'notificacoes', (SELECT count(*) FROM public.notificacoes n WHERE n.user_id = p.id)
+        'notificacoes', (SELECT count(*) FROM public.notificacoes n WHERE n.user_id = p.id),
+        'preferencias', (SELECT count(*) FROM public.preferencias_notificacao pn WHERE pn.user_id = p.id),
+        'mensagens_administrativas', (SELECT count(*) FROM public.admin_messages am WHERE am.sender_id = p.id OR am.recipient_id = p.id)
       )
       WHEN 'empresa' THEN jsonb_build_object(
         'vagas', (SELECT count(*) FROM public.vagas v WHERE v.company_id = co.id),
@@ -128,7 +130,9 @@ BEGIN
         'candidaturas', (SELECT count(*) FROM public.candidaturas ca JOIN public.vagas v ON v.id = ca.vaga_id WHERE v.company_id = co.id),
         'avaliacoes', (SELECT count(*) FROM public.avaliacoes av WHERE av.company_id = co.id OR av.user_id = p.id),
         'denuncias', (SELECT count(*) FROM public.denuncias d WHERE d.company_id = co.id OR d.user_id = p.id),
-        'notificacoes', (SELECT count(*) FROM public.notificacoes n WHERE n.user_id = p.id)
+        'notificacoes', (SELECT count(*) FROM public.notificacoes n WHERE n.user_id = p.id),
+        'preferencias', (SELECT count(*) FROM public.preferencias_notificacao pn WHERE pn.user_id = p.id),
+        'mensagens_administrativas', (SELECT count(*) FROM public.admin_messages am WHERE am.sender_id = p.id OR am.recipient_id = p.id)
       )
       ELSE jsonb_build_object(
         'candidaturas', (SELECT count(*) FROM public.candidaturas ca WHERE ca.user_id = p.id),
@@ -141,7 +145,8 @@ BEGIN
         'denuncias', (SELECT count(*) FROM public.denuncias d WHERE d.user_id = p.id),
         'preferencias', (SELECT count(*) FROM public.preferencias_cliente pc WHERE pc.user_id = p.id),
         'notificacoes', (SELECT count(*) FROM public.notificacoes n WHERE n.user_id = p.id),
-        'mensagens_administrativas', (SELECT count(*) FROM public.admin_messages am WHERE am.sender_id = p.id OR am.recipient_id = p.id)
+        'mensagens_administrativas', (SELECT count(*) FROM public.admin_messages am WHERE am.sender_id = p.id OR am.recipient_id = p.id),
+        'preferencias_notificacao', (SELECT count(*) FROM public.preferencias_notificacao pn WHERE pn.user_id = p.id)
       )
     END
   FROM public.profiles p
