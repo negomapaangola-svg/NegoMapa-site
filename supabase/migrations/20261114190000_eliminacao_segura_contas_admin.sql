@@ -196,7 +196,7 @@ BEGIN
   IF p_account_id IS NULL OR p_account_id = auth.uid() THEN
     RAISE EXCEPTION 'Conta inválida ou não é permitido eliminar a própria conta' USING ERRCODE = '22023';
   END IF;
-  IF p_account_type NOT IN ('cliente', 'profissional', 'empresa') THEN
+  IF p_account_type IS NULL OR p_account_type NOT IN ('cliente', 'profissional', 'empresa') THEN
     RAISE EXCEPTION 'Tipo de conta inválido' USING ERRCODE = '22023';
   END IF;
   IF p_reason IS NULL OR char_length(btrim(p_reason)) < 10 OR char_length(btrim(p_reason)) > 1000 THEN
@@ -214,7 +214,7 @@ BEGIN
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Conta não encontrada' USING ERRCODE = 'P0002';
   END IF;
-  IF COALESCE(v_profile.account_type, 'cliente') <> p_account_type THEN
+  IF COALESCE(v_profile.account_type, 'cliente') IS DISTINCT FROM p_account_type THEN
     RAISE EXCEPTION 'O tipo de conta não corresponde ao registo actual' USING ERRCODE = '22023';
   END IF;
   IF v_profile.is_active IS FALSE THEN
@@ -287,6 +287,402 @@ REVOKE ALL ON FUNCTION public.admin_update_account_deletion_auth_status(uuid, te
 GRANT EXECUTE ON FUNCTION public.admin_list_account_deletion_candidates() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_deactivate_account(uuid, text, text, boolean) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_update_account_deletion_auth_status(uuid, text) TO authenticated;
+
+-- A conta desactivada perde também acesso às linhas próprias e às listagens directas.
+-- A remoção das políticas DELETE evita que esta área administrativa faça hard delete
+-- de perfis profissionais/empresas e active cascatas sobre dados relacionados.
+DROP POLICY IF EXISTS admin_delete_all_companies ON public.companies;
+
+DROP POLICY IF EXISTS anon_select_approved_companies ON public.companies;
+CREATE POLICY anon_select_approved_companies
+  ON public.companies FOR SELECT TO anon
+  USING (
+    is_approved = true
+    AND EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = companies.user_id AND p.is_active = true)
+  );
+
+DROP POLICY IF EXISTS auth_select_approved_and_own_companies ON public.companies;
+CREATE POLICY auth_select_approved_and_own_companies
+  ON public.companies FOR SELECT TO authenticated
+  USING (
+    (
+      is_approved = true
+      AND EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = companies.user_id AND p.is_active = true)
+    )
+    OR (
+      user_id = auth.uid()
+      AND EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.is_active = true)
+    )
+  );
+
+DROP POLICY IF EXISTS auth_insert_own_company ON public.companies;
+CREATE POLICY auth_insert_own_company
+  ON public.companies FOR INSERT TO authenticated
+  WITH CHECK (
+    user_id = auth.uid()
+    AND (is_approved = false OR is_approved IS NULL)
+    AND EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.is_active = true)
+  );
+
+DROP POLICY IF EXISTS auth_update_own_company_not_approved ON public.companies;
+CREATE POLICY auth_update_own_company_not_approved
+  ON public.companies FOR UPDATE TO authenticated
+  USING (
+    user_id = auth.uid()
+    AND (is_approved = false OR is_approved IS NULL)
+    AND EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.is_active = true)
+  )
+  WITH CHECK (
+    user_id = auth.uid()
+    AND (is_approved = false OR is_approved IS NULL)
+    AND EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.is_active = true)
+  );
+
+DROP POLICY IF EXISTS profissionais_all_admin ON public.profissionais;
+CREATE POLICY profissionais_admin_select
+  ON public.profissionais FOR SELECT TO authenticated
+  USING (public.is_admin());
+CREATE POLICY profissionais_admin_update
+  ON public.profissionais FOR UPDATE TO authenticated
+  USING (public.is_admin())
+  WITH CHECK (public.is_admin());
+
+DROP POLICY IF EXISTS profissionais_delete_auth ON public.profissionais;
+DROP POLICY IF EXISTS profissionais_select_anon ON public.profissionais;
+CREATE POLICY profissionais_select_anon
+  ON public.profissionais FOR SELECT TO anon
+  USING (
+    estado = 'aprovado'
+    AND EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = profissionais.user_id AND p.is_active = true)
+  );
+
+DROP POLICY IF EXISTS profissionais_select_auth ON public.profissionais;
+CREATE POLICY profissionais_select_auth
+  ON public.profissionais FOR SELECT TO authenticated
+  USING (
+    (
+      estado = 'aprovado'
+      AND EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = profissionais.user_id AND p.is_active = true)
+    )
+    OR (
+      user_id = auth.uid()
+      AND EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.is_active = true)
+    )
+  );
+
+DROP POLICY IF EXISTS profissionais_insert_auth ON public.profissionais;
+CREATE POLICY profissionais_insert_auth
+  ON public.profissionais FOR INSERT TO authenticated
+  WITH CHECK (
+    user_id = auth.uid()
+    AND EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.is_active = true)
+  );
+
+DROP POLICY IF EXISTS profissionais_update_auth ON public.profissionais;
+CREATE POLICY profissionais_update_auth
+  ON public.profissionais FOR UPDATE TO authenticated
+  USING (
+    user_id = auth.uid()
+    AND EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.is_active = true)
+  )
+  WITH CHECK (
+    user_id = auth.uid()
+    AND EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.is_active = true)
+  );
+
+DROP POLICY IF EXISTS servicos_select_anon ON public.servicos;
+CREATE POLICY servicos_select_anon
+  ON public.servicos FOR SELECT TO anon
+  USING (
+    estado = 'aprovado'
+    AND EXISTS (
+      SELECT 1 FROM public.profissionais p
+      JOIN public.profiles pr ON pr.id = p.user_id
+      WHERE p.id = servicos.profissional_id
+        AND p.estado = 'aprovado'
+        AND pr.is_active = true
+    )
+  );
+
+DROP POLICY IF EXISTS servicos_select_auth ON public.servicos;
+CREATE POLICY servicos_select_auth
+  ON public.servicos FOR SELECT TO authenticated
+  USING (
+    (
+      estado = 'aprovado'
+      AND EXISTS (
+        SELECT 1 FROM public.profissionais p
+        JOIN public.profiles pr ON pr.id = p.user_id
+        WHERE p.id = servicos.profissional_id
+          AND p.estado = 'aprovado'
+          AND pr.is_active = true
+      )
+    )
+    OR (
+      profissional_id IN (
+        SELECT p.id FROM public.profissionais p
+        JOIN public.profiles pr ON pr.id = p.user_id
+        WHERE p.user_id = auth.uid() AND pr.is_active = true
+      )
+    )
+  );
+
+DROP POLICY IF EXISTS servicos_insert_auth ON public.servicos;
+CREATE POLICY servicos_insert_auth
+  ON public.servicos FOR INSERT TO authenticated
+  WITH CHECK (
+    profissional_id IN (
+      SELECT p.id FROM public.profissionais p
+      JOIN public.profiles pr ON pr.id = p.user_id
+      WHERE p.user_id = auth.uid() AND pr.is_active = true
+    )
+  );
+
+DROP POLICY IF EXISTS servicos_update_auth ON public.servicos;
+CREATE POLICY servicos_update_auth
+  ON public.servicos FOR UPDATE TO authenticated
+  USING (
+    profissional_id IN (
+      SELECT p.id FROM public.profissionais p
+      JOIN public.profiles pr ON pr.id = p.user_id
+      WHERE p.user_id = auth.uid() AND pr.is_active = true
+    )
+  )
+  WITH CHECK (
+    profissional_id IN (
+      SELECT p.id FROM public.profissionais p
+      JOIN public.profiles pr ON pr.id = p.user_id
+      WHERE p.user_id = auth.uid() AND pr.is_active = true
+    )
+  );
+
+DROP POLICY IF EXISTS servicos_delete_auth ON public.servicos;
+CREATE POLICY servicos_delete_auth
+  ON public.servicos FOR DELETE TO authenticated
+  USING (
+    profissional_id IN (
+      SELECT p.id FROM public.profissionais p
+      JOIN public.profiles pr ON pr.id = p.user_id
+      WHERE p.user_id = auth.uid() AND pr.is_active = true
+    )
+  );
+
+DROP POLICY IF EXISTS vagas_select_anon ON public.vagas;
+CREATE POLICY vagas_select_anon
+  ON public.vagas FOR SELECT TO anon
+  USING (
+    estado = 'aprovado'
+    AND company_id IN (
+      SELECT c.id FROM public.companies c
+      JOIN public.profiles p ON p.id = c.user_id
+      WHERE c.is_approved = true AND p.is_active = true
+    )
+  );
+
+DROP POLICY IF EXISTS vagas_select_auth ON public.vagas;
+CREATE POLICY vagas_select_auth
+  ON public.vagas FOR SELECT TO authenticated
+  USING (
+    (
+      estado = 'aprovado'
+      AND company_id IN (
+        SELECT c.id FROM public.companies c
+        JOIN public.profiles p ON p.id = c.user_id
+        WHERE c.is_approved = true AND p.is_active = true
+      )
+    )
+    OR (
+      company_id IN (
+        SELECT c.id FROM public.companies c
+        JOIN public.profiles p ON p.id = c.user_id
+        WHERE c.user_id = auth.uid() AND p.is_active = true
+      )
+    )
+  );
+
+DROP POLICY IF EXISTS vagas_insert_auth ON public.vagas;
+CREATE POLICY vagas_insert_auth
+  ON public.vagas FOR INSERT TO authenticated
+  WITH CHECK (
+    company_id IN (
+      SELECT c.id FROM public.companies c
+      JOIN public.profiles p ON p.id = c.user_id
+      WHERE c.user_id = auth.uid() AND p.is_active = true
+    )
+  );
+
+DROP POLICY IF EXISTS vagas_update_auth ON public.vagas;
+CREATE POLICY vagas_update_auth
+  ON public.vagas FOR UPDATE TO authenticated
+  USING (
+    company_id IN (
+      SELECT c.id FROM public.companies c
+      JOIN public.profiles p ON p.id = c.user_id
+      WHERE c.user_id = auth.uid() AND p.is_active = true
+    )
+  )
+  WITH CHECK (
+    company_id IN (
+      SELECT c.id FROM public.companies c
+      JOIN public.profiles p ON p.id = c.user_id
+      WHERE c.user_id = auth.uid() AND p.is_active = true
+    )
+  );
+
+DROP POLICY IF EXISTS vagas_delete_auth ON public.vagas;
+CREATE POLICY vagas_delete_auth
+  ON public.vagas FOR DELETE TO authenticated
+  USING (
+    company_id IN (
+      SELECT c.id FROM public.companies c
+      JOIN public.profiles p ON p.id = c.user_id
+      WHERE c.user_id = auth.uid() AND p.is_active = true
+    )
+  );
+
+DROP POLICY IF EXISTS produtos_select_publico ON public.produtos;
+CREATE POLICY produtos_select_publico
+  ON public.produtos FOR SELECT TO anon, authenticated
+  USING (
+    estado_aprovacao = 'aprovado'
+    AND EXISTS (
+      SELECT 1 FROM public.companies c
+      JOIN public.profiles p ON p.id = c.user_id
+      WHERE c.id = produtos.company_id AND c.is_approved = true AND p.is_active = true
+    )
+  );
+
+DROP POLICY IF EXISTS produtos_select_proprietario ON public.produtos;
+CREATE POLICY produtos_select_proprietario
+  ON public.produtos FOR SELECT TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.companies c
+      JOIN public.profiles p ON p.id = c.user_id
+      WHERE c.id = produtos.company_id AND c.user_id = auth.uid() AND p.is_active = true
+    )
+  );
+
+DROP POLICY IF EXISTS produtos_insert_proprietario ON public.produtos;
+CREATE POLICY produtos_insert_proprietario
+  ON public.produtos FOR INSERT TO authenticated
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.companies c
+      JOIN public.profiles p ON p.id = c.user_id
+      WHERE c.id = produtos.company_id AND c.user_id = auth.uid() AND p.is_active = true
+    )
+  );
+
+DROP POLICY IF EXISTS produtos_update_proprietario ON public.produtos;
+CREATE POLICY produtos_update_proprietario
+  ON public.produtos FOR UPDATE TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.companies c
+      JOIN public.profiles p ON p.id = c.user_id
+      WHERE c.id = produtos.company_id AND c.user_id = auth.uid() AND p.is_active = true
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.companies c
+      JOIN public.profiles p ON p.id = c.user_id
+      WHERE c.id = produtos.company_id AND c.user_id = auth.uid() AND p.is_active = true
+    )
+  );
+
+DROP POLICY IF EXISTS produtos_delete_proprietario ON public.produtos;
+CREATE POLICY produtos_delete_proprietario
+  ON public.produtos FOR DELETE TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.companies c
+      JOIN public.profiles p ON p.id = c.user_id
+      WHERE c.id = produtos.company_id AND c.user_id = auth.uid() AND p.is_active = true
+    )
+  );
+
+DROP POLICY IF EXISTS produto_imagens_select_publico ON public.produto_imagens;
+CREATE POLICY produto_imagens_select_publico
+  ON public.produto_imagens FOR SELECT TO anon, authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.produtos p
+      JOIN public.companies c ON c.id = p.company_id
+      JOIN public.profiles pr ON pr.id = c.user_id
+      WHERE p.id = produto_imagens.produto_id
+        AND p.estado_aprovacao = 'aprovado'
+        AND c.is_approved = true
+        AND pr.is_active = true
+    )
+  );
+
+DROP POLICY IF EXISTS produto_imagens_select_proprietario ON public.produto_imagens;
+CREATE POLICY produto_imagens_select_proprietario
+  ON public.produto_imagens FOR SELECT TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.produtos p
+      JOIN public.companies c ON c.id = p.company_id
+      JOIN public.profiles pr ON pr.id = c.user_id
+      WHERE p.id = produto_imagens.produto_id
+        AND c.user_id = auth.uid()
+        AND pr.is_active = true
+    )
+  );
+
+DROP POLICY IF EXISTS produto_imagens_insert_proprietario ON public.produto_imagens;
+CREATE POLICY produto_imagens_insert_proprietario
+  ON public.produto_imagens FOR INSERT TO authenticated
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.produtos p
+      JOIN public.companies c ON c.id = p.company_id
+      JOIN public.profiles pr ON pr.id = c.user_id
+      WHERE p.id = produto_imagens.produto_id
+        AND c.user_id = auth.uid()
+        AND pr.is_active = true
+    )
+  );
+
+DROP POLICY IF EXISTS produto_imagens_update_proprietario ON public.produto_imagens;
+CREATE POLICY produto_imagens_update_proprietario
+  ON public.produto_imagens FOR UPDATE TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.produtos p
+      JOIN public.companies c ON c.id = p.company_id
+      JOIN public.profiles pr ON pr.id = c.user_id
+      WHERE p.id = produto_imagens.produto_id
+        AND c.user_id = auth.uid()
+        AND pr.is_active = true
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.produtos p
+      JOIN public.companies c ON c.id = p.company_id
+      JOIN public.profiles pr ON pr.id = c.user_id
+      WHERE p.id = produto_imagens.produto_id
+        AND c.user_id = auth.uid()
+        AND pr.is_active = true
+    )
+  );
+
+DROP POLICY IF EXISTS produto_imagens_delete_proprietario ON public.produto_imagens;
+CREATE POLICY produto_imagens_delete_proprietario
+  ON public.produto_imagens FOR DELETE TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.produtos p
+      JOIN public.companies c ON c.id = p.company_id
+      JOIN public.profiles pr ON pr.id = c.user_id
+      WHERE p.id = produto_imagens.produto_id
+        AND c.user_id = auth.uid()
+        AND pr.is_active = true
+    )
+  );
 
 -- As vistas públicas mantêm as colunas existentes e excluem contas desactivadas.
 CREATE OR REPLACE VIEW public.empresas_publicas AS
