@@ -332,8 +332,8 @@ export async function getAdminActivitySeries(): Promise<AdminActivitySeries | nu
   const startIso = start.toISOString()
 
   const result: AdminActivitySeries = {
-    // A política de profiles permite leitura do próprio registo, não leitura
-    // administrativa em massa. Sem RPC temporal aprovada, não inferir contas.
+    // Contagens protegidas por RPC administrativa: nunca são lidos perfis ou
+    // conteúdo de mensagens privadas através da sessão do administrador.
     accounts: null,
     professionals: null,
     companies: null,
@@ -346,7 +346,68 @@ export async function getAdminActivitySeries(): Promise<AdminActivitySeries | nu
     alerts: null,
   }
 
-  const sources = await Promise.all(
+  const [privateSeries, sources] = await Promise.all([
+    supabase.rpc('admin_activity_private_series', {
+      p_start_date: start.toISOString().slice(0, 10),
+      p_days: 90,
+    }),
+    Promise.all(
+      ACTIVITY_SOURCES.map(async (source) => ({
+        id: source.id,
+        dates: await readAdminActivityDates(supabase, source.table, source.column, startIso),
+      }))
+    ),
+  ])
+
+  if (privateSeries.error) {
+    // Até a migração de RPC estar aplicada, estas duas séries ficam indisponíveis.
+    console.error('[admin-activity] protected series unavailable:', privateSeries.error.code)
+  } else {
+    const privateCounts: Record<'accounts' | 'messages', Map<string, number>> = {
+      accounts: new Map(),
+      messages: new Map(),
+    }
+
+    for (const row of privateSeries.data ?? []) {
+      if (row.metric !== 'accounts' && row.metric !== 'messages') continue
+      const date = typeof row.activity_date === 'string' ? row.activity_date : ''
+      const value = typeof row.value === 'number' ? row.value : Number(row.value)
+      if (/^\\d{4}-\\d{2}-\\d{2}$/.test(date) && Number.isFinite(value) && value >= 0) {
+        privateCounts[row.metric].set(date, value)
+      }
+    }
+
+    for (const metric of ['accounts', 'messages'] as const) {
+      result[metric] = Array.from({ length: 90 }, (_, day) => {
+        const date = new Date(start)
+        date.setUTCDate(start.getUTCDate() + day)
+        const key = date.toISOString().slice(0, 10)
+        return { date: key, value: privateCounts[metric].get(key) ?? 0 }
+      })
+    }
+  }
+
+  for (const source of sources) {
+    if (source.dates === null) {
+      result[source.id] = null
+      continue
+    }
+
+    const counts = new Map<string, number>()
+    for (const date of source.dates) counts.set(date, (counts.get(date) ?? 0) + 1)
+
+    const points: AdminActivityPoint[] = []
+    for (let day = 0; day < 90; day += 1) {
+      const date = new Date(start)
+      date.setUTCDate(start.getUTCDate() + day)
+      const key = date.toISOString().slice(0, 10)
+      points.push({ date: key, value: counts.get(key) ?? 0 })
+    }
+    result[source.id] = points
+  }
+
+  return result
+}
     ACTIVITY_SOURCES.map(async (source) => ({
       id: source.id,
       dates: await readAdminActivityDates(supabase, source.table, source.column, startIso),
