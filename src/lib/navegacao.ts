@@ -28,6 +28,7 @@ export const ITENS_NAVEGACAO: ItemNavegacao[] = [
  {id:'painel-profissional',rotulo:'Painel do profissional',rota:'/profissional/painel',regras:['profissional'],locais:['menu_mobile']},
  {id:'painel-empresa',rotulo:'Painel da empresa',rota:'/empresa/painel',regras:['empresa'],locais:['menu_mobile']},
  {id:'administracao',rotulo:'Administração',rota:'/admin',regras:['administrador'],locais:['menu_mobile']},
+ {id:'eliminar-conta',rotulo:'Eliminar conta',rota:'/admin/contas',regras:['administrador'],locais:['menu_mobile']},
  {id:'sair',rotulo:'Sair',rota:'#sair',regras:['autenticado'],locais:['menu_mobile']},
  {id:'contacto',rotulo:'Contacto',rota:'/contacto',regras:['publico'],locais:['menu_mobile','rodape']},
  {id:'termos',rotulo:'Termos e condições',rota:'/termos',regras:['publico'],locais:['menu_mobile','rodape']},
@@ -56,7 +57,7 @@ export function podeVerItem(item: ItemNavegacao, c: ContextoNavegacao): boolean 
 export const GRUPOS_MENU_MOBILE = [
  {id:'explorar',titulo:'Explorar',itens:['inicio','descobrir','servicos','profissionais','empresas','produtos','vagas']},
  {id:'publicar',titulo:'Publicar',itens:['publicar-servico','publicar-vaga','cadastrar-empresa','cadastrar-profissional']},
- {id:'conta',titulo:'A minha conta',itens:['perfil','candidaturas','mensagens','pedidos','painel-profissional','painel-empresa','administracao','entrar','registar','sair']},
+ {id:'conta',titulo:'A minha conta',itens:['perfil','candidaturas','mensagens','pedidos','painel-profissional','painel-empresa','administracao','eliminar-conta','entrar','registar','sair']},
  {id:'configuracoes',titulo:'Configurações',itens:['configuracoes','notificacoes','preferencias']},
  {id:'apoio',titulo:'Apoio',itens:['contacto','termos','privacidade','cookies','regras-empresas','regras-profissionais']},
 ] as const
