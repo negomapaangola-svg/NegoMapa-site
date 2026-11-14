@@ -34,6 +34,7 @@ export type AdminDashboardStats = {
   applicationsTotal: AdminMetric
   requestsTotal: AdminMetric
   messagesTotal: AdminMetric
+  messagesInboxTotal: AdminMetric
   messagesUnread: AdminMetric
   alertsTotal: AdminMetric
 }
@@ -44,7 +45,7 @@ const METRIC_KEYS: Array<keyof AdminDashboardStats> = [
   'professionalsTotal', 'professionalsPending', 'professionalsApproved', 'professionalsRejected',
   'companiesTotal', 'companiesPending', 'companiesApproved', 'companiesRejected',
   'servicesTotal', 'servicesActive', 'productsTotal', 'productsActive', 'vacanciesTotal', 'vacanciesActive', 'applicationsTotal',
-  'requestsTotal', 'messagesTotal', 'messagesUnread', 'alertsTotal',
+  'requestsTotal', 'messagesTotal', 'messagesInboxTotal', 'messagesUnread', 'alertsTotal',
 ]
 
 function emptyDashboardStats(): AdminDashboardStats {
@@ -69,14 +70,16 @@ export async function getAdminDashboardStats(): Promise<AdminDashboardStats | nu
     const value = values[key]
     result[key] = typeof value === 'number' && Number.isFinite(value) ? value : null
   }
-  const [services, products, vacancies] = await Promise.all([
+  const [services, products, vacancies, inbox] = await Promise.all([
     supabase.from('servicos').select('id', { count: 'exact', head: true }).eq('estado', 'aprovado'),
     supabase.from('produtos').select('id', { count: 'exact', head: true }).eq('estado_aprovacao', 'aprovado'),
     supabase.from('vagas').select('id', { count: 'exact', head: true }).eq('estado', 'aprovado'),
+    supabase.from('admin_messages').select('id', { count: 'exact', head: true }).is('recipient_id', null),
   ])
   result.servicesActive = services.error ? null : services.count ?? 0
   result.productsActive = products.error ? null : products.count ?? 0
   result.vacanciesActive = vacancies.error ? null : vacancies.count ?? 0
+  result.messagesInboxTotal = inbox.error ? null : inbox.count ?? 0
   return result
 }
 
@@ -183,8 +186,6 @@ export async function replyToAdminMessage(
     return { success: false, error: 'Não foi possível enviar a resposta.' }
   }
 
-  const readResult = await markAdminMessageRead(messageId)
-  if (!readResult.success) return { success: false, error: 'A resposta foi enviada, mas não foi possível marcar a mensagem original como lida.' }
   revalidatePath('/admin/mensagens')
   return { success: true }
 }
