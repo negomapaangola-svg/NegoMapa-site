@@ -81,7 +81,7 @@ export default async function AdminDashboardPage() {
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               <MetricCard label="Profissionais pendentes" value={stats.professionalsPending} detail={`${number(stats.professionalsTotal)} profissionais registados`} href="/admin/profissionais" action="Rever profissionais" share={percentage(stats.professionalsPending, stats.professionalsTotal)} />
               <MetricCard label="Empresas pendentes" value={stats.companiesPending} detail={`${number(stats.companiesTotal)} empresas registadas`} href="/admin/empresas" action="Rever empresas" share={percentage(stats.companiesPending, stats.companiesTotal)} />
-              <MetricCard label="Mensagens não lidas" value={stats.messagesUnread} detail={`${number(stats.messagesTotal)} mensagens administrativas`} href="/admin/mensagens" action="Abrir mensagens" share={percentage(stats.messagesUnread, stats.messagesTotal)} />
+              <MetricCard label="Mensagens não lidas" value={stats.messagesUnread} detail={`${number(stats.messagesInboxTotal)} mensagens recebidas`} href="/admin/mensagens" action="Abrir mensagens" share={percentage(stats.messagesUnread, stats.messagesInboxTotal)} />
             </div>
           </Section>
 
