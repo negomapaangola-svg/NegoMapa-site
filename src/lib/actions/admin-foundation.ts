@@ -353,7 +353,6 @@ export async function getAdminActivitySeries(): Promise<AdminActivitySeries | nu
     }))
   )
 
-  const totals = new Map<string, number>()
   for (const source of sources) {
     if (source.dates === null) {
       result[source.id] = null
