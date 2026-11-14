@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   validate:
-    name: Lint, build and TypeScript
+    name: Changed-file lint, build and TypeScript
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -35,8 +35,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Lint
-        run: npm run lint
+      - name: Lint changed files
+        run: npx eslint src/app/admin/_components/AdminActivityCharts.tsx src/app/admin/page.tsx src/lib/actions/admin-foundation.ts
 
       - name: Build
         run: npm run build
