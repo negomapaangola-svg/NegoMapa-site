@@ -3,7 +3,8 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { MainLayout } from '@/components/layout/MainLayout'
 import { isAdmin } from '@/lib/auth'
-import { getAdminDashboardStats, type AdminMetric } from '@/lib/actions/admin-foundation'
+import { getAdminDashboardStats, getAdminActivitySeries, type AdminMetric } from '@/lib/actions/admin-foundation'
+import { AdminActivityCharts } from './_components/AdminActivityCharts'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -61,8 +62,8 @@ function Section({ title, description, children }: { title: string; description:
 
 export default async function AdminDashboardPage() {
   if (!(await isAdmin())) notFound()
-  const stats = await getAdminDashboardStats()
-  if (!stats) notFound()
+  const [stats, activity] = await Promise.all([getAdminDashboardStats(), getAdminActivitySeries()])
+  if (!stats || !activity) notFound()
 
   return (
     <MainLayout>
@@ -108,6 +109,8 @@ export default async function AdminDashboardPage() {
               <MetricCard label="Denúncias" value={stats.alertsTotal} detail="Denúncias submetidas" href="/admin/denuncias" action="Consultar denúncias" />
             </div>
           </Section>
+
+          <AdminActivityCharts series={activity} />
 
           <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">
             As percentagens representam a proporção da métrica indicada sobre o total correspondente. Quando não existe denominador válido, é apresentado “—”. Visitantes e analytics não são apresentados porque não existe uma fonte de dados confirmada para essas métricas.
