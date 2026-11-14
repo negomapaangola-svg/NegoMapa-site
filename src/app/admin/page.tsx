@@ -94,6 +94,12 @@ export default async function AdminDashboardPage() {
             </div>
           </Section>
 
+          <Section title="Gestão de contas" description="Ferramentas administrativas para gerir contas sem apagar os respectivos registos.">
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              <MetricCard label="Desactivação segura" value={stats.accountsTotal} detail="Clientes, profissionais e empresas com histórico preservado" href="/admin/contas" action="Eliminar conta" />
+            </div>
+          </Section>
+
           <Section title="Publicações" description="Conteúdos e oportunidades disponíveis na plataforma.">
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               <MetricCard label="Serviços activos" value={stats.servicesActive} detail={`${number(stats.servicesTotal)} serviços registados`} href="/admin/servicos" action="Ver serviços" share={percentage(stats.servicesActive, stats.servicesTotal)} />
