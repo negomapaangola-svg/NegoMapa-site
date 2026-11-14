@@ -307,7 +307,7 @@ async function readAdminActivityDates(
     }
 
     for (const row of data ?? []) {
-      const value = (row as Record<string, unknown>)[column]
+      const value = (row as unknown as Record<string, unknown>)[column]
       if (typeof value === 'string' && Number.isFinite(Date.parse(value))) {
         dates.push(value.slice(0, 10))
       }
