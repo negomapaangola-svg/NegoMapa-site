@@ -368,12 +368,17 @@ export async function getAdminActivitySeries(): Promise<AdminActivitySeries | nu
       messages: new Map(),
     }
 
-    for (const row of privateSeries.data ?? []) {
+    for (const row of (privateSeries.data ?? []) as Array<{
+      metric: string
+      activity_date: string
+      value: number | string
+    }>) {
       if (row.metric !== 'accounts' && row.metric !== 'messages') continue
+      const metric = row.metric as 'accounts' | 'messages'
       const date = typeof row.activity_date === 'string' ? row.activity_date : ''
       const value = typeof row.value === 'number' ? row.value : Number(row.value)
       if (/^\d{4}-\d{2}-\d{2}$/.test(date) && Number.isFinite(value) && value >= 0) {
-        privateCounts[row.metric].set(date, value)
+        privateCounts[metric].set(date, value)
       }
     }
 
