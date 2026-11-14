@@ -38,9 +38,17 @@ export function AdminMessagesClient({ initialMessages }: Props) {
   function run(action: () => Promise<{ success: boolean; error?: string }>) {
     startTransition(async () => {
       const result = await action()
-      setFeedback(result.success ? 'Alteração guardada.' : result.error || 'Não foi possível concluir a operação.')
+      if (!result.success) {
+        setFeedback(result.error || 'Não foi possível concluir a operação.')
+        return
+      }
       const updated = await getAdminMessages(filter)
-      if (updated) setMessages(updated)
+      if (updated) {
+        setMessages(updated)
+        setFeedback('Alteração guardada.')
+      } else {
+        setFeedback('A alteração foi enviada, mas não foi possível actualizar a lista. Actualize a página para confirmar o estado.')
+      }
     })
   }
 
