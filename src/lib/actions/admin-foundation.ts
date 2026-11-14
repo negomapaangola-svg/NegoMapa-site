@@ -372,7 +372,7 @@ export async function getAdminActivitySeries(): Promise<AdminActivitySeries | nu
       if (row.metric !== 'accounts' && row.metric !== 'messages') continue
       const date = typeof row.activity_date === 'string' ? row.activity_date : ''
       const value = typeof row.value === 'number' ? row.value : Number(row.value)
-      if (/^\\d{4}-\\d{2}-\\d{2}$/.test(date) && Number.isFinite(value) && value >= 0) {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(date) && Number.isFinite(value) && value >= 0) {
         privateCounts[row.metric].set(date, value)
       }
     }
@@ -386,33 +386,6 @@ export async function getAdminActivitySeries(): Promise<AdminActivitySeries | nu
       })
     }
   }
-
-  for (const source of sources) {
-    if (source.dates === null) {
-      result[source.id] = null
-      continue
-    }
-
-    const counts = new Map<string, number>()
-    for (const date of source.dates) counts.set(date, (counts.get(date) ?? 0) + 1)
-
-    const points: AdminActivityPoint[] = []
-    for (let day = 0; day < 90; day += 1) {
-      const date = new Date(start)
-      date.setUTCDate(start.getUTCDate() + day)
-      const key = date.toISOString().slice(0, 10)
-      points.push({ date: key, value: counts.get(key) ?? 0 })
-    }
-    result[source.id] = points
-  }
-
-  return result
-}
-    ACTIVITY_SOURCES.map(async (source) => ({
-      id: source.id,
-      dates: await readAdminActivityDates(supabase, source.table, source.column, startIso),
-    }))
-  )
 
   for (const source of sources) {
     if (source.dates === null) {
