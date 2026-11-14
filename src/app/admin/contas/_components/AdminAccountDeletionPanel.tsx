@@ -28,6 +28,7 @@ const DEPENDENCY_LABELS: Record<string, string> = {
   preferencias: 'Preferências',
   notificacoes: 'Notificações',
   mensagens_administrativas: 'Mensagens administrativas',
+  preferencias_notificacao: 'Preferências de notificação',
 }
 
 function countDependencies(dependencies: Record<string, number>) {
@@ -76,7 +77,13 @@ export function AdminAccountDeletionPanel({ accounts, audit }: Props) {
 
     const target = selected
     startTransition(async () => {
-      const result = await eliminarContaAdmin(target.account_id, target.account_type, reason, confirmation)
+      let result: Awaited<ReturnType<typeof eliminarContaAdmin>>
+      try {
+        result = await eliminarContaAdmin(target.account_id, target.account_type, reason, confirmation)
+      } catch {
+        setFeedback({ success: false, text: 'O servidor não conseguiu concluir a operação. Verifique o estado da conta e da auditoria antes de repetir.' })
+        return
+      }
       if (!result.success) {
         setFeedback({ success: false, text: result.error || 'Não foi possível concluir a operação.' })
         return
@@ -114,7 +121,7 @@ export function AdminAccountDeletionPanel({ accounts, audit }: Props) {
       ) : null}
 
       {selected ? (
-        <section role="dialog" aria-modal="true" aria-labelledby="confirm-delete-title" className="space-y-4 rounded-xl border-2 border-red-300 bg-white p-4 shadow-sm dark:border-red-900 dark:bg-slate-900 sm:p-6">
+        <section aria-labelledby="confirm-delete-title" className="space-y-4 rounded-xl border-2 border-red-300 bg-white p-4 shadow-sm dark:border-red-900 dark:bg-slate-900 sm:p-6">
           <div>
             <h2 id="confirm-delete-title" className="text-lg font-bold text-slate-950 dark:text-white">Confirmar desactivação da conta</h2>
             <p className="mt-2 text-sm text-slate-700 dark:text-slate-300">
@@ -127,7 +134,7 @@ export function AdminAccountDeletionPanel({ accounts, audit }: Props) {
 
           <div className="space-y-2">
             <label htmlFor="account-deletion-reason" className="block text-sm font-semibold text-slate-800 dark:text-slate-200">Motivo obrigatório</label>
-            <textarea id="account-deletion-reason" value={reason} onChange={(event) => setReason(event.target.value)}
+            <textarea autoFocus id="account-deletion-reason" value={reason} onChange={(event) => setReason(event.target.value)}
               minLength={10} maxLength={1000} rows={4} required
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:border-slate-600 dark:bg-slate-950 dark:text-white"
               placeholder="Registe o motivo administrativo (mínimo 10 caracteres)." />
@@ -145,7 +152,7 @@ export function AdminAccountDeletionPanel({ accounts, audit }: Props) {
           <div className="flex flex-col gap-2 sm:flex-row">
             <button type="button" onClick={confirmDeletion} disabled={pending || reason.trim().length < 10 || confirmation !== 'ELIMINAR'}
               className="inline-flex min-h-11 items-center justify-center rounded-lg border border-red-700 bg-red-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-red-600 dark:bg-red-700 dark:hover:bg-red-600 dark:focus-visible:ring-offset-slate-900">
-              {pending ? 'A desactivar…' : 'Confirmar eliminação segura'}
+              {pending ? 'A desactivar…' : 'Confirmar desactivação segura'}
             </button>
             <button type="button" onClick={cancelConfirmation} disabled={pending}
               className="inline-flex min-h-11 items-center justify-center rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 disabled:opacity-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800">
