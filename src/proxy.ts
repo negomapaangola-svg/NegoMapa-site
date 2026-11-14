@@ -39,7 +39,7 @@ export async function proxy(request: NextRequest) {
   }
 
   let accountType = perfil?.account_type ?? null
-  if (profileError?.code === '42703') {
+  if ((profileError?.code === '42703' || profileError?.code === 'PGRST204')) {
     // Compatibilidade temporária com ambientes onde a migração ainda não foi aplicada.
     const { data: perfilLegado, error: legacyError } = await supabase
       .from('profiles')
