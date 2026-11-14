@@ -679,6 +679,61 @@ CREATE POLICY produto_imagens_delete_proprietario
     )
   );
 
+-- Bloqueio transversal de acesso a dados com JWTs ainda válidos.
+-- O perfil continua legível pelo próprio utilizador para que o login apresente
+-- a mensagem de conta desactivada; todas as restantes tabelas exigem conta activa.
+DROP POLICY IF EXISTS users_update_own_profile ON public.profiles;
+CREATE POLICY users_update_own_profile
+  ON public.profiles FOR UPDATE TO authenticated
+  USING (id = auth.uid() AND negomapa_private.is_account_active(auth.uid()))
+  WITH CHECK (
+    id = auth.uid()
+    AND negomapa_private.is_account_active(auth.uid())
+    AND NOT (
+      is_admin IS DISTINCT FROM (
+        SELECT p.is_admin FROM public.profiles p WHERE p.id = auth.uid()
+      )
+    )
+  );
+
+DO $policy$
+DECLARE
+  v_table text;
+  v_tables text[] := ARRAY[
+    'admin_acessos_bi',
+    'admin_messages',
+    'admin_users',
+    'avaliacoes',
+    'candidaturas',
+    'categorias',
+    'companies',
+    'contact_submissions',
+    'conversas',
+    'denuncias',
+    'mensagens',
+    'modelos_mensagem',
+    'notificacoes',
+    'pedidos_servico',
+    'preferencias_cliente',
+    'preferencias_notificacao',
+    'produto_imagens',
+    'produtos',
+    'profissionais',
+    'servicos',
+    'vagas',
+    'admin_account_deletion_audit'
+  ];
+BEGIN
+  FOREACH v_table IN ARRAY v_tables LOOP
+    EXECUTE format('DROP POLICY IF EXISTS active_account_required ON public.%I', v_table);
+    EXECUTE format(
+      'CREATE POLICY active_account_required ON public.%I AS RESTRICTIVE FOR ALL TO authenticated USING (negomapa_private.is_account_active(auth.uid())) WITH CHECK (negomapa_private.is_account_active(auth.uid()))',
+      v_table
+    );
+  END LOOP;
+END;
+$policy$;
+
 -- As vistas públicas mantêm as colunas existentes e excluem contas desactivadas.
 CREATE OR REPLACE VIEW public.empresas_publicas AS
 SELECT
