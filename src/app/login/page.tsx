@@ -49,6 +49,12 @@ function LoginForm() {
         Bem-vindo de volta ao NegóMapa.
       </p>
 
+      {searchParams.get("erro") === "conta-desactivada" && !error && (
+        <div role="alert" className="mb-4 rounded-[4px] bg-red-100 p-3 text-sm text-red-800 dark:bg-red-900 dark:text-red-200">
+          Esta conta está desactivada. Contacte a administração da plataforma.
+        </div>
+      )}
+
       {searchParams.get("erro") === "confirmacao" && !error && (
         <div className="mb-4 p-3 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded-[4px] text-sm">
           Não foi possível confirmar o seu email. Tente novamente ou crie a conta de novo.
