@@ -256,3 +256,57 @@ body {
 .skip-link:focus {
   top: 0;
 }
+
+/* Protecção global contra overflow horizontal em ecrãs estreitos. */
+html,
+body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+body,
+body * {
+  min-width: 0;
+}
+
+img,
+video,
+canvas,
+iframe,
+svg {
+  max-width: 100%;
+}
+
+img,
+video {
+  height: auto;
+}
+
+:where(p, a, span, li, dt, dd, th, td, h1, h2, h3, h4, h5, h6) {
+  overflow-wrap: anywhere;
+}
+
+table {
+  width: 100%;
+  max-width: 100%;
+  table-layout: fixed;
+}
+
+th,
+td {
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+pre {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+@media (max-width: 639px) {
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
