@@ -279,7 +279,6 @@ const ACTIVITY_SOURCES: Array<{
   { id: 'vacancies', table: 'vagas', column: 'created_at' },
   { id: 'applications', table: 'candidaturas', column: 'criada_em' },
   { id: 'requests', table: 'pedidos_servico', column: 'criada_em' },
-  { id: 'messages', table: 'admin_messages', column: 'created_at' },
   { id: 'alerts', table: 'denuncias', column: 'created_at' },
 ]
 
