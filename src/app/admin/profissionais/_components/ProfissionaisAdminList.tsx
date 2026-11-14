@@ -145,7 +145,7 @@ export function ProfissionaisAdminList({ profissionais }: Props) {
         )}
         {profissional.estado !== 'suspenso' && (
           <Button
-            variant="secondary"
+            variant="destructive"
             size="sm"
             disabled={!SUSPENSAO_DISPONIVEL || pending}
             title={SUSPENSAO_DISPONIVEL ? undefined : 'Indisponível até a migração de suspensão ser aplicada.'}
