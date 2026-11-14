@@ -26,8 +26,26 @@ export async function loginAction(formData: FormData) {
     return { error: error.message }
   }
 
-  if (!data.session) {
+  if (!data.session || !data.user) {
     return { error: 'Sessão não criada. Tente novamente.' }
+  }
+
+  // A coluna só existe depois da migração de desactivação segura.
+  // Em ambientes ainda sem migração, mantém-se o fluxo de autenticação anterior.
+  const { data: profileStatus, error: profileStatusError } = await supabase
+    .from('profiles')
+    .select('is_active')
+    .eq('id', data.user.id)
+    .maybeSingle()
+
+  if (!profileStatusError && profileStatus?.is_active === false) {
+    await supabase.auth.signOut({ scope: 'local' })
+    return { error: 'Esta conta está desactivada. Contacte a administração da plataforma.' }
+  }
+
+  if (profileStatusError && profileStatusError.code !== '42703') {
+    await supabase.auth.signOut({ scope: 'local' })
+    return { error: 'Não foi possível confirmar o estado da conta. Tente novamente.' }
   }
 
   const adminCheck = await isAdmin()
