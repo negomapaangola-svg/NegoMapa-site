@@ -95,9 +95,9 @@ export default async function AdminDashboardPage() {
 
           <Section title="Publicações" description="Conteúdos e oportunidades disponíveis na plataforma.">
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              <MetricCard label="Serviços registados" value={stats.servicesTotal} detail="Total de serviços na plataforma" href="/admin/servicos" action="Ver serviços" />
-              <MetricCard label="Produtos activos" value={stats.productsTotal} detail="Total de produtos registados" href="/admin/conteudos?tipo=produtos" action="Ver produtos" />
-              <MetricCard label="Vagas registadas" value={stats.vacanciesTotal} detail="Total de vagas na plataforma" href="/admin/vagas" action="Ver vagas" />
+              <MetricCard label="Serviços activos" value={stats.servicesActive} detail={`${number(stats.servicesTotal)} serviços registados`} href="/admin/servicos" action="Ver serviços" />
+              <MetricCard label="Produtos activos" value={stats.productsActive} detail={`${number(stats.productsTotal)} produtos registados`} href="/admin/conteudos?tipo=produtos" action="Ver produtos" />
+              <MetricCard label="Vagas activas" value={stats.vacanciesActive} detail={`${number(stats.vacanciesTotal)} vagas registadas`} href="/admin/vagas" action="Ver vagas" />
             </div>
           </Section>
 
