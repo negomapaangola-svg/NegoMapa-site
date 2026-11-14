@@ -78,7 +78,7 @@ export function AuthUserMenu({ variante = 'cabecalho', onNavigate }: { variante?
       </section>
     })}
     <section aria-labelledby="menu-tema">
-      <h2 id="menu-tema" className="px-3 pb-1 text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-cream-text/70">{grupo.titulo}</h2>
+      <h2 id="menu-tema" className="px-3 pb-1 text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-cream-text/70">Tema</h2>
       <div className="grid grid-cols-3 gap-2 px-3">{(['claro', 'escuro', 'sistema'] as const).map((opcao) => <button key={opcao} type="button" onClick={() => definirTema(opcao)} className="min-h-11 rounded-lg border border-card-border px-2 text-sm capitalize focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500">{opcao}</button>)}</div>
     </section>
   </nav>
