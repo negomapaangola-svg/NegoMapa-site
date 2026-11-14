@@ -113,23 +113,23 @@ export default async function AdminContentPage({
           ) : rows.length === 0 ? (
             <p className="rounded-lg bg-neutral-50 px-4 py-8 text-center text-sm text-neutral-600 dark:bg-neutral-900 dark:text-neutral-300">Não foram encontrados registos.</p>
           ) : (
-            <div className="overflow-x-auto rounded-lg border border-neutral-200 dark:border-neutral-800">
-              <table className="w-full min-w-[680px] border-collapse text-left text-sm">
-                <thead className="bg-neutral-100 text-xs uppercase tracking-wide text-neutral-500 dark:bg-neutral-900 dark:text-neutral-400">
-                  <tr><th className="px-4 py-3 font-semibold">Registo</th><th className="px-4 py-3 font-semibold">Estado</th><th className="px-4 py-3 font-semibold">Data</th><th className="px-4 py-3 font-semibold">Referência</th><th className="px-4 py-3 font-semibold">ID</th></tr>
-                </thead>
-                <tbody className="divide-y divide-neutral-200 dark:divide-neutral-800">
-                  {rows.map((row) => (
-                    <tr key={row.id} className="bg-white dark:bg-neutral-950">
-                      <td className="px-4 py-3 font-medium text-neutral-900 dark:text-neutral-100">{row.title}</td>
-                      <td className="px-4 py-3 text-neutral-700 dark:text-neutral-300">{row.status}</td>
-                      <td className="px-4 py-3 whitespace-nowrap text-neutral-600 dark:text-neutral-400">{new Date(row.createdAt).toLocaleDateString('pt-PT')}</td>
-                      <td className="px-4 py-3 text-xs text-neutral-500 dark:text-neutral-400">{row.detail}</td>
-                      <td className="px-4 py-3 font-mono text-xs text-neutral-500 dark:text-neutral-400">{row.id}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {rows.map((row) => (
+                <article key={row.id} className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-black/5 dark:bg-slate-900 dark:ring-white/10">
+                  <div className="flex items-start justify-between gap-3">
+                    <h2 className="min-w-0 break-words text-base font-semibold text-slate-950 dark:text-white">{row.title || 'Registo sem título'}</h2>
+                    <span className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">{row.status || 'Sem estado'}</span>
+                  </div>
+                  <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">Criado em {new Date(row.createdAt).toLocaleDateString('pt-PT')}</p>
+                  <details className="mt-4 border-t border-slate-200 pt-3 text-sm dark:border-slate-700">
+                    <summary className="min-h-10 cursor-pointer content-center font-semibold text-orange-800 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:text-orange-300">Ver detalhes</summary>
+                    <dl className="mt-3 space-y-2">
+                      <div><dt className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Referência</dt><dd className="break-words text-slate-800 dark:text-slate-200">{row.detail}</dd></div>
+                      <div><dt className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Identificador</dt><dd className="break-all font-mono text-xs text-slate-600 dark:text-slate-300">{row.id}</dd></div>
+                    </dl>
+                  </details>
+                </article>
+              ))}
             </div>
           )}
           <p className="mt-4 text-xs text-neutral-500 dark:text-neutral-400">Por segurança, esta primeira versão é de consulta. A edição e remoção de registos dependem de regras de integridade e de Storage específicas para cada tipo de conteúdo.</p>
