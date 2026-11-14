@@ -49,7 +49,7 @@ export function AdminActivityCharts({ series }: { series: AdminActivitySeries })
 
   const selected = METRICS.find((item) => item.id === metric) ?? METRICS[0]
   const points = useMemo(() => (series[metric] ?? []).slice(-period), [series, metric, period])
-  const hasData = points.length > 0 && points.some((point) => point.value > 0)
+  const hasData = points.length > 0
   const total = points.reduce((sum, point) => sum + point.value, 0)
   const peak = points.reduce((max, point) => Math.max(max, point.value), 0)
   const line = hasData ? buildLine(points) : ''
