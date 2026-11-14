@@ -26,8 +26,11 @@ export type AdminDashboardStats = {
   companiesApproved: AdminMetric
   companiesRejected: AdminMetric
   servicesTotal: AdminMetric
+  servicesActive: AdminMetric
   productsTotal: AdminMetric
+  productsActive: AdminMetric
   vacanciesTotal: AdminMetric
+  vacanciesActive: AdminMetric
   applicationsTotal: AdminMetric
   requestsTotal: AdminMetric
   messagesTotal: AdminMetric
@@ -40,7 +43,7 @@ const METRIC_KEYS: Array<keyof AdminDashboardStats> = [
   'accountsProfessional', 'accountsCompany', 'accountsLast7Days', 'accountsLast30Days',
   'professionalsTotal', 'professionalsPending', 'professionalsApproved', 'professionalsRejected',
   'companiesTotal', 'companiesPending', 'companiesApproved', 'companiesRejected',
-  'servicesTotal', 'productsTotal', 'vacanciesTotal', 'applicationsTotal',
+  'servicesTotal', 'servicesActive', 'productsTotal', 'productsActive', 'vacanciesTotal', 'vacanciesActive', 'applicationsTotal',
   'requestsTotal', 'messagesTotal', 'messagesUnread', 'alertsTotal',
 ]
 
@@ -66,6 +69,14 @@ export async function getAdminDashboardStats(): Promise<AdminDashboardStats | nu
     const value = values[key]
     result[key] = typeof value === 'number' && Number.isFinite(value) ? value : null
   }
+  const [services, products, vacancies] = await Promise.all([
+    supabase.from('servicos').select('id', { count: 'exact', head: true }).eq('estado', 'aprovado'),
+    supabase.from('produtos').select('id', { count: 'exact', head: true }).eq('estado_aprovacao', 'aprovado'),
+    supabase.from('vagas').select('id', { count: 'exact', head: true }).eq('estado', 'aprovado'),
+  ])
+  result.servicesActive = services.error ? null : services.count ?? 0
+  result.productsActive = products.error ? null : products.count ?? 0
+  result.vacanciesActive = vacancies.error ? null : vacancies.count ?? 0
   return result
 }
 
@@ -101,13 +112,14 @@ export async function markAdminMessageRead(messageId: string): Promise<{ success
   }
 
   const supabase = await createSupabaseServerClient()
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('admin_messages')
     .update({ read_at: new Date().toISOString() })
     .eq('id', messageId)
     .is('recipient_id', null)
+    .select('id')
 
-  if (error) return { success: false, error: 'Não foi possível actualizar a mensagem.' }
+  if (error || !data?.length) return { success: false, error: 'Não foi possível actualizar a mensagem ou a mensagem já não está disponível.' }
   revalidatePath('/admin')
   revalidatePath('/admin/mensagens')
   return { success: true }
@@ -119,13 +131,14 @@ export async function archiveAdminMessage(messageId: string): Promise<{ success:
   }
 
   const supabase = await createSupabaseServerClient()
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('admin_messages')
     .update({ archived_at: new Date().toISOString() })
     .eq('id', messageId)
     .is('recipient_id', null)
+    .select('id')
 
-  if (error) return { success: false, error: 'Não foi possível arquivar a mensagem.' }
+  if (error || !data?.length) return { success: false, error: 'Não foi possível arquivar a mensagem ou a mensagem já não está disponível.' }
   revalidatePath('/admin')
   revalidatePath('/admin/mensagens')
   return { success: true }
@@ -170,7 +183,8 @@ export async function replyToAdminMessage(
     return { success: false, error: 'Não foi possível enviar a resposta.' }
   }
 
-  await markAdminMessageRead(messageId)
+  const readResult = await markAdminMessageRead(messageId)
+  if (!readResult.success) return { success: false, error: 'A resposta foi enviada, mas não foi possível marcar a mensagem original como lida.' }
   revalidatePath('/admin/mensagens')
   return { success: true }
 }
