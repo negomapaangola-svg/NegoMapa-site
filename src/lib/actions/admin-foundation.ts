@@ -246,3 +246,132 @@ export async function getMyAdminMessages(): Promise<Array<{
   }
   return data ?? []
 }
+
+
+export type AdminActivityMetricId =
+  | 'accounts'
+  | 'professionals'
+  | 'companies'
+  | 'services'
+  | 'products'
+  | 'vacancies'
+  | 'applications'
+  | 'requests'
+  | 'messages'
+  | 'alerts'
+
+export type AdminActivityPoint = {
+  date: string
+  value: number
+}
+
+export type AdminActivitySeries = Record<AdminActivityMetricId, AdminActivityPoint[] | null>
+
+const ACTIVITY_SOURCES: Array<{
+  id: Exclude<AdminActivityMetricId, 'accounts'>
+  table: string
+  column: string
+}> = [
+  { id: 'professionals', table: 'profissionais', column: 'created_at' },
+  { id: 'companies', table: 'companies', column: 'created_at' },
+  { id: 'services', table: 'servicos', column: 'created_at' },
+  { id: 'products', table: 'produtos', column: 'created_at' },
+  { id: 'vacancies', table: 'vagas', column: 'created_at' },
+  { id: 'applications', table: 'candidaturas', column: 'criada_em' },
+  { id: 'requests', table: 'pedidos_servico', column: 'criada_em' },
+  { id: 'messages', table: 'admin_messages', column: 'created_at' },
+  { id: 'alerts', table: 'denuncias', column: 'created_at' },
+]
+
+async function readAdminActivityDates(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  table: string,
+  column: string,
+  startIso: string
+): Promise<string[] | null> {
+  const dates: string[] = []
+  const pageSize = 1000
+  let offset = 0
+
+  while (offset < 100000) {
+    const { data, error } = await supabase
+      .from(table)
+      .select(column)
+      .gte(column, startIso)
+      .order(column, { ascending: true })
+      .range(offset, offset + pageSize - 1)
+
+    if (error) {
+      console.error('[admin-activity] source unavailable:', table, error.code)
+      return null
+    }
+
+    for (const row of data ?? []) {
+      const value = (row as Record<string, unknown>)[column]
+      if (typeof value === 'string' && Number.isFinite(Date.parse(value))) {
+        dates.push(value.slice(0, 10))
+      }
+    }
+
+    if (!data || data.length < pageSize) return dates
+    offset += pageSize
+  }
+
+  // Não apresentar uma série truncada como se fosse completa.
+  console.error('[admin-activity] source exceeded safe pagination limit:', table)
+  return null
+}
+
+export async function getAdminActivitySeries(): Promise<AdminActivitySeries | null> {
+  if (!(await isAdmin())) return null
+
+  const supabase = await createSupabaseServerClient()
+  const start = new Date()
+  start.setUTCHours(0, 0, 0, 0)
+  start.setUTCDate(start.getUTCDate() - 89)
+  const startIso = start.toISOString()
+
+  const result: AdminActivitySeries = {
+    // A política de profiles permite leitura do próprio registo, não leitura
+    // administrativa em massa. Sem RPC temporal aprovada, não inferir contas.
+    accounts: null,
+    professionals: null,
+    companies: null,
+    services: null,
+    products: null,
+    vacancies: null,
+    applications: null,
+    requests: null,
+    messages: null,
+    alerts: null,
+  }
+
+  const sources = await Promise.all(
+    ACTIVITY_SOURCES.map(async (source) => ({
+      id: source.id,
+      dates: await readAdminActivityDates(supabase, source.table, source.column, startIso),
+    }))
+  )
+
+  const totals = new Map<string, number>()
+  for (const source of sources) {
+    if (source.dates === null) {
+      result[source.id] = null
+      continue
+    }
+
+    const counts = new Map<string, number>()
+    for (const date of source.dates) counts.set(date, (counts.get(date) ?? 0) + 1)
+
+    const points: AdminActivityPoint[] = []
+    for (let day = 0; day < 90; day += 1) {
+      const date = new Date(start)
+      date.setUTCDate(start.getUTCDate() + day)
+      const key = date.toISOString().slice(0, 10)
+      points.push({ date: key, value: counts.get(key) ?? 0 })
+    }
+    result[source.id] = points
+  }
+
+  return result
+}
