@@ -36,11 +36,11 @@ CREATE POLICY admin_read_account_deletion_audit
   USING (public.is_admin());
 
 -- Consulta mínima de estado, executada com privilégios controlados para RLS e vistas públicas.
-CREATE SCHEMA IF NOT EXISTS private;
-REVOKE ALL ON SCHEMA private FROM PUBLIC;
-GRANT USAGE ON SCHEMA private TO anon, authenticated;
+CREATE SCHEMA IF NOT EXISTS negomapa_private;
+REVOKE ALL ON SCHEMA negomapa_private FROM PUBLIC;
+GRANT USAGE ON SCHEMA negomapa_private TO anon, authenticated;
 
-CREATE OR REPLACE FUNCTION private.is_account_active(p_user_id uuid)
+CREATE OR REPLACE FUNCTION negomapa_private.is_account_active(p_user_id uuid)
 RETURNS boolean
 LANGUAGE sql
 STABLE
@@ -53,8 +53,8 @@ AS $function$
   );
 $function$;
 
-REVOKE ALL ON FUNCTION private.is_account_active(uuid) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION private.is_account_active(uuid) TO anon, authenticated;
+REVOKE ALL ON FUNCTION negomapa_private.is_account_active(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION negomapa_private.is_account_active(uuid) TO anon, authenticated;
 
 -- Um administrador desactivado deixa também de satisfazer a verificação central.
 CREATE OR REPLACE FUNCTION public.is_admin()
@@ -319,7 +319,7 @@ CREATE POLICY anon_select_approved_companies
   ON public.companies FOR SELECT TO anon
   USING (
     is_approved = true
-    AND private.is_account_active(companies.user_id)
+    AND negomapa_private.is_account_active(companies.user_id)
   );
 
 DROP POLICY IF EXISTS auth_select_approved_and_own_companies ON public.companies;
@@ -328,11 +328,11 @@ CREATE POLICY auth_select_approved_and_own_companies
   USING (
     (
       is_approved = true
-      AND private.is_account_active(companies.user_id)
+      AND negomapa_private.is_account_active(companies.user_id)
     )
     OR (
       user_id = auth.uid()
-      AND private.is_account_active(auth.uid())
+      AND negomapa_private.is_account_active(auth.uid())
     )
   );
 
@@ -342,7 +342,7 @@ CREATE POLICY auth_insert_own_company
   WITH CHECK (
     user_id = auth.uid()
     AND (is_approved = false OR is_approved IS NULL)
-    AND private.is_account_active(auth.uid())
+    AND negomapa_private.is_account_active(auth.uid())
   );
 
 DROP POLICY IF EXISTS auth_update_own_company_not_approved ON public.companies;
@@ -351,12 +351,12 @@ CREATE POLICY auth_update_own_company_not_approved
   USING (
     user_id = auth.uid()
     AND (is_approved = false OR is_approved IS NULL)
-    AND private.is_account_active(auth.uid())
+    AND negomapa_private.is_account_active(auth.uid())
   )
   WITH CHECK (
     user_id = auth.uid()
     AND (is_approved = false OR is_approved IS NULL)
-    AND private.is_account_active(auth.uid())
+    AND negomapa_private.is_account_active(auth.uid())
   );
 
 DROP POLICY IF EXISTS profissionais_all_admin ON public.profissionais;
@@ -374,7 +374,7 @@ CREATE POLICY profissionais_select_anon
   ON public.profissionais FOR SELECT TO anon
   USING (
     estado = 'aprovado'
-    AND private.is_account_active(profissionais.user_id)
+    AND negomapa_private.is_account_active(profissionais.user_id)
   );
 
 DROP POLICY IF EXISTS profissionais_select_auth ON public.profissionais;
@@ -383,11 +383,11 @@ CREATE POLICY profissionais_select_auth
   USING (
     (
       estado = 'aprovado'
-      AND private.is_account_active(profissionais.user_id)
+      AND negomapa_private.is_account_active(profissionais.user_id)
     )
     OR (
       user_id = auth.uid()
-      AND private.is_account_active(auth.uid())
+      AND negomapa_private.is_account_active(auth.uid())
     )
   );
 
@@ -396,7 +396,7 @@ CREATE POLICY profissionais_insert_auth
   ON public.profissionais FOR INSERT TO authenticated
   WITH CHECK (
     user_id = auth.uid()
-    AND private.is_account_active(auth.uid())
+    AND negomapa_private.is_account_active(auth.uid())
   );
 
 DROP POLICY IF EXISTS profissionais_update_auth ON public.profissionais;
@@ -404,11 +404,11 @@ CREATE POLICY profissionais_update_auth
   ON public.profissionais FOR UPDATE TO authenticated
   USING (
     user_id = auth.uid()
-    AND private.is_account_active(auth.uid())
+    AND negomapa_private.is_account_active(auth.uid())
   )
   WITH CHECK (
     user_id = auth.uid()
-    AND private.is_account_active(auth.uid())
+    AND negomapa_private.is_account_active(auth.uid())
   );
 
 DROP POLICY IF EXISTS servicos_select_anon ON public.servicos;
@@ -420,7 +420,7 @@ CREATE POLICY servicos_select_anon
       SELECT 1 FROM public.profissionais p
       WHERE p.id = servicos.profissional_id
         AND p.estado = 'aprovado'
-        AND private.is_account_active(p.user_id)
+        AND negomapa_private.is_account_active(p.user_id)
     )
   );
 
@@ -434,13 +434,13 @@ CREATE POLICY servicos_select_auth
         SELECT 1 FROM public.profissionais p
         WHERE p.id = servicos.profissional_id
           AND p.estado = 'aprovado'
-          AND private.is_account_active(p.user_id)
+          AND negomapa_private.is_account_active(p.user_id)
       )
     )
     OR (
       profissional_id IN (
         SELECT p.id FROM public.profissionais p
-        WHERE p.user_id = auth.uid() AND private.is_account_active(p.user_id)
+        WHERE p.user_id = auth.uid() AND negomapa_private.is_account_active(p.user_id)
       )
     )
   );
@@ -451,7 +451,7 @@ CREATE POLICY servicos_insert_auth
   WITH CHECK (
     profissional_id IN (
       SELECT p.id FROM public.profissionais p
-      WHERE p.user_id = auth.uid() AND private.is_account_active(p.user_id)
+      WHERE p.user_id = auth.uid() AND negomapa_private.is_account_active(p.user_id)
     )
   );
 
@@ -461,13 +461,13 @@ CREATE POLICY servicos_update_auth
   USING (
     profissional_id IN (
       SELECT p.id FROM public.profissionais p
-      WHERE p.user_id = auth.uid() AND private.is_account_active(p.user_id)
+      WHERE p.user_id = auth.uid() AND negomapa_private.is_account_active(p.user_id)
     )
   )
   WITH CHECK (
     profissional_id IN (
       SELECT p.id FROM public.profissionais p
-      WHERE p.user_id = auth.uid() AND private.is_account_active(p.user_id)
+      WHERE p.user_id = auth.uid() AND negomapa_private.is_account_active(p.user_id)
     )
   );
 
@@ -477,7 +477,7 @@ CREATE POLICY servicos_delete_auth
   USING (
     profissional_id IN (
       SELECT p.id FROM public.profissionais p
-      WHERE p.user_id = auth.uid() AND private.is_account_active(p.user_id)
+      WHERE p.user_id = auth.uid() AND negomapa_private.is_account_active(p.user_id)
     )
   );
 
@@ -488,7 +488,7 @@ CREATE POLICY vagas_select_anon
     estado = 'aprovado'
     AND company_id IN (
       SELECT c.id FROM public.companies c
-      WHERE c.is_approved = true AND private.is_account_active(c.user_id)
+      WHERE c.is_approved = true AND negomapa_private.is_account_active(c.user_id)
     )
   );
 
@@ -500,13 +500,13 @@ CREATE POLICY vagas_select_auth
       estado = 'aprovado'
       AND company_id IN (
         SELECT c.id FROM public.companies c
-        WHERE c.is_approved = true AND private.is_account_active(c.user_id)
+        WHERE c.is_approved = true AND negomapa_private.is_account_active(c.user_id)
       )
     )
     OR (
       company_id IN (
         SELECT c.id FROM public.companies c
-        WHERE c.user_id = auth.uid() AND private.is_account_active(c.user_id)
+        WHERE c.user_id = auth.uid() AND negomapa_private.is_account_active(c.user_id)
       )
     )
   );
@@ -517,7 +517,7 @@ CREATE POLICY vagas_insert_auth
   WITH CHECK (
     company_id IN (
       SELECT c.id FROM public.companies c
-      WHERE c.user_id = auth.uid() AND private.is_account_active(c.user_id)
+      WHERE c.user_id = auth.uid() AND negomapa_private.is_account_active(c.user_id)
     )
   );
 
@@ -527,13 +527,13 @@ CREATE POLICY vagas_update_auth
   USING (
     company_id IN (
       SELECT c.id FROM public.companies c
-      WHERE c.user_id = auth.uid() AND private.is_account_active(c.user_id)
+      WHERE c.user_id = auth.uid() AND negomapa_private.is_account_active(c.user_id)
     )
   )
   WITH CHECK (
     company_id IN (
       SELECT c.id FROM public.companies c
-      WHERE c.user_id = auth.uid() AND private.is_account_active(c.user_id)
+      WHERE c.user_id = auth.uid() AND negomapa_private.is_account_active(c.user_id)
     )
   );
 
@@ -543,7 +543,7 @@ CREATE POLICY vagas_delete_auth
   USING (
     company_id IN (
       SELECT c.id FROM public.companies c
-      WHERE c.user_id = auth.uid() AND private.is_account_active(c.user_id)
+      WHERE c.user_id = auth.uid() AND negomapa_private.is_account_active(c.user_id)
     )
   );
 
@@ -554,7 +554,7 @@ CREATE POLICY produtos_select_publico
     estado_aprovacao = 'aprovado'
     AND EXISTS (
       SELECT 1 FROM public.companies c
-      WHERE c.id = produtos.company_id AND c.is_approved = true AND private.is_account_active(c.user_id)
+      WHERE c.id = produtos.company_id AND c.is_approved = true AND negomapa_private.is_account_active(c.user_id)
     )
   );
 
@@ -564,7 +564,7 @@ CREATE POLICY produtos_select_proprietario
   USING (
     EXISTS (
       SELECT 1 FROM public.companies c
-      WHERE c.id = produtos.company_id AND c.user_id = auth.uid() AND private.is_account_active(c.user_id)
+      WHERE c.id = produtos.company_id AND c.user_id = auth.uid() AND negomapa_private.is_account_active(c.user_id)
     )
   );
 
@@ -574,7 +574,7 @@ CREATE POLICY produtos_insert_proprietario
   WITH CHECK (
     EXISTS (
       SELECT 1 FROM public.companies c
-      WHERE c.id = produtos.company_id AND c.user_id = auth.uid() AND private.is_account_active(c.user_id)
+      WHERE c.id = produtos.company_id AND c.user_id = auth.uid() AND negomapa_private.is_account_active(c.user_id)
     )
   );
 
@@ -584,13 +584,13 @@ CREATE POLICY produtos_update_proprietario
   USING (
     EXISTS (
       SELECT 1 FROM public.companies c
-      WHERE c.id = produtos.company_id AND c.user_id = auth.uid() AND private.is_account_active(c.user_id)
+      WHERE c.id = produtos.company_id AND c.user_id = auth.uid() AND negomapa_private.is_account_active(c.user_id)
     )
   )
   WITH CHECK (
     EXISTS (
       SELECT 1 FROM public.companies c
-      WHERE c.id = produtos.company_id AND c.user_id = auth.uid() AND private.is_account_active(c.user_id)
+      WHERE c.id = produtos.company_id AND c.user_id = auth.uid() AND negomapa_private.is_account_active(c.user_id)
     )
   );
 
@@ -600,7 +600,7 @@ CREATE POLICY produtos_delete_proprietario
   USING (
     EXISTS (
       SELECT 1 FROM public.companies c
-      WHERE c.id = produtos.company_id AND c.user_id = auth.uid() AND private.is_account_active(c.user_id)
+      WHERE c.id = produtos.company_id AND c.user_id = auth.uid() AND negomapa_private.is_account_active(c.user_id)
     )
   );
 
@@ -614,7 +614,7 @@ CREATE POLICY produto_imagens_select_publico
       WHERE p.id = produto_imagens.produto_id
         AND p.estado_aprovacao = 'aprovado'
         AND c.is_approved = true
-        AND private.is_account_active(c.user_id)
+        AND negomapa_private.is_account_active(c.user_id)
     )
   );
 
@@ -627,7 +627,7 @@ CREATE POLICY produto_imagens_select_proprietario
       JOIN public.companies c ON c.id = p.company_id
       WHERE p.id = produto_imagens.produto_id
         AND c.user_id = auth.uid()
-        AND private.is_account_active(c.user_id)
+        AND negomapa_private.is_account_active(c.user_id)
     )
   );
 
@@ -640,7 +640,7 @@ CREATE POLICY produto_imagens_insert_proprietario
       JOIN public.companies c ON c.id = p.company_id
       WHERE p.id = produto_imagens.produto_id
         AND c.user_id = auth.uid()
-        AND private.is_account_active(c.user_id)
+        AND negomapa_private.is_account_active(c.user_id)
     )
   );
 
@@ -653,7 +653,7 @@ CREATE POLICY produto_imagens_update_proprietario
       JOIN public.companies c ON c.id = p.company_id
       WHERE p.id = produto_imagens.produto_id
         AND c.user_id = auth.uid()
-        AND private.is_account_active(c.user_id)
+        AND negomapa_private.is_account_active(c.user_id)
     )
   )
   WITH CHECK (
@@ -662,7 +662,7 @@ CREATE POLICY produto_imagens_update_proprietario
       JOIN public.companies c ON c.id = p.company_id
       WHERE p.id = produto_imagens.produto_id
         AND c.user_id = auth.uid()
-        AND private.is_account_active(c.user_id)
+        AND negomapa_private.is_account_active(c.user_id)
     )
   );
 
@@ -675,7 +675,7 @@ CREATE POLICY produto_imagens_delete_proprietario
       JOIN public.companies c ON c.id = p.company_id
       WHERE p.id = produto_imagens.produto_id
         AND c.user_id = auth.uid()
-        AND private.is_account_active(c.user_id)
+        AND negomapa_private.is_account_active(c.user_id)
     )
   );
 
@@ -687,7 +687,7 @@ SELECT
   c.is_approved, c.whatsapp, c.logo_url, c.portfolio
 FROM public.companies c
 WHERE c.is_approved = true
-  AND private.is_account_active(c.user_id);
+  AND negomapa_private.is_account_active(c.user_id);
 
 CREATE OR REPLACE VIEW public.profissionais_publicos AS
 SELECT
@@ -698,7 +698,7 @@ SELECT
 FROM public.profissionais p
 LEFT JOIN public.categorias c ON c.id = p.categoria_id
 WHERE p.estado = 'aprovado'
-  AND private.is_account_active(p.user_id);
+  AND negomapa_private.is_account_active(p.user_id);
 
 CREATE OR REPLACE VIEW public.vagas_publicas AS
 SELECT
@@ -708,7 +708,7 @@ FROM public.vagas v
 WHERE v.estado = 'aprovado'
   AND EXISTS (
     SELECT 1 FROM public.companies c
-    WHERE c.id = v.company_id AND c.is_approved = true AND private.is_account_active(c.user_id)
+    WHERE c.id = v.company_id AND c.is_approved = true AND negomapa_private.is_account_active(c.user_id)
   );
 
 CREATE OR REPLACE VIEW public.produtos_publicos AS
@@ -719,7 +719,7 @@ FROM public.produtos p
 WHERE p.estado_aprovacao = 'aprovado'
   AND EXISTS (
     SELECT 1 FROM public.companies c
-    WHERE c.id = p.company_id AND c.is_approved = true AND private.is_account_active(c.user_id)
+    WHERE c.id = p.company_id AND c.is_approved = true AND negomapa_private.is_account_active(c.user_id)
   );
 
 CREATE OR REPLACE VIEW public.produto_imagens_publicas AS
@@ -732,5 +732,5 @@ WHERE EXISTS (
   WHERE p.id = pi.produto_id
     AND p.estado_aprovacao = 'aprovado'
     AND c.is_approved = true
-    AND private.is_account_active(c.user_id)
+    AND negomapa_private.is_account_active(c.user_id)
 );
