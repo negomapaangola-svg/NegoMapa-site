@@ -23,7 +23,11 @@ export async function loginAction(formData: FormData) {
   })
 
   if (error) {
-    return { error: error.message }
+    return {
+      error: error.code === 'user_banned'
+        ? 'Esta conta está desactivada. Contacte a administração da plataforma.'
+        : error.message,
+    }
   }
 
   if (!data.session || !data.user) {
