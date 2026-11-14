@@ -43,7 +43,7 @@ export async function loginAction(formData: FormData) {
     return { error: 'Esta conta está desactivada. Contacte a administração da plataforma.' }
   }
 
-  if (profileStatusError && profileStatusError.code !== '42703') {
+  if (profileStatusError && !(profileStatusError.code === '42703' || profileStatusError.code === 'PGRST204')) {
     await supabase.auth.signOut({ scope: 'local' })
     return { error: 'Não foi possível confirmar o estado da conta. Tente novamente.' }
   }
