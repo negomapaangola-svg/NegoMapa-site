@@ -436,19 +436,31 @@ CREATE POLICY active_profile_update_required
 DROP POLICY IF EXISTS active_owner_public_select ON public.companies;
 CREATE POLICY active_owner_public_select
   ON public.companies AS RESTRICTIVE
-  FOR SELECT TO anon, authenticated
+  FOR SELECT TO anon
   USING (negomapa_private.is_account_active(companies.user_id));
+
+DROP POLICY IF EXISTS active_owner_authenticated_select ON public.companies;
+CREATE POLICY active_owner_authenticated_select
+  ON public.companies AS RESTRICTIVE
+  FOR SELECT TO authenticated
+  USING (public.is_admin() OR negomapa_private.is_account_active(companies.user_id));
 
 DROP POLICY IF EXISTS active_owner_public_select ON public.profissionais;
 CREATE POLICY active_owner_public_select
   ON public.profissionais AS RESTRICTIVE
-  FOR SELECT TO anon, authenticated
+  FOR SELECT TO anon
   USING (negomapa_private.is_account_active(profissionais.user_id));
+
+DROP POLICY IF EXISTS active_owner_authenticated_select ON public.profissionais;
+CREATE POLICY active_owner_authenticated_select
+  ON public.profissionais AS RESTRICTIVE
+  FOR SELECT TO authenticated
+  USING (public.is_admin() OR negomapa_private.is_account_active(profissionais.user_id));
 
 DROP POLICY IF EXISTS active_owner_public_select ON public.servicos;
 CREATE POLICY active_owner_public_select
   ON public.servicos AS RESTRICTIVE
-  FOR SELECT TO anon, authenticated
+  FOR SELECT TO anon
   USING (
     EXISTS (
       SELECT 1
@@ -458,10 +470,23 @@ CREATE POLICY active_owner_public_select
     )
   );
 
+DROP POLICY IF EXISTS active_owner_authenticated_select ON public.servicos;
+CREATE POLICY active_owner_authenticated_select
+  ON public.servicos AS RESTRICTIVE
+  FOR SELECT TO authenticated
+  USING (
+    public.is_admin()
+    OR EXISTS (
+      SELECT 1 FROM public.profissionais AS p
+      WHERE p.id = servicos.profissional_id
+        AND negomapa_private.is_account_active(p.user_id)
+    )
+  );
+
 DROP POLICY IF EXISTS active_owner_public_select ON public.vagas;
 CREATE POLICY active_owner_public_select
   ON public.vagas AS RESTRICTIVE
-  FOR SELECT TO anon, authenticated
+  FOR SELECT TO anon
   USING (
     EXISTS (
       SELECT 1
@@ -471,10 +496,23 @@ CREATE POLICY active_owner_public_select
     )
   );
 
+DROP POLICY IF EXISTS active_owner_authenticated_select ON public.vagas;
+CREATE POLICY active_owner_authenticated_select
+  ON public.vagas AS RESTRICTIVE
+  FOR SELECT TO authenticated
+  USING (
+    public.is_admin()
+    OR EXISTS (
+      SELECT 1 FROM public.companies AS c
+      WHERE c.id = vagas.company_id
+        AND negomapa_private.is_account_active(c.user_id)
+    )
+  );
+
 DROP POLICY IF EXISTS active_owner_public_select ON public.produtos;
 CREATE POLICY active_owner_public_select
   ON public.produtos AS RESTRICTIVE
-  FOR SELECT TO anon, authenticated
+  FOR SELECT TO anon
   USING (
     EXISTS (
       SELECT 1
@@ -484,12 +522,40 @@ CREATE POLICY active_owner_public_select
     )
   );
 
+DROP POLICY IF EXISTS active_owner_authenticated_select ON public.produtos;
+CREATE POLICY active_owner_authenticated_select
+  ON public.produtos AS RESTRICTIVE
+  FOR SELECT TO authenticated
+  USING (
+    public.is_admin()
+    OR EXISTS (
+      SELECT 1 FROM public.companies AS c
+      WHERE c.id = produtos.company_id
+        AND negomapa_private.is_account_active(c.user_id)
+    )
+  );
+
 DROP POLICY IF EXISTS active_owner_public_select ON public.produto_imagens;
 CREATE POLICY active_owner_public_select
   ON public.produto_imagens AS RESTRICTIVE
-  FOR SELECT TO anon, authenticated
+  FOR SELECT TO anon
   USING (
     EXISTS (
+      SELECT 1
+      FROM public.produtos AS p
+      JOIN public.companies AS c ON c.id = p.company_id
+      WHERE p.id = produto_imagens.produto_id
+        AND negomapa_private.is_account_active(c.user_id)
+    )
+  );
+
+DROP POLICY IF EXISTS active_owner_authenticated_select ON public.produto_imagens;
+CREATE POLICY active_owner_authenticated_select
+  ON public.produto_imagens AS RESTRICTIVE
+  FOR SELECT TO authenticated
+  USING (
+    public.is_admin()
+    OR EXISTS (
       SELECT 1
       FROM public.produtos AS p
       JOIN public.companies AS c ON c.id = p.company_id
@@ -501,7 +567,7 @@ CREATE POLICY active_owner_public_select
 DROP POLICY IF EXISTS active_owner_public_select ON public.avaliacoes;
 CREATE POLICY active_owner_public_select
   ON public.avaliacoes AS RESTRICTIVE
-  FOR SELECT TO anon, authenticated
+  FOR SELECT TO anon
   USING (
     (avaliacoes.profissional_id IS NULL OR EXISTS (
       SELECT 1 FROM public.profissionais AS p
@@ -527,6 +593,38 @@ CREATE POLICY active_owner_public_select
       WHERE v.id = avaliacoes.vaga_id
         AND negomapa_private.is_account_active(c.user_id)
     ))
+  );
+
+DROP POLICY IF EXISTS active_owner_authenticated_select ON public.avaliacoes;
+CREATE POLICY active_owner_authenticated_select
+  ON public.avaliacoes AS RESTRICTIVE
+  FOR SELECT TO authenticated
+  USING (
+    public.is_admin()
+    OR (
+      (avaliacoes.profissional_id IS NULL OR EXISTS (
+        SELECT 1 FROM public.profissionais AS p
+        WHERE p.id = avaliacoes.profissional_id
+          AND negomapa_private.is_account_active(p.user_id)
+      ))
+      AND (avaliacoes.company_id IS NULL OR EXISTS (
+        SELECT 1 FROM public.companies AS c
+        WHERE c.id = avaliacoes.company_id
+          AND negomapa_private.is_account_active(c.user_id)
+      ))
+      AND (avaliacoes.servico_id IS NULL OR EXISTS (
+        SELECT 1 FROM public.servicos AS s
+        JOIN public.profissionais AS p ON p.id = s.profissional_id
+        WHERE s.id = avaliacoes.servico_id
+          AND negomapa_private.is_account_active(p.user_id)
+      ))
+      AND (avaliacoes.vaga_id IS NULL OR EXISTS (
+        SELECT 1 FROM public.vagas AS v
+        JOIN public.companies AS c ON c.id = v.company_id
+        WHERE v.id = avaliacoes.vaga_id
+          AND negomapa_private.is_account_active(c.user_id)
+      ))
+    )
   );
 
 -- As vistas mantêm exactamente as colunas públicas actuais e acrescentam
