@@ -112,7 +112,9 @@ BEGIN
      OR NEW.deleted_by IS DISTINCT FROM OLD.deleted_by
      OR NEW.deletion_reason IS DISTINCT FROM OLD.deletion_reason THEN
     IF pg_catalog.current_setting('app.account_deactivation_authorized', true)
-       IS DISTINCT FROM 'on' THEN
+         IS DISTINCT FROM 'on'
+       OR auth.uid() IS NULL
+       OR NOT public.is_admin() THEN
       RAISE EXCEPTION 'Os campos de desactivação só podem ser alterados pela função administrativa'
         USING ERRCODE = '42501';
     END IF;
