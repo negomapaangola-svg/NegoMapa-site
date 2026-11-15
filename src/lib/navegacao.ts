@@ -28,7 +28,7 @@ export const ITENS_NAVEGACAO: ItemNavegacao[] = [
  {id:'painel-profissional',rotulo:'Painel do profissional',rota:'/profissional/painel',regras:['profissional'],locais:['menu_mobile']},
  {id:'painel-empresa',rotulo:'Painel da empresa',rota:'/empresa/painel',regras:['empresa'],locais:['menu_mobile']},
  {id:'administracao',rotulo:'Administração',rota:'/admin',regras:['administrador'],locais:['menu_mobile']},
- {id:'eliminar-conta',rotulo:'Eliminar conta',rota:'/admin/contas',regras:['administrador'],locais:['menu_mobile']},
+ {id:'eliminar-conta',rotulo:'Gerir contas',rota:'/admin/contas',regras:['administrador'],locais:['menu_mobile']},
  {id:'sair',rotulo:'Sair',rota:'#sair',regras:['autenticado'],locais:['menu_mobile']},
  {id:'contacto',rotulo:'Contacto',rota:'/contacto',regras:['publico'],locais:['menu_mobile','rodape']},
  {id:'termos',rotulo:'Termos e condições',rota:'/termos',regras:['publico'],locais:['menu_mobile','rodape']},
