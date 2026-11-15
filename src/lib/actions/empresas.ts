@@ -13,6 +13,7 @@ export type EmpresaAdmin = {
   email?: string | null
   phone?: string | null
   is_approved: boolean
+  estado?: string | null
   created_at: string
   user_id: string
 }
@@ -73,6 +74,7 @@ export async function getAllEmpresasAdmin(): Promise<EmpresasAdminResult> {
       email,
       phone,
       is_approved,
+      estado,
       created_at,
       user_id
     `)
@@ -105,9 +107,12 @@ export async function aprovarEmpresa(empresaId: string): Promise<ActionResult> {
     return { success: false, error: 'Empresa não encontrada.' }
   }
 
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: 'Sessão expirada.' }
+
   const { data, error } = await supabase
     .from('companies')
-    .update({ is_approved: true })
+    .update({ is_approved: true, estado: 'aprovado', motivo_decisao: null, decidido_em: new Date().toISOString(), decidido_por: user.id })
     .eq('id', empresaId)
     .select('id')
 
@@ -135,21 +140,38 @@ export async function aprovarEmpresa(empresaId: string): Promise<ActionResult> {
   return { success: true }
 }
 
-export async function rejeitarEmpresa(empresaId: string): Promise<ActionResult> {
-  if (!UUID_RE.test(empresaId)) return { success: false, error: 'Empresa não encontrada.' }
+export async function rejeitarEmpresa(empresaId: string, motivo: string): Promise<ActionResult> {
+  if (!UUID_RE.test(empresaId) || typeof motivo !== 'string' || motivo.trim().length < 10 || motivo.trim().length > 1000) {
+    return { success: false, error: 'Indique um motivo de rejeição com pelo menos 10 caracteres.' }
+  }
 
-  const adminCheck = await isAdmin()
-  if (!adminCheck) {
+  if (!(await isAdmin())) {
     return { success: false, error: 'Acesso negado. Privilégios de administrador necessários.' }
   }
 
-  // O esquema actual só tem is_approved (booleano), que não distingue rejeição
-  // de pendência/suspensão. Não apagar nem reutilizar esse estado com outro significado.
-  // A operação fica desactivada até existir um estado de rejeição próprio.
-  return {
-    success: false,
-    error: 'A rejeição está temporariamente desactivada para proteger o registo da empresa. Use a suspensão enquanto não existir um estado de rejeição próprio.',
+  const supabase = await createSupabaseServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: 'Sessão expirada.' }
+
+  const { data, error } = await supabase
+    .from('companies')
+    .update({
+      is_approved: false,
+      estado: 'rejeitado',
+      motivo_decisao: motivo.trim(),
+      decidido_em: new Date().toISOString(),
+      decidido_por: user.id,
+    })
+    .eq('id', empresaId)
+    .select('id')
+
+  if (error || !data?.length) {
+    console.error('Erro ao rejeitar empresa. Código:', error?.code)
+    return { success: false, error: 'Não foi possível rejeitar a empresa.' }
   }
+
+  revalidatePath('/admin/empresas')
+  return { success: true }
 }
 
 export async function suspenderEmpresa(empresaId: string): Promise<ActionResult> {
@@ -171,12 +193,16 @@ export async function suspenderEmpresa(empresaId: string): Promise<ActionResult>
     return { success: false, error: 'Empresa não encontrada' }
   }
 
-  const { error } = await supabase
-    .from('companies')
-    .update({ is_approved: false })
-    .eq('id', empresaId)
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: 'Sessão expirada.' }
 
-  if (error) {
+  const { data, error } = await supabase
+    .from('companies')
+    .update({ is_approved: false, estado: 'suspenso', motivo_decisao: null, decidido_em: new Date().toISOString(), decidido_por: user.id })
+    .eq('id', empresaId)
+    .select('id')
+
+  if (error || !data?.length) {
     console.error('Erro ao suspender empresa. Código:', error?.code)
     return { success: false, error: 'Erro ao suspender empresa. Tente novamente.' }
   }

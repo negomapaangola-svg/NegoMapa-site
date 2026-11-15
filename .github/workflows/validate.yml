@@ -1,0 +1,45 @@
+name: Validate
+
+on:
+  push:
+    branches:
+      - feat/admin-painel-completo
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Changed-file lint, build and TypeScript
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint changed files
+        run: npx eslint src/app/admin/_components/AdminActivityCharts.tsx src/app/admin/page.tsx src/lib/actions/admin-foundation.ts src/app/admin/contas/page.tsx src/app/admin/contas/_components/AdminAccountDeletionPanel.tsx src/lib/actions/admin-account-deletion.ts src/lib/actions/login.ts src/proxy.ts src/app/login/page.tsx src/lib/navegacao.ts
+
+      - name: Build
+        run: npm run build
+
+      - name: TypeScript
+        run: npx tsc --noEmit
