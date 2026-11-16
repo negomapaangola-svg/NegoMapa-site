@@ -243,7 +243,7 @@ $policies$;
 DO $membership$
 BEGIN
   IF NOT pg_catalog.pg_has_role('postgres', 'negomapa_public_view_owner', 'MEMBER') THEN
-    GRANT negomapa_public_view_owner TO postgres;
+    EXECUTE 'GRANT negomapa_public_view_owner TO postgres';
   END IF;
 END
 $membership$;
