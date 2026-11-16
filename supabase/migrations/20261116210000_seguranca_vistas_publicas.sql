@@ -44,7 +44,8 @@ $role$;
 ALTER ROLE negomapa_public_view_owner SET search_path = '';
 
 -- 2. Acesso mínimo para o papel dono das vistas internas.
-GRANT USAGE, CREATE ON SCHEMA public, negomapa_private
+GRANT USAGE ON SCHEMA public TO negomapa_public_view_owner;
+GRANT USAGE, CREATE ON SCHEMA negomapa_private
   TO negomapa_public_view_owner;
 
 REVOKE ALL PRIVILEGES ON TABLE
@@ -368,7 +369,7 @@ TO anon, authenticated, service_role;
 -- SECURITY INVOKER garante que o papel chamador não herda os privilégios do
 -- proprietário da vista pública. A vista interna aplica RLS pelo owner restrito.
 CREATE OR REPLACE VIEW public.empresas_publicas
-WITH (security_invoker = true, security_barrier = true)
+WITH (security_invoker = true)
 AS
 SELECT
   id, name, slug, sector, province, city, bairro, rua,
@@ -377,7 +378,7 @@ SELECT
 FROM negomapa_private.v_empresas_publicas;
 
 CREATE OR REPLACE VIEW public.profissionais_publicos
-WITH (security_invoker = true, security_barrier = true)
+WITH (security_invoker = true)
 AS
 SELECT
   id, nome, slug, categoria_id, categoria, provincia, municipio,
@@ -387,7 +388,7 @@ SELECT
 FROM negomapa_private.v_profissionais_publicos;
 
 CREATE OR REPLACE VIEW public.produtos_publicos
-WITH (security_invoker = true, security_barrier = true)
+WITH (security_invoker = true)
 AS
 SELECT
   id, categoria_id, titulo, slug, descricao, preco, preco_tipo,
@@ -395,13 +396,13 @@ SELECT
 FROM negomapa_private.v_produtos_publicos;
 
 CREATE OR REPLACE VIEW public.produto_imagens_publicas
-WITH (security_invoker = true, security_barrier = true)
+WITH (security_invoker = true)
 AS
 SELECT id, produto_id, url, ordem
 FROM negomapa_private.v_produto_imagens_publicas;
 
 CREATE OR REPLACE VIEW public.vagas_publicas
-WITH (security_invoker = true, security_barrier = true)
+WITH (security_invoker = true)
 AS
 SELECT
   id, company_id, titulo, slug, descricao, requisitos, categoria,
