@@ -162,7 +162,7 @@ BEGIN
       CREATE POLICY negomapa_public_view_owner_select
       ON public.categorias
       FOR SELECT TO negomapa_public_view_owner
-      USING (ativo IS TRUE)
+      USING (true)
     $sql$;
   END IF;
 
@@ -345,6 +345,9 @@ ALTER VIEW negomapa_private.v_profissionais_publicos OWNER TO negomapa_public_vi
 ALTER VIEW negomapa_private.v_produtos_publicos OWNER TO negomapa_public_view_owner;
 ALTER VIEW negomapa_private.v_produto_imagens_publicas OWNER TO negomapa_public_view_owner;
 ALTER VIEW negomapa_private.v_vagas_publicas OWNER TO negomapa_public_view_owner;
+
+-- O papel já é dono das vistas; não precisa de CREATE para leitura em runtime.
+REVOKE CREATE ON SCHEMA negomapa_private FROM negomapa_public_view_owner;
 
 -- As vistas internas devolvem exactamente a projecção pública aprovada.
 -- Só leitura para os papéis API; a execução da consulta subjacente usa o
