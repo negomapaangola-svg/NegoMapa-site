@@ -343,21 +343,6 @@ BEGIN
 END
 $private_views$;
 
--- O papel é proprietário das vistas internas; retirar CREATE reduz privilégios.
-REVOKE CREATE ON SCHEMA negomapa_private FROM negomapa_public_view_owner;
-RESET ROLE;
-REVOKE negomapa_public_view_owner FROM postgres;
-
--- O executor da migração precisa de SELECT temporário para definir as vistas
--- públicas SECURITY INVOKER sobre as vistas internas. O grant é revogado abaixo.
-GRANT SELECT ON TABLE
-  negomapa_private.v_empresas_publicas,
-  negomapa_private.v_profissionais_publicos,
-  negomapa_private.v_produtos_publicos,
-  negomapa_private.v_produto_imagens_publicas,
-  negomapa_private.v_vagas_publicas
-TO postgres;
-
 -- As vistas internas devolvem exactamente a projecção pública aprovada.
 -- Só leitura para os papéis API; a execução da consulta subjacente usa o
 -- papel proprietário limitado e as suas políticas RLS.
@@ -375,7 +360,12 @@ GRANT SELECT ON TABLE
   negomapa_private.v_produtos_publicos,
   negomapa_private.v_produto_imagens_publicas,
   negomapa_private.v_vagas_publicas
-TO anon, authenticated, service_role;
+TO anon, authenticated, service_role, postgres;
+
+-- O papel é proprietário das vistas internas; retirar CREATE reduz privilégios.
+REVOKE CREATE ON SCHEMA negomapa_private FROM negomapa_public_view_owner;
+RESET ROLE;
+REVOKE negomapa_public_view_owner FROM postgres;
 
 -- 6. As cinco vistas públicas mantêm nomes, colunas, tipos e ordem actuais.
 -- SECURITY INVOKER garante que o papel chamador não herda os privilégios do
