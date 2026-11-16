@@ -403,13 +403,10 @@ GRANT SELECT ON TABLE
   public.vagas_publicas
 TO anon, authenticated, service_role;
 
-REVOKE SELECT ON TABLE
-  negomapa_private.v_empresas_publicas,
-  negomapa_private.v_profissionais_publicos,
-  negomapa_private.v_produtos_publicos,
-  negomapa_private.v_produto_imagens_publicas,
-  negomapa_private.v_vagas_publicas
-FROM postgres;
+-- O executor postgres conserva SELECT nas vistas internas para poder
+-- definir/substituir as vistas públicas SECURITY INVOKER em futuras migrações.
+-- O schema privado não é exposto pela API; os papéis de runtime recebem apenas
+-- SELECT e não são membros do papel proprietário.
 
 -- 7. Verificações estruturais fail-closed. Se qualquer condição falhar,
 -- a migração inteira é revertida pela transacção.
