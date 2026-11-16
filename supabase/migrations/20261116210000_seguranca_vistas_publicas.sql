@@ -237,6 +237,10 @@ $policies$;
 
 -- 5. Vistas internas. O papel proprietário não é dono das tabelas e não tem
 -- BYPASSRLS: as políticas acima são aplicadas durante todas estas leituras.
+-- A sessão de migração assume temporariamente o papel proprietário para criar
+-- ou substituir as vistas internas; a membership é removida antes do COMMIT.
+GRANT negomapa_public_view_owner TO postgres;
+SET LOCAL ROLE negomapa_public_view_owner;
 -- O bloco cria as vistas na primeira execução e substitui as definições nas
 -- execuções seguintes, mantendo o ficheiro idempotente.
 DO $private_views$
@@ -339,19 +343,20 @@ BEGIN
 END
 $private_views$;
 
--- O owner tem de ser o papel limitado, nunca postgres/service_role.
--- A migração só assume temporariamente o papel para transferir a propriedade;
--- a membership é removida imediatamente após a transferência.
-GRANT negomapa_public_view_owner TO postgres;
-ALTER VIEW negomapa_private.v_empresas_publicas OWNER TO negomapa_public_view_owner;
-ALTER VIEW negomapa_private.v_profissionais_publicos OWNER TO negomapa_public_view_owner;
-ALTER VIEW negomapa_private.v_produtos_publicos OWNER TO negomapa_public_view_owner;
-ALTER VIEW negomapa_private.v_produto_imagens_publicas OWNER TO negomapa_public_view_owner;
-ALTER VIEW negomapa_private.v_vagas_publicas OWNER TO negomapa_public_view_owner;
+-- O papel é proprietário das vistas internas; retirar CREATE reduz privilégios.
+REVOKE CREATE ON SCHEMA negomapa_private FROM negomapa_public_view_owner;
+RESET ROLE;
 REVOKE negomapa_public_view_owner FROM postgres;
 
--- O papel já é dono das vistas; não precisa de CREATE para leitura em runtime.
-REVOKE CREATE ON SCHEMA negomapa_private FROM negomapa_public_view_owner;
+-- O executor da migração precisa de SELECT temporário para definir as vistas
+-- públicas SECURITY INVOKER sobre as vistas internas. O grant é revogado abaixo.
+GRANT SELECT ON TABLE
+  negomapa_private.v_empresas_publicas,
+  negomapa_private.v_profissionais_publicos,
+  negomapa_private.v_produtos_publicos,
+  negomapa_private.v_produto_imagens_publicas,
+  negomapa_private.v_vagas_publicas
+TO postgres;
 
 -- As vistas internas devolvem exactamente a projecção pública aprovada.
 -- Só leitura para os papéis API; a execução da consulta subjacente usa o
@@ -433,6 +438,14 @@ GRANT SELECT ON TABLE
   public.produto_imagens_publicas,
   public.vagas_publicas
 TO anon, authenticated, service_role;
+
+REVOKE SELECT ON TABLE
+  negomapa_private.v_empresas_publicas,
+  negomapa_private.v_profissionais_publicos,
+  negomapa_private.v_produtos_publicos,
+  negomapa_private.v_produto_imagens_publicas,
+  negomapa_private.v_vagas_publicas
+FROM postgres;
 
 -- 7. Verificações estruturais fail-closed. Se qualquer condição falhar,
 -- a migração inteira é revertida pela transacção.
