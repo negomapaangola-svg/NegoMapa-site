@@ -16,6 +16,7 @@ import { getMediaAvaliacoes, getAvaliacoesPorAlvo } from "@/lib/actions/avaliaco
 import { AlvoDenuncia } from "@/lib/actions/denuncias"
 import { createBrowserSupabaseClient } from "@/lib/supabase-browser"
 import { BotaoContactarEmpresa } from "@/components/empresas/BotaoContactarEmpresa"
+import { Rating } from "@/components/avaliacoes/Rating"
 import { verificarPodeContactar } from "@/lib/actions/conversas"
 import { AvaliacoesProfissional } from "@/app/profissional/[slug]/_components/AvaliacoesProfissional"
 import { PortfolioProfissional } from "@/app/profissional/[slug]/_components/PortfolioProfissional"
@@ -30,6 +31,7 @@ function EmpresaContent() {
   const [userId, setUserId] = React.useState<string | null>(null)
   const [podeContactar, setPodeContactar] = React.useState(false)
   const [avaliacoesCarregando, setAvaliacoesCarregando] = React.useState(true)
+  const [erroCarregamento, setErroCarregamento] = React.useState(false)
 
   React.useEffect(() => {
     async function carregarEmpresa() {
@@ -49,8 +51,10 @@ function EmpresaContent() {
 
       if (error) {
         console.error("Erro ao carregar empresa. Código:", error.code)
+        setErroCarregamento(true)
         setEmpresa(null)
       } else {
+        setErroCarregamento(false)
         setEmpresa(data)
       }
       setCarregando(false)
@@ -121,8 +125,12 @@ function EmpresaContent() {
   if (!empresa) {
     return (
       <MainLayout>
-        <div className="min-h-[50vh] bg-white p-8 text-center dark:bg-navy-dark">
-          <p className="text-lg font-medium text-red-600 dark:text-red-400">Empresa não encontrada</p>
+        <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4 bg-white p-8 text-center dark:bg-navy-dark">
+          <p role={erroCarregamento ? "alert" : "status"} className="text-lg font-medium text-neutral-800 dark:text-cream">
+            {erroCarregamento ? "Não foi possível carregar este perfil." : "Empresa não encontrada"}
+          </p>
+          {erroCarregamento && <button type="button" onClick={() => window.location.reload()} className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-orange-600 px-5 py-2 font-semibold text-white hover:bg-orange-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2">Tentar novamente</button>}
+          <Link href="/empresas" className="inline-flex min-h-[44px] items-center font-semibold text-orange-700 underline-offset-4 hover:underline dark:text-orange-300">Voltar às empresas</Link>
         </div>
       </MainLayout>
     )
@@ -167,11 +175,15 @@ function EmpresaContent() {
                 {empresa.sector && <Badge variant="neutral">{empresa.sector}</Badge>}
                 {localizacao && <span>{localizacao}</span>}
               </div>
+              <div className="pt-1"><Rating media={media.media} total={media.total} size="md" /></div>
             </div>
           </CardContent>
         </Card>
 
-        <BotaoContactarEmpresa empresaId={empresa.id} visivel={podeContactar} />
+        <section aria-label="Contacto principal" className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="w-full sm:max-w-xs"><BotaoContactarEmpresa empresaId={empresa.id} visivel={podeContactar} className="[&>button]:min-h-[44px] [&>button]:w-full" /></div>
+          {empresa.whatsapp && <div className="w-full sm:max-w-xs"><ProfissionalWhatsApp whatsapp={empresa.whatsapp} /></div>}
+        </section>
 
         {empresa.description && (
           <Card variant="muted" padding="md">
@@ -204,20 +216,12 @@ function EmpresaContent() {
               </div>
             </div>
 
-            {empresa.horario_atendimento && (
-              <div>
-                <p className="text-sm font-medium text-neutral-500 dark:text-cream-text/70">Horário de atendimento</p>
-                <p className="mt-1 whitespace-pre-wrap text-neutral-900 dark:text-cream">{empresa.horario_atendimento}</p>
-              </div>
-            )}
+            <div>
+              <p className="text-sm font-medium text-neutral-500 dark:text-cream-text/70">Disponibilidade e horário</p>
+              <p className="mt-1 whitespace-pre-wrap text-neutral-900 dark:text-cream">{empresa.horario_atendimento || "Horário ainda não informado pela empresa."}</p>
+            </div>
           </CardContent>
         </Card>
-
-        {empresa.whatsapp && (
-          <div className="max-w-md">
-            <ProfissionalWhatsApp whatsapp={empresa.whatsapp} />
-          </div>
-        )}
 
         {temPortfolio && (
           <section>
@@ -227,7 +231,7 @@ function EmpresaContent() {
 
         <section className="space-y-6">
           {avaliacoesCarregando ? (
-            <p className="py-8 text-center text-neutral-500 dark:text-cream-text/70">Carregando avaliações...</p>
+            <p role="status" aria-live="polite" className="py-8 text-center text-neutral-500 dark:text-cream-text/70">Carregando avaliações...</p>
           ) : (
             <AvaliacoesProfissional avaliacoes={avaliacoes} resumo={media} />
           )}
