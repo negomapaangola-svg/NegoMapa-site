@@ -134,18 +134,41 @@ CREATE TRIGGER trg_proteger_propriedade_servico
   BEFORE INSERT OR UPDATE ON public.servicos
   FOR EACH ROW EXECUTE FUNCTION public.proteger_propriedade_servico();
 
--- Reafirma a protecção de estado existente (apenas administradores aprovam).
-DO $$
+-- A função legado public.proteger_estado() aprova automaticamente INSERTs em
+-- servicos e vagas. Não a reutilizar em serviços: isso permitiria auto-aprovação.
+-- A função legado permanece intacta para as outras tabelas que a utilizem.
+CREATE OR REPLACE FUNCTION public.proteger_estado_servico()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path TO ''
+AS $function$
 BEGIN
-  IF to_regprocedure('public.proteger_estado()') IS NULL THEN
-    RAISE EXCEPTION 'FASE 3B: função public.proteger_estado() inexistente';
+  IF (current_user = 'postgres' AND session_user = 'postgres')
+     OR current_user = 'service_role'
+     OR public.is_admin() THEN
+    RETURN NEW;
   END IF;
+
+  IF TG_OP = 'INSERT' THEN
+    NEW.estado := 'pendente';
+    RETURN NEW;
+  END IF;
+
+  IF NEW.estado IS DISTINCT FROM OLD.estado THEN
+    RAISE EXCEPTION 'Apenas administradores podem alterar o estado do serviço';
+  END IF;
+
+  RETURN NEW;
 END
-$$;
+$function$;
+
+REVOKE ALL ON FUNCTION public.proteger_estado_servico()
+  FROM PUBLIC, anon, authenticated;
+
 DROP TRIGGER IF EXISTS trg_proteger_estado_servicos ON public.servicos;
 CREATE TRIGGER trg_proteger_estado_servicos
   BEFORE INSERT OR UPDATE ON public.servicos
-  FOR EACH ROW EXECUTE FUNCTION public.proteger_estado();
+  FOR EACH ROW EXECUTE FUNCTION public.proteger_estado_servico();
 
 -- 3. RLS. A política restritiva de conta activa existente mantém-se.
 DROP POLICY IF EXISTS "active_owner_public_select" ON public.servicos;
@@ -501,6 +524,17 @@ BEGIN
       AND conname = 'servicos_um_proprietario_check' AND convalidated
   ) THEN
     RAISE EXCEPTION 'FASE 3B: constraint de propriedade exclusiva não validada';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_trigger t
+    WHERE t.tgrelid = 'public.servicos'::regclass
+      AND t.tgname = 'trg_proteger_estado_servicos'
+      AND t.tgfoid = 'public.proteger_estado_servico()'::regprocedure
+      AND NOT t.tgisinternal
+  ) THEN
+    RAISE EXCEPTION 'FASE 3B: trigger de estado de serviços não usa a função segura';
   END IF;
 
   IF EXISTS (
