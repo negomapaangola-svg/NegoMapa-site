@@ -82,7 +82,7 @@ export function InfoChip({ children, className }: { children: ReactNode; classNa
 
 export function RatingBadge({ average, total }: { average: number; total: number }) {
   return <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-950/40 dark:text-amber-200" aria-label={total ? `Avaliação ${average.toFixed(1)} de 5, ${total} avaliações` : 'Sem avaliações'}>
-    <span aria-hidden="true">★</span>{total ? average.toFixed(1).replace('.', ',') : 'Novo'}{total > 0 && <span className="font-normal opacity-75">({total})</span>}
+    <span aria-hidden="true">★</span>{total ? average.toFixed(1).replace('.', ',') : 'Sem avaliações'}{total > 0 && <span className="font-normal opacity-75">({total})</span>}
   </span>;
 }
 

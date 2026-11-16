@@ -52,7 +52,10 @@ export default async function ProfissionaisPage({ searchParams }: { searchParams
       <div className="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">
         <PageHeader title="Profissionais" description="Encontre profissionais qualificados por área e localização em Angola." />
         <SearchBar action="/profissionais" defaultValue={filtros.q} placeholder="Nome, serviço ou província" />
-        <FilterChips value={filtros.categoria} items={[{label:"Todas",value:"",href:"/profissionais"},...categorias.map(c=>({label:c,value:c,href:`/profissionais?${new URLSearchParams({categoria:c})}`}))]} />
+        <FilterChips value={filtros.categoria} items={[
+          {label:"Todas",value:"",href:`/profissionais?${new URLSearchParams({q:filtros.q,provincia:filtros.provincia})}`},
+          ...categorias.map(c=>({label:c,value:c,href:`/profissionais?${new URLSearchParams({q:filtros.q,categoria:c,provincia:filtros.provincia})}`}))
+        ]} />
         <SettingsSheet title="Filtros e definições">
           <FiltrosProfissionais q={filtros.q} categoria={filtros.categoria} provincia={filtros.provincia} categorias={categorias} provincias={provincias} />
         </SettingsSheet>

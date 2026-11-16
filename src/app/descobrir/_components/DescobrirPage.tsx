@@ -1,4 +1,4 @@
-import type { ParamsDescobrir } from '@/lib/descobrir/params';
+import { hrefDescobrir, type ParamsDescobrir } from '@/lib/descobrir/params';
 import type { CategoriaDescobrir, ResultadoDescobrir } from '@/lib/descobrir/buscar-servicos';
 import type { ResultadoProdutos } from '@/lib/descobrir/buscar-produtos';
 import { SeparadoresTipo } from './SeparadoresTipo';
@@ -28,7 +28,7 @@ export function DescobrirPage({ params, categorias, municipios, totalPaginas, se
   const categoriasRapidas = categorias.slice(0, 8).map((categoria) => ({
     label: categoria.nome,
     value: categoria.slug,
-    href: `/descobrir?${new URLSearchParams({ tipo: params.tipo, categoria: categoria.slug })}`,
+    href: hrefDescobrir(params, { categoria: categoria.slug, pagina: 1 }),
   }));
 
   return (
