@@ -129,7 +129,8 @@ export default async function ProfissionalPublicoPage({ params }: { params: Para
           <Card variant="liquid" padding="none" className="overflow-hidden border border-white/70 shadow-xl shadow-slate-900/5 dark:border-white/10 dark:shadow-black/20">
             <div className="p-5 sm:p-8">
               {dados.categoria && (
-                <div className="mb-4">
+                <div className="mb-4 space-y-1">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-cream-text/70">Serviço principal</p>
                   <Badge variant="primary">{dados.categoria}</Badge>
                 </div>
               )}
@@ -156,7 +157,7 @@ export default async function ProfissionalPublicoPage({ params }: { params: Para
                       <span>Localização não informada</span>
                     )}
                     {dados.anos_experiencia != null && (
-                      <span>{dados.anos_experiencia} {dados.anos_experiencia === 1 ? 'ano' : 'anos'} de experiência</span>
+                      <span>{dados.anos_experiencia} {dados.anos_experiencia === 1 ? 'ano' : 'anos'} de carreira</span>
                     )}
                   </div>
                 </div>
@@ -200,9 +201,13 @@ export default async function ProfissionalPublicoPage({ params }: { params: Para
                     {dados.bio?.trim() || 'Este profissional ainda não adicionou uma descrição.'}
                   </p>
                 </section>
+                <section aria-labelledby="formacao-titulo" className="mt-7 border-t border-card-border pt-6">
+                  <h2 id="formacao-titulo" className="text-lg font-semibold text-ink dark:text-cream">Formação</h2>
+                  <p className="mt-2 text-sm text-neutral-600 dark:text-cream-text">A informação sobre formação ainda não foi disponibilizada neste perfil.</p>
+                </section>
                 {especialidades.length > 0 && (
                   <section aria-labelledby="especialidades-titulo" className="mt-7 border-t border-card-border pt-6">
-                    <h2 id="especialidades-titulo" className="text-lg font-semibold text-ink dark:text-cream">Especialidades</h2>
+                    <h2 id="especialidades-titulo" className="text-lg font-semibold text-ink dark:text-cream">Outras habilidades e especialidades</h2>
                     <ul className="mt-3 flex flex-wrap gap-2" aria-label="Especialidades do profissional">
                       {especialidades.map((especialidade, index) => (
                         <li key={`${especialidade}-${index}`}>
@@ -212,11 +217,14 @@ export default async function ProfissionalPublicoPage({ params }: { params: Para
                     </ul>
                   </section>
                 )}
-                {(dados.disponibilidade_dias?.length || dados.disponibilidade_horarios) && (
-                  <div className="mt-6 border-t border-card-border pt-5">
-                    <Disponibilidade dias={dados.disponibilidade_dias} horarios={dados.disponibilidade_horarios} />
-                  </div>
-                )}
+                <section aria-labelledby="disponibilidade-titulo" className="mt-6 border-t border-card-border pt-5">
+                  <h3 id="disponibilidade-titulo" className="text-sm font-semibold text-ink dark:text-cream">Disponibilidade e horário</h3>
+                  {(dados.disponibilidade_dias?.length || dados.disponibilidade_horarios) ? (
+                    <div className="mt-2"><Disponibilidade dias={dados.disponibilidade_dias} horarios={dados.disponibilidade_horarios} /></div>
+                  ) : (
+                    <p className="mt-2 text-sm text-neutral-600 dark:text-cream-text">Este profissional ainda não indicou os seus dias e horários disponíveis.</p>
+                  )}
+                </section>
               </Card>
 
               <Card variant="liquid" padding="lg" className="border border-white/70 shadow-md shadow-slate-900/5 dark:border-white/10 dark:shadow-black/20">
