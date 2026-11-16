@@ -239,7 +239,9 @@ $policies$;
 -- 5. Vistas internas. O papel proprietário não é dono das tabelas e não tem
 -- BYPASSRLS: as políticas acima são aplicadas durante todas estas leituras.
 -- A sessão de migração assume temporariamente o papel proprietário para criar
--- ou substituir as vistas internas; a membership é removida antes do COMMIT.
+-- ou substituir as vistas internas. A membership do principal de migração
+-- postgres fica limitada a este papel NOLOGIN/NOBYPASSRLS; nenhum papel API
+-- recebe membership e o papel técnico não pode iniciar sessão.
 GRANT negomapa_public_view_owner TO postgres;
 SET LOCAL ROLE negomapa_public_view_owner;
 -- O bloco cria as vistas na primeira execução e substitui as definições nas
@@ -337,7 +339,6 @@ TO anon, authenticated, service_role, postgres;
 -- O papel é proprietário das vistas internas; retirar CREATE reduz privilégios.
 RESET ROLE;
 REVOKE CREATE ON SCHEMA negomapa_private FROM negomapa_public_view_owner;
-REVOKE negomapa_public_view_owner FROM postgres;
 
 -- 6. As cinco vistas públicas mantêm nomes, colunas, tipos e ordem actuais.
 -- SECURITY INVOKER garante que o papel chamador não herda os privilégios do
