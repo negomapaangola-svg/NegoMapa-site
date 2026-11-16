@@ -40,11 +40,14 @@ export function SearchBar({ action = '/descobrir', defaultValue = '', placeholde
 }
 
 export function FilterChips({ items, value, onChange, className }: {
-  items: Array<{ label: string; value: string }>; value?: string; onChange?: (value: string) => void; className?: string;
+  items: Array<{ label: string; value: string; href?: string }>; value?: string; onChange?: (value: string) => void; className?: string;
 }) {
   return <div className={cn('flex flex-wrap gap-2', className)} aria-label="Filtros rápidos">
-    {items.map((item) => <button key={item.value} type="button" aria-pressed={value === item.value}
-      onClick={() => onChange?.(item.value)}
+    {items.map((item) => item.href ? <Link key={item.value} href={item.href} aria-current={value === item.value ? 'page' : undefined}
+      className={cn('inline-flex min-h-11 items-center rounded-full border px-4 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500',
+        value === item.value ? 'border-orange-500 bg-orange-500 text-white' : 'border-card-border bg-white text-ink hover:border-orange-400 dark:bg-neutral-900 dark:text-cream')}>
+      {item.label}
+    </Link> : <button key={item.value} type="button" aria-pressed={value === item.value} onClick={() => onChange?.(item.value)}
       className={cn('inline-flex min-h-11 items-center rounded-full border px-4 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500',
         value === item.value ? 'border-orange-500 bg-orange-500 text-white' : 'border-card-border bg-white text-ink hover:border-orange-400 dark:bg-neutral-900 dark:text-cream')}>
       {item.label}
@@ -166,7 +169,7 @@ export interface CompanyCardData {
   logo?: string | null; rating?: number; reviewCount?: number; whatsapp?: string | null;
 }
 
-export function CompanyCard({ company }: { company: CompanyCardData }) {
+export function CompanyCard({ company, contactAction }: { company: CompanyCardData; contactAction?: ReactNode }) {
   return <Card padding="md" className="flex h-full flex-col gap-3">
     <div className="flex items-start gap-3">
       <CompanyLogo src={company.logo} alt={company.name} name={company.name} width={56} height={56} className="h-14 w-14 shrink-0 rounded-xl" />
@@ -177,7 +180,7 @@ export function CompanyCard({ company }: { company: CompanyCardData }) {
     {company.location && <p className="text-sm text-neutral-600 dark:text-cream-text">⌖ {company.location}</p>}
     <div className="flex flex-wrap items-center justify-between gap-2">
       {typeof company.rating === 'number' ? <Rating media={company.rating} total={company.reviewCount ?? 0} size="sm" /> : <RatingBadge average={0} total={0} />}
-      <ContactCTA whatsapp={company.whatsapp} />
+      {contactAction ?? <ContactCTA whatsapp={company.whatsapp} />}
     </div>
   </Card>;
 }
