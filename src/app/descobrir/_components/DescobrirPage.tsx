@@ -3,7 +3,8 @@ import type { CategoriaDescobrir, ResultadoDescobrir } from '@/lib/descobrir/bus
 import type { ResultadoProdutos } from '@/lib/descobrir/buscar-produtos';
 import { SeparadoresTipo } from './SeparadoresTipo';
 import { FiltrosDescobrir } from './FiltrosDescobrir';
-import { EstadoSemResultados } from './EstadoSemResultados';
+import Link from 'next/link';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { PaginacaoDescobrir } from './PaginacaoDescobrir';
 import { RecomendacoesCliente } from './RecomendacoesCliente';
 import type { RecomendacaoDescobrir } from '@/lib/descobrir/recomendacoes';
@@ -69,7 +70,7 @@ export function DescobrirPage({ params, categorias, municipios, totalPaginas, se
               </li>
             ))}
           </ul>
-        ) : <EstadoSemResultados params={params} categorias={categorias} />}
+        ) : <EmptyState title={ehProdutos ? 'Nenhum produto encontrado.' : 'Nenhum serviço encontrado.'} description="Experimente alterar a pesquisa ou remover os filtros aplicados." action={<Link href={`/descobrir?tipo=${params.tipo}`} className="text-sm font-semibold text-orange-600 underline">Remover filtros</Link>} />}
         <PaginacaoDescobrir params={params} totalPaginas={totalPaginas} />
       </div>
     </section>
