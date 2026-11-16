@@ -371,6 +371,39 @@ CREATE POLICY "servicos_select_public_view_owner"
 -- 4. Privilégios. anon não escreve e só lê colunas públicas compatíveis com
 -- a listagem actual. company_id e campos administrativos não são expostos.
 REVOKE ALL PRIVILEGES ON TABLE public.servicos FROM anon;
+
+-- TRUNCATE não é protegido por RLS. Retirar também esse privilégio de
+-- authenticated, preservando DELETE condicionado à política administrativa.
+REVOKE TRUNCATE, REFERENCES, TRIGGER ON TABLE public.servicos FROM authenticated;
+
+-- Limpa privilégios DML que eventualmente tenham sido concedidos por coluna.
+DO $
+DECLARE
+  coluna record;
+BEGIN
+  FOR coluna IN
+    SELECT attname
+    FROM pg_attribute
+    WHERE attrelid = 'public.servicos'::regclass
+      AND attnum > 0
+      AND NOT attisdropped
+  LOOP
+    EXECUTE format(
+      'REVOKE INSERT (%1$I) ON TABLE public.servicos FROM anon',
+      coluna.attname
+    );
+    EXECUTE format(
+      'REVOKE UPDATE (%1$I) ON TABLE public.servicos FROM anon',
+      coluna.attname
+    );
+    EXECUTE format(
+      'REVOKE REFERENCES (%1$I) ON TABLE public.servicos FROM anon',
+      coluna.attname
+    );
+  END LOOP;
+END
+$;
+
 REVOKE SELECT (
   id, profissional_id, company_id, categoria_id, titulo, slug, descricao,
   preco, preco_tipo, whatsapp, provincia, municipio, estado, created_at,
@@ -456,6 +489,25 @@ BEGIN
      OR has_table_privilege('anon', 'public.servicos', 'DELETE')
      OR has_table_privilege('anon', 'public.servicos', 'TRUNCATE') THEN
     RAISE EXCEPTION 'FASE 3B: anon ainda possui privilégios de escrita';
+  END IF;
+
+  IF has_table_privilege('authenticated', 'public.servicos', 'TRUNCATE')
+     OR has_table_privilege('authenticated', 'public.servicos', 'TRIGGER')
+     OR has_table_privilege('authenticated', 'public.servicos', 'REFERENCES') THEN
+    RAISE EXCEPTION 'FASE 3B: authenticated mantém privilégios de infraestrutura desnecessários';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns c
+    WHERE c.table_schema = 'public'
+      AND c.table_name = 'servicos'
+      AND (
+        has_column_privilege('anon', 'public.servicos', c.column_name, 'INSERT')
+        OR has_column_privilege('anon', 'public.servicos', c.column_name, 'UPDATE')
+      )
+  ) THEN
+    RAISE EXCEPTION 'FASE 3B: anon mantém privilégios DML por coluna';
   END IF;
 
   IF has_column_privilege('anon', 'public.servicos', 'company_id', 'SELECT')
