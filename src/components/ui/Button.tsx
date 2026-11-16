@@ -13,7 +13,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const baseStyles = `
-  inline-flex min-h-10 items-center justify-center gap-2
+  inline-flex min-h-11 items-center justify-center gap-2
   font-heading font-bold rounded-xl
   transition-all duration-200 ease-out
   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-950
@@ -57,10 +57,10 @@ const variants = {
 };
 
 const sizes = {
-  sm: 'px-3 py-2 text-sm gap-1.5',
-  md: 'px-4 py-2.5 text-sm gap-2',
-  lg: 'px-5 py-3 text-base gap-2.5',
-  xl: 'px-6 py-4 text-lg gap-3',
+  sm: 'min-h-11 px-3 py-2 text-sm gap-1.5',
+  md: 'min-h-11 px-4 py-2.5 text-sm gap-2',
+  lg: 'min-h-11 px-5 py-3 text-base gap-2.5',
+  xl: 'min-h-11 px-6 py-4 text-lg gap-3',
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
