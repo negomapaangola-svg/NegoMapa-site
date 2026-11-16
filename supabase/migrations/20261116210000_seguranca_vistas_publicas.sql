@@ -337,6 +337,7 @@ TO anon, authenticated, service_role, postgres;
 -- O papel é proprietário das vistas internas; retirar CREATE reduz privilégios.
 RESET ROLE;
 REVOKE CREATE ON SCHEMA negomapa_private FROM negomapa_public_view_owner;
+REVOKE negomapa_public_view_owner FROM postgres;
 
 -- 6. As cinco vistas públicas mantêm nomes, colunas, tipos e ordem actuais.
 -- SECURITY INVOKER garante que o papel chamador não herda os privilégios do
