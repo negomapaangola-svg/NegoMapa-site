@@ -23,9 +23,10 @@ BEGIN
     IF EXISTS (
       SELECT 1
       FROM pg_catalog.pg_auth_members
-      WHERE roleid = v_role_oid OR member = v_role_oid
+      WHERE member = v_role_oid
+         OR (roleid = v_role_oid AND member <> (SELECT oid FROM pg_catalog.pg_roles WHERE rolname = 'postgres'))
     ) THEN
-      RAISE EXCEPTION 'negomapa_public_view_owner já tem memberships; revisão manual necessária';
+      RAISE EXCEPTION 'negomapa_public_view_owner tem memberships inesperadas; revisão manual necessária';
     END IF;
 
     IF EXISTS (
@@ -239,7 +240,13 @@ $policies$;
 -- BYPASSRLS: as políticas acima são aplicadas durante todas estas leituras.
 -- A sessão de migração assume temporariamente o papel proprietário para criar
 -- ou substituir as vistas internas; a membership é removida antes do COMMIT.
-GRANT negomapa_public_view_owner TO postgres;
+DO $membership$
+BEGIN
+  IF NOT pg_catalog.pg_has_role('postgres', 'negomapa_public_view_owner', 'MEMBER') THEN
+    GRANT negomapa_public_view_owner TO postgres;
+  END IF;
+END
+$membership$;
 SET LOCAL ROLE negomapa_public_view_owner;
 -- O bloco cria as vistas na primeira execução e substitui as definições nas
 -- execuções seguintes, mantendo o ficheiro idempotente.
@@ -365,7 +372,6 @@ TO anon, authenticated, service_role, postgres;
 -- O papel é proprietário das vistas internas; retirar CREATE reduz privilégios.
 REVOKE CREATE ON SCHEMA negomapa_private FROM negomapa_public_view_owner;
 RESET ROLE;
-REVOKE negomapa_public_view_owner FROM postgres;
 
 -- 6. As cinco vistas públicas mantêm nomes, colunas, tipos e ordem actuais.
 -- SECURITY INVOKER garante que o papel chamador não herda os privilégios do
