@@ -254,8 +254,6 @@ BEGIN
       c.referencia_localizacao, c.description, c.horario_atendimento,
       c.is_verified, c.is_approved, c.whatsapp, c.logo_url, c.portfolio
     FROM public.companies c
-    WHERE c.is_approved IS TRUE
-      AND negomapa_private.is_account_active(c.user_id)
   $view$;
   IF to_regclass('negomapa_private.v_empresas_publicas') IS NULL THEN
     EXECUTE 'CREATE VIEW negomapa_private.v_empresas_publicas WITH (security_barrier = true, security_invoker = false) AS ' || v_sql;
@@ -272,8 +270,6 @@ BEGIN
       p.faixa_preco_desde
     FROM public.profissionais p
     LEFT JOIN public.categorias c ON c.id = p.categoria_id
-    WHERE p.estado = 'aprovado'
-      AND negomapa_private.is_account_active(p.user_id)
   $view$;
   IF to_regclass('negomapa_private.v_profissionais_publicos') IS NULL THEN
     EXECUTE 'CREATE VIEW negomapa_private.v_profissionais_publicos WITH (security_barrier = true, security_invoker = false) AS ' || v_sql;
@@ -287,14 +283,6 @@ BEGIN
       p.preco_tipo, p.estado_produto, p.entrega, p.provincia, p.municipio,
       p.criado_em
     FROM public.produtos p
-    WHERE p.estado_aprovacao = 'aprovado'
-      AND EXISTS (
-        SELECT 1
-        FROM public.companies c
-        WHERE c.id = p.company_id
-          AND c.is_approved IS TRUE
-          AND negomapa_private.is_account_active(c.user_id)
-      )
   $view$;
   IF to_regclass('negomapa_private.v_produtos_publicos') IS NULL THEN
     EXECUTE 'CREATE VIEW negomapa_private.v_produtos_publicos WITH (security_barrier = true, security_invoker = false) AS ' || v_sql;
@@ -305,15 +293,6 @@ BEGIN
   v_sql := $view$
     SELECT pi.id, pi.produto_id, pi.url, pi.ordem
     FROM public.produto_imagens pi
-    WHERE EXISTS (
-      SELECT 1
-      FROM public.produtos p
-      JOIN public.companies c ON c.id = p.company_id
-      WHERE p.id = pi.produto_id
-        AND p.estado_aprovacao = 'aprovado'
-        AND c.is_approved IS TRUE
-        AND negomapa_private.is_account_active(c.user_id)
-    )
   $view$;
   IF to_regclass('negomapa_private.v_produto_imagens_publicas') IS NULL THEN
     EXECUTE 'CREATE VIEW negomapa_private.v_produto_imagens_publicas WITH (security_barrier = true, security_invoker = false) AS ' || v_sql;
@@ -327,14 +306,6 @@ BEGIN
       v.categoria, v.provincia, v.municipio, v.tipo_contrato, v.salario,
       v.estado, v.created_at
     FROM public.vagas v
-    WHERE v.estado = 'aprovado'
-      AND EXISTS (
-        SELECT 1
-        FROM public.companies c
-        WHERE c.id = v.company_id
-          AND c.is_approved IS TRUE
-          AND negomapa_private.is_account_active(c.user_id)
-      )
   $view$;
   IF to_regclass('negomapa_private.v_vagas_publicas') IS NULL THEN
     EXECUTE 'CREATE VIEW negomapa_private.v_vagas_publicas WITH (security_barrier = true, security_invoker = false) AS ' || v_sql;
