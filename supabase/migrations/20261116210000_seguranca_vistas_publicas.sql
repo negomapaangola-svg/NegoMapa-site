@@ -240,13 +240,7 @@ $policies$;
 -- BYPASSRLS: as políticas acima são aplicadas durante todas estas leituras.
 -- A sessão de migração assume temporariamente o papel proprietário para criar
 -- ou substituir as vistas internas; a membership é removida antes do COMMIT.
-DO $membership$
-BEGIN
-  IF NOT pg_catalog.pg_has_role('postgres', 'negomapa_public_view_owner', 'MEMBER') THEN
-    EXECUTE 'GRANT negomapa_public_view_owner TO postgres';
-  END IF;
-END
-$membership$;
+GRANT negomapa_public_view_owner TO postgres;
 SET LOCAL ROLE negomapa_public_view_owner;
 -- O bloco cria as vistas na primeira execução e substitui as definições nas
 -- execuções seguintes, mantendo o ficheiro idempotente.
