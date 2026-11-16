@@ -367,7 +367,7 @@ GRANT SELECT (id, name, user_id, is_approved)
 GRANT SELECT (id, nome, user_id, estado)
   ON TABLE public.profissionais TO negomapa_public_view_owner;
 GRANT USAGE ON SCHEMA negomapa_private
-  TO anon, authenticated, negomapa_public_view_owner;
+  TO anon, authenticated, service_role, negomapa_public_view_owner;
 
 -- 5. Vista interna sanitizada, propriedade da role RLS dedicada.
 CREATE OR REPLACE VIEW negomapa_private.v_servicos_publicos
