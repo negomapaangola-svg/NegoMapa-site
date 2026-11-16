@@ -340,11 +340,15 @@ END
 $private_views$;
 
 -- O owner tem de ser o papel limitado, nunca postgres/service_role.
+-- A migração só assume temporariamente o papel para transferir a propriedade;
+-- a membership é removida imediatamente após a transferência.
+GRANT negomapa_public_view_owner TO postgres;
 ALTER VIEW negomapa_private.v_empresas_publicas OWNER TO negomapa_public_view_owner;
 ALTER VIEW negomapa_private.v_profissionais_publicos OWNER TO negomapa_public_view_owner;
 ALTER VIEW negomapa_private.v_produtos_publicos OWNER TO negomapa_public_view_owner;
 ALTER VIEW negomapa_private.v_produto_imagens_publicas OWNER TO negomapa_public_view_owner;
 ALTER VIEW negomapa_private.v_vagas_publicas OWNER TO negomapa_public_view_owner;
+REVOKE negomapa_public_view_owner FROM postgres;
 
 -- O papel já é dono das vistas; não precisa de CREATE para leitura em runtime.
 REVOKE CREATE ON SCHEMA negomapa_private FROM negomapa_public_view_owner;
