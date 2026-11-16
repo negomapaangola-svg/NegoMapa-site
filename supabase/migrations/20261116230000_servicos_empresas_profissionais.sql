@@ -77,7 +77,9 @@ LANGUAGE plpgsql
 SET search_path TO ''
 AS $function$
 BEGIN
-  IF current_user IN ('postgres', 'service_role') OR public.is_admin() THEN
+  IF (current_user = 'postgres' AND session_user = 'postgres')
+     OR current_user = 'service_role'
+     OR public.is_admin() THEN
     RETURN NEW;
   END IF;
 
