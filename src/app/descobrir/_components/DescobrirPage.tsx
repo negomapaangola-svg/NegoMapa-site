@@ -56,14 +56,16 @@ export function DescobrirPage({ params, categorias, municipios, totalPaginas, se
           <ul className="grid grid-cols-1 gap-5 md:grid-cols-3 xl:grid-cols-4" aria-label={ehProdutos ? 'Resultados de produtos' : 'Resultados de serviços'}>
             {ehProdutos ? (produtos?.produtos ?? []).map((item) => (
               <li key={item.id}>
-                <ProductCard product={{ name: item.titulo, href: `/produto/${item.slug}`, price: item.preco,
-                  priceType: item.preco_tipo, location: [item.municipio, item.provincia].filter(Boolean).join(', ') || 'Angola',
+                <ProductCard product={{ name: item.titulo, description: item.descricao, href: `/produto/${item.slug}`, price: item.preco,
+                  priceType: item.preco_tipo, fulfilment: item.entrega ? (item.entrega === 'entrega' ? 'Entrega disponível' : item.entrega) : undefined, location: [item.municipio, item.provincia].filter(Boolean).join(', ') || 'Angola',
                   image: item.imagem }} />
               </li>
             )) : (servicos?.servicos ?? []).map((item) => (
               <li key={item.id}>
-                <ServiceCard service={{ name: item.titulo, href: `/servico/${item.slug}`, price: item.preco,
-                  priceType: item.preco_tipo, location: [item.municipio, item.provincia].filter(Boolean).join(', ') || 'Angola' }} />
+                <ServiceCard service={{ name: item.titulo, description: item.descricao, href: `/servico/${item.slug}`, price: item.preco,
+                  priceType: item.preco_tipo, providerName: item.prestador_nome ?? undefined,
+                  providerHref: item.prestador_slug ? `/profissional/${item.prestador_slug}` : undefined,
+                  whatsapp: item.prestador_whatsapp, location: [item.municipio, item.provincia].filter(Boolean).join(', ') || 'Angola' }} />
               </li>
             ))}
           </ul>

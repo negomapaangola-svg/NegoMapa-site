@@ -11,6 +11,8 @@ export type ProdutoDescobrir = {
   id: string;
   slug: string;
   titulo: string;
+  descricao?: string | null;
+  entrega?: string | null;
   preco: number | null;
   preco_tipo: string;
   provincia: string;
@@ -173,7 +175,7 @@ export async function buscarProdutosDescobrir(params: ParamsDescobrir, localizac
     const primeira = imagensPorProduto.get(linha.id)?.[0];
     const imagem = primeira ? await criarUrlImagemProduto(primeira.url) : null;
     produtos.push({
-      id: linha.id, slug: linha.slug, titulo: linha.titulo, preco: linha.preco,
+      id: linha.id, slug: linha.slug, titulo: linha.titulo, descricao: linha.descricao, entrega: linha.entrega, preco: linha.preco,
       preco_tipo: linha.preco_tipo, provincia: linha.provincia, municipio: linha.municipio,
       estado_produto: linha.estado_produto, imagem, distancia_km: linha.distancia_km,
     });

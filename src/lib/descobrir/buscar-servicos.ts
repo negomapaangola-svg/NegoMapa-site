@@ -6,6 +6,7 @@ import {
 import type { ParamsDescobrir } from './params';
 import { ordenarPorDistanciaEAdministrativa, type LocalizacaoAdministrativa } from '@/lib/localizacao/ordenar-resultados';
 import { obterDistanciasAproximadas } from '@/lib/actions/proximidade';
+import { obterProfissionaisContactoPorIds } from '@/lib/actions/profissionais-publicos';
 
 export const RESULTADOS_POR_PAGINA = 12;
 const LIMITE_AVALIACAO = 300;
@@ -17,6 +18,10 @@ export type ServicoDescobrir = {
   id: string;
   slug: string;
   titulo: string;
+  descricao?: string | null;
+  prestador_nome?: string | null;
+  prestador_slug?: string | null;
+  prestador_whatsapp?: string | null;
   preco: number | null;
   preco_tipo: string | null;
   provincia: string | null;
@@ -113,7 +118,7 @@ export async function buscarServicosDescobrir(params: ParamsDescobrir, localizac
   const termo = params.q.replace(/[,()*"\\%_]/g, ' ').trim().slice(0, 100);
   let query = supabase
     .from('servicos')
-    .select('id, slug, titulo, preco, preco_tipo, provincia, municipio, profissional_id', { count: 'exact' })
+    .select('id, slug, titulo, descricao, preco, preco_tipo, provincia, municipio, profissional_id', { count: 'exact' })
     .eq('estado', 'aprovado')
     .in('profissional_id', idsProfissionais)
     .in('categoria_id', categorias.map((item) => item.id))
@@ -165,12 +170,17 @@ export async function buscarServicosDescobrir(params: ParamsDescobrir, localizac
     console.error('Erro ao calcular avaliações dos serviços. Código:', erroAvaliacoes.code);
   }
   const resumos = resumirAvaliacoes(validarAvaliacoes(avaliacoes));
+  const contactos = await obterProfissionaisContactoPorIds(linhas.map((linha) => linha.profissional_id));
 
   const distancias = await obterDistanciasAproximadas('servico', linhas.map((linha) => linha.id));
   let resultados: ServicoDescobrir[] = linhas.map((linha) => ({
     id: linha.id,
     slug: linha.slug,
     titulo: linha.titulo,
+    descricao: linha.descricao,
+    prestador_nome: contactos.get(linha.profissional_id)?.nome ?? null,
+    prestador_slug: contactos.get(linha.profissional_id)?.slug ?? null,
+    prestador_whatsapp: contactos.get(linha.profissional_id)?.whatsapp ?? null,
     preco: linha.preco,
     preco_tipo: linha.preco_tipo,
     provincia: linha.provincia,
