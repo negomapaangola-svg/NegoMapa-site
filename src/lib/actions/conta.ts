@@ -24,8 +24,8 @@ export async function getContaSnapshot(): Promise<ContaSnapshot | null> {
   const { supabase, user } = await authenticated()
   const [profileResult, professionalResult, companyResult, detailsResult] = await Promise.all([
     supabase.from('profiles').select('id,nome,telefone,whatsapp,avatar_url,account_type,localizacao_provincia,localizacao_municipio,localizacao_bairro,is_active').eq('id', user.id).maybeSingle(),
-    supabase.from('profissionais').select('id,nome,telefone,whatsapp,bio,provincia,municipio,estado,avatar_url,categoria_id,especialidades,disponibilidade,disponibilidade_dias,disponibilidade_horarios,portfolio').eq('user_id', user.id).maybeSingle(),
-    supabase.from('companies').select('id,name,sector,province,city,description,whatsapp,phone,logo_url,is_approved,estado,horario_atendimento,portfolio').eq('user_id', user.id).maybeSingle(),
+    supabase.from('profissionais').select('id,nome,telefone,whatsapp,bio,provincia,municipio,bairro,estado,avatar_url,categoria_id,especialidades,disponibilidade,disponibilidade_dias,disponibilidade_horarios,portfolio').eq('user_id', user.id).maybeSingle(),
+    supabase.from('companies').select('id,name,sector,province,city,bairro,rua,referencia_localizacao,website,description,whatsapp,phone,logo_url,is_approved,estado,horario_atendimento,portfolio').eq('user_id', user.id).maybeSingle(),
     supabase.from('conta_detalhes').select('formacao,preferencias,disponibilidade,tipo_empresa,tamanho_empresa').eq('user_id', user.id).maybeSingle(),
   ])
   if (profileResult.error) throw new Error('Não foi possível carregar o perfil da conta.')

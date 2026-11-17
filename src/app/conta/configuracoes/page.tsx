@@ -31,7 +31,7 @@ export default async function ContaConfiguracoesPage({ searchParams }: { searchP
     </section>
 
     <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
-      <div><h2 className="font-semibold">Notificações</h2><p className="text-sm text-slate-500">Escolha como pretende receber actualizações.</p></div>
+      <div id="notificacoes"><h2 className="font-semibold">Notificações</h2><p className="text-sm text-slate-500">Escolha como pretende receber actualizações.</p></div>
       <form action={guardarNotificacoesConta} className="space-y-3">
         {(['plataforma','email','whatsapp'] as const).map((key) => <label key={key} className="flex min-h-11 items-center gap-3 text-sm"><input type="checkbox" name={key} defaultChecked={Boolean(pref[key])} className="h-5 w-5 rounded border-slate-300 accent-orange-700" /><span>{key === 'plataforma' ? 'Notificações na plataforma' : key === 'email' ? 'Email' : 'WhatsApp'}</span></label>)}
         <button className="inline-flex min-h-11 items-center rounded-xl bg-slate-900 px-4 text-sm font-semibold text-white hover:bg-slate-700 dark:bg-white dark:text-slate-900">Guardar notificações</button>
@@ -39,7 +39,7 @@ export default async function ContaConfiguracoesPage({ searchParams }: { searchP
     </section>
 
     <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
-      <div><h2 className="font-semibold">Segurança</h2><p className="text-sm text-slate-500">O email de autenticação não pode ser alterado nesta fase.</p></div>
+      <div id="seguranca"><h2 className="font-semibold">Segurança</h2><p className="text-sm text-slate-500">O email de autenticação não pode ser alterado nesta fase.</p></div>
       <form action={alterarPalavraPasse} className="grid gap-3 sm:grid-cols-2">
         <label className="space-y-1.5 text-sm font-medium">Nova palavra-passe<input name="password" type="password" autoComplete="new-password" required minLength={10} className="mt-1 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 dark:border-slate-700 dark:bg-slate-950" /></label>
         <label className="space-y-1.5 text-sm font-medium">Confirmar palavra-passe<input name="confirmation" type="password" autoComplete="new-password" required minLength={10} className="mt-1 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 dark:border-slate-700 dark:bg-slate-950" /></label>
@@ -49,12 +49,12 @@ export default async function ContaConfiguracoesPage({ searchParams }: { searchP
     </section>
 
     <section className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
-      <div><h2 className="font-semibold">Contactar administrador</h2><p className="text-sm text-slate-500">Para apoio ou dúvidas sobre a conta, envie uma mensagem à equipa NegóMapa.</p></div>
+      <div id="contactar-administrador"><h2 className="font-semibold">Contactar administrador</h2><p className="text-sm text-slate-500">Para apoio ou dúvidas sobre a conta, envie uma mensagem à equipa NegóMapa.</p></div>
       <a href="/mensagens/administracao" className="inline-flex min-h-11 items-center text-sm font-semibold text-orange-700 hover:underline dark:text-orange-300">Contactar administrador</a>
     </section>
 
     <section id="apagar-conta" className="space-y-3 rounded-2xl border border-red-300 bg-white p-5 dark:border-red-900 dark:bg-slate-900">
-      <div><h2 className="font-semibold text-red-700 dark:text-red-300">Zona de perigo</h2><p className="text-sm text-slate-600 dark:text-slate-300">Solicitar a eliminação da conta. O pedido será analisado pelo administrador; esta acção não apaga automaticamente os dados nem a autenticação.</p></div>
+      <div id="apagar-conta"><h2 className="font-semibold text-red-700 dark:text-red-300">Zona de perigo</h2><p className="text-sm text-slate-600 dark:text-slate-300">Solicitar a eliminação da conta. O pedido será analisado pelo administrador; esta acção não apaga automaticamente os dados nem a autenticação.</p></div>
       <form action={solicitarEliminacaoConta} className="space-y-3">
         <label className="block space-y-1.5 text-sm font-medium">Motivo do pedido<textarea name="motivo" required minLength={10} maxLength={1000} rows={3} className="w-full rounded-xl border border-slate-300 bg-white px-3 py-3 dark:border-slate-700 dark:bg-slate-950" /></label>
         <label className="block space-y-1.5 text-sm font-medium">Escreva ELIMINAR para confirmar<input name="confirmacao" required autoComplete="off" className="min-h-11 w-full rounded-xl border border-red-300 bg-white px-3 dark:border-red-900 dark:bg-slate-950" /></label>
