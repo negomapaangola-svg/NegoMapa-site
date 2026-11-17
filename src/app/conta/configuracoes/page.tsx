@@ -25,7 +25,7 @@ export default async function ContaConfiguracoesPage({ searchParams }: { searchP
     {params.password && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200">Palavra-passe actualizada.</p>}
     {params.pedido && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200">Pedido de eliminação enviado ao administrador.</p>}
 
-    <section className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+    <section id="localizacao" className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
       <div><h2 className="font-semibold">Localização</h2><p className="text-sm text-slate-500">Actualize a província, município e bairro na secção de perfil. A localização GPS é opcional e depende do seu consentimento.</p></div>
       <a href="/conta/perfil#localizacao-preferencias" className="inline-flex min-h-11 items-center text-sm font-semibold text-orange-700 hover:underline dark:text-orange-300">Gerir localização e preferências</a>
     </section>
