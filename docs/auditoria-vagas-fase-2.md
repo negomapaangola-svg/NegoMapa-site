@@ -57,7 +57,8 @@ Depois da migração: 3 vagas, 0 candidaturas e 0 vagas encerradas. Não houve a
 | Simulação SQL da migração | PASSOU; transacção revertida e esquema permaneceu inalterado |
 | Aplicação da migração e verificação pós-condição | PASSOU |
 | RLS activado em vagas/candidaturas | PASSOU por introspecção |
-| Políticas de isolamento candidato/empresa | Confirmadas por introspecção; não houve teste funcional com dois utilizadores |
+| Isolamento de UPDATE por empresa | PASSOU em transacção com identidade activa `authenticated`: tentativa de actualizar vagas não pertencentes à empresa afectou 0 linhas; transacção revertida |
+| Políticas de isolamento candidato/empresa | Confirmadas por introspecção; não houve teste funcional com dois candidatos
 | Restrição contra duplicados | PASSOU por introspecção da constraint UNIQUE; tentativa real não executada |
 | Validação de candidatura a vaga encerrada/empresa inactiva | PASSOU por definição instalada da função; sem vaga aprovada para teste funcional |
 | Pesquisa, filtros e detalhe | Revisão estática do código; sem sessão de navegador disponível |
@@ -71,7 +72,8 @@ Depois da migração: 3 vagas, 0 candidaturas e 0 vagas encerradas. Não houve a
 1. Testes funcionais completos com duas empresas activas e um candidato activo exigem contas de teste autorizadas ou um ambiente isolado. Não foram criados utilizadores ou registos de demonstração em produção.
 2. O preview Vercel correspondente ao commit não pôde ser criado devido ao limite de deployments. Não existe URL de preview válida para entregar nesta execução.
 3. A política existente `vagas_delete_auth` permite ao proprietário eliminar uma vaga; a FK `candidaturas.vaga_id ON DELETE CASCADE` faria desaparecer as candidaturas associadas. A UI desta fase não oferece eliminação. A política não foi alterada por não fazer parte da lista de acções solicitadas.
-4. O estado de aprovação/moderação permanece sob as triggers e políticas existentes; a Fase 7 continua responsável por qualquer alteração à regra geral.
+4. `npm ci` reportou 20 vulnerabilidades no conjunto de dependências (6 moderadas, 13 altas e 1 crítica). Não foi executado `npm audit fix`, por estar fora do âmbito e poder introduzir alterações incompatíveis.
+5. O estado de aprovação/moderação permanece sob as triggers e políticas existentes; a Fase 7 continua responsável por qualquer alteração à regra geral.
 
 ## Critérios de aceitação
 
