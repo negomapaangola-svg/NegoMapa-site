@@ -58,13 +58,13 @@ Depois da migração: 3 vagas, 0 candidaturas e 0 vagas encerradas. Não houve a
 | Aplicação da migração e verificação pós-condição | PASSOU |
 | RLS activado em vagas/candidaturas | PASSOU por introspecção |
 | Isolamento de UPDATE por empresa | PASSOU em transacção com identidade activa `authenticated`: tentativa de actualizar vagas não pertencentes à empresa afectou 0 linhas; transacção revertida |
-| Políticas de isolamento candidato/empresa | Confirmadas por introspecção; não houve teste funcional com dois candidatos
+| Políticas de isolamento candidato/empresa | Confirmadas por introspecção; não houve teste funcional com dois candidatos |
 | Restrição contra duplicados | PASSOU por introspecção da constraint UNIQUE; tentativa real não executada |
 | Validação de candidatura a vaga encerrada/empresa inactiva | PASSOU por definição instalada da função; sem vaga aprovada para teste funcional |
 | Pesquisa, filtros e detalhe | Revisão estática do código; sem sessão de navegador disponível |
 | Erros de carregamento vs. listas vazias | Implementado com estados de erro distintos nas listagens pública e da empresa; lint/build/TypeScript executados no CI |
 | Criação, edição, publicação, encerramento e candidatura com papéis distintos | NÃO EXECUTADO: o projecto tem 0 candidatos activos, 0 vagas aprovadas e 0 candidaturas. Não foram criadas contas nem dados de demonstração |
-| Lint, build e TypeScript | PASSOU no GitHub Actions (run #123, commit `591e40d8`): lint, build e `tsc --noEmit` concluídos com sucesso. A página pública de vagas foi incluída na lista de lint para a validação do commit seguinte |
+| Lint, build e TypeScript | PASSOU no GitHub Actions (run #126, commit `e3fc4b33`): lint de todos os ficheiros alterados, `npm run build` e `npx tsc --noEmit` concluídos com sucesso em Node 24 |
 | Preview Vercel | BLOQUEADO pelo limite da equipa: `api-deployments-free-per-day`, mais de 100 deployments; API devolveu HTTP 402 e retry em 24 horas |
 
 ## Riscos restantes
