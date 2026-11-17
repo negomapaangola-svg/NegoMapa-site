@@ -6,9 +6,9 @@ DO $$
 BEGIN
   IF to_regclass('public.vagas') IS NULL
      OR to_regclass('public.candidaturas') IS NULL
-     OR to_regclass('negomapa_private.v_vagas_publicas') IS NULL
      OR to_regprocedure('negomapa_private.is_account_active(uuid)') IS NULL
-     OR to_regprocedure('public.vaga_disponivel_para_candidatura(uuid)') IS NULL THEN
+     OR to_regprocedure('public.vaga_disponivel_para_candidatura(uuid)') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'negomapa_public_view_owner') THEN
     RAISE EXCEPTION 'FASE 2: esquema base incompleto; migração cancelada';
   END IF;
 
@@ -27,9 +27,12 @@ ALTER TABLE public.vagas
 COMMENT ON COLUMN public.vagas.encerrada_em IS
   'Momento em que a empresa proprietária encerrou a vaga; NULL significa que continua aberta.';
 
--- A vista é executada pela role dedicada. Conceder apenas a nova coluna interna
--- necessária ao filtro; a coluna não é exposta pela vista pública.
-GRANT SELECT (encerrada_em) ON TABLE public.vagas TO negomapa_public_view_owner;
+-- A vista interna é propriedade de uma role dedicada que não deve ser transferida.
+-- Esta política restritiva aplica o encerramento na origem, sem alterar a vista.
+CREATE POLICY vagas_public_open_only
+  ON public.vagas AS RESTRICTIVE
+  FOR SELECT TO negomapa_public_view_owner
+  USING (encerrada_em IS NULL);
 
 CREATE OR REPLACE FUNCTION public.vaga_disponivel_para_candidatura(p_vaga_id uuid)
 RETURNS boolean
@@ -49,26 +52,6 @@ AS $function$
        AND negomapa_private.is_account_active(c.user_id)
   )
 $function$;
-
-CREATE OR REPLACE VIEW negomapa_private.v_vagas_publicas
-WITH (security_barrier = true, security_invoker = false)
-AS
-  SELECT
-    v.id,
-    v.company_id,
-    v.titulo,
-    v.slug,
-    v.descricao,
-    v.requisitos,
-    v.categoria,
-    v.provincia,
-    v.municipio,
-    v.tipo_contrato,
-    v.salario,
-    v.estado,
-    v.created_at
-  FROM public.vagas v
-  WHERE v.encerrada_em IS NULL;
 
 DO $$
 BEGIN
@@ -95,12 +78,14 @@ BEGIN
     RAISE EXCEPTION 'FASE 2: políticas de propriedade/privacidade em falta';
   END IF;
 
-  IF NOT has_column_privilege('negomapa_public_view_owner', 'public.vagas', 'encerrada_em', 'SELECT') THEN
-    RAISE EXCEPTION 'FASE 2: role da vista pública sem acesso à coluna de encerramento';
-  END IF;
-
-  IF pg_get_viewdef('negomapa_private.v_vagas_publicas'::regclass, true) NOT ILIKE '%encerrada_em IS NULL%' THEN
-    RAISE EXCEPTION 'FASE 2: a vista pública não exclui vagas encerradas';
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'vagas'
+      AND policyname = 'vagas_public_open_only'
+      AND cmd = 'SELECT'
+      AND permissive = 'RESTRICTIVE'
+  ) THEN
+    RAISE EXCEPTION 'FASE 2: política de encerramento da vista pública em falta';
   END IF;
 
   IF pg_get_functiondef('public.vaga_disponivel_para_candidatura(uuid)'::regprocedure) NOT ILIKE '%encerrada_em IS NULL%'

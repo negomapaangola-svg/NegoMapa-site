@@ -35,26 +35,7 @@ AS $function$
   )
 $function$;
 
-CREATE OR REPLACE VIEW negomapa_private.v_vagas_publicas
-WITH (security_barrier = true, security_invoker = false)
-AS
-  SELECT
-    id,
-    company_id,
-    titulo,
-    slug,
-    descricao,
-    requisitos,
-    categoria,
-    provincia,
-    municipio,
-    tipo_contrato,
-    salario,
-    estado,
-    created_at
-  FROM public.vagas;
-
-REVOKE SELECT (encerrada_em) ON TABLE public.vagas FROM negomapa_public_view_owner;
+DROP POLICY IF EXISTS vagas_public_open_only ON public.vagas;
 ALTER TABLE public.vagas DROP COLUMN encerrada_em;
 
 COMMIT;
