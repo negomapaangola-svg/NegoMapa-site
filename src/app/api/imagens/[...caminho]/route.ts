@@ -52,7 +52,7 @@ export async function GET(
   const { data: image, error } = await admin.storage.from(bucket).download(path)
   if (error || !image) return new NextResponse('Not found', { status: 404 })
 
-  const contentType = image.type === 'image/webp' ? 'image/webp' : 'image/jpeg'
+  const contentType = ['image/webp', 'image/jpeg', 'image/png'].includes(image.type) ? image.type : 'application/octet-stream'
   return new NextResponse(await image.arrayBuffer(), {
     status: 200,
     headers: {
