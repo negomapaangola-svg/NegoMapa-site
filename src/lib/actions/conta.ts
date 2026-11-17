@@ -77,6 +77,17 @@ function validImageRef(value: string, bucket: string, userId: string, folder: 'a
   return new RegExp('^' + userId + '/' + folder + '/[0-9a-f-]{36}\\.(webp|jpg)$', 'i').test(path)
 }
 
+function validPortfolioItems(value: unknown, bucket: string, userId: string) {
+  if (!Array.isArray(value)) return false
+  return value.every(item => {
+    if (typeof item === 'string') return validImageRef(item, bucket, userId, 'portfolio')
+    if (!item || typeof item !== 'object' || Array.isArray(item)) return false
+    const record = item as Record<string, unknown>
+    const imageKeys = ['imagem_url', 'image_url', 'foto_url', 'url_imagem']
+    return imageKeys.every(key => record[key] === undefined || record[key] === null || (typeof record[key] === 'string' && validImageRef(record[key] as string, bucket, userId, 'portfolio')))
+  })
+}
+
 function imageRefs(value: unknown, bucket: string, userId: string): string[] {
   const strings: string[] = []
   const collect = (item: unknown) => {
@@ -136,7 +147,7 @@ export async function guardarPerfilConta(form: FormData): Promise<void> {
     let portfolio: unknown = []
     if (portfolioRaw) {
       try { portfolio = JSON.parse(portfolioRaw) } catch { redirect('/conta/perfil?erro=portfolio') }
-      if (!Array.isArray(portfolio) || !portfolio.every(item => typeof item === 'string' && validImageRef(item, 'profissionais-portfolio', user.id, 'portfolio'))) redirect('/conta/perfil?erro=portfolio')
+      if (!validPortfolioItems(portfolio, 'profissionais-portfolio', user.id)) redirect('/conta/perfil?erro=portfolio')
     }
     const { data: owned } = await supabase.from('profissionais').select('id').eq('user_id', user.id).maybeSingle()
     if (!owned) redirect('/conta/perfil?erro=sem-perfil')
@@ -154,7 +165,7 @@ export async function guardarPerfilConta(form: FormData): Promise<void> {
     let portfolio: unknown = []
     if (portfolioRaw) {
       try { portfolio = JSON.parse(portfolioRaw) } catch { redirect('/conta/perfil?erro=portfolio') }
-      if (!Array.isArray(portfolio) || !portfolio.every(item => typeof item === 'string' && validImageRef(item, 'empresas-portfolio', user.id, 'portfolio'))) redirect('/conta/perfil?erro=portfolio')
+      if (!validPortfolioItems(portfolio, 'empresas-portfolio', user.id)) redirect('/conta/perfil?erro=portfolio')
     }
     const { data: owned } = await supabase.from('companies').select('id').eq('user_id', user.id).maybeSingle()
     if (!owned) redirect('/conta/perfil?erro=sem-perfil')
