@@ -14,7 +14,7 @@ interface FiltersFormProps {
 }
 
 const campo =
-  'w-full px-3 py-2 border border-card-border rounded-[4px] shadow-sm bg-white text-ink focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-neutral-700 dark:text-cream';
+  'min-h-[44px] w-full px-3 py-2 border border-card-border rounded-[4px] shadow-sm bg-white text-ink focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-neutral-700 dark:text-cream';
 
 /** Filtros por GET: título do serviço ou nome do profissional, categoria, província e município. */
 export function FiltersForm({ initialSearchParams, categorias, provincias, municipios }: FiltersFormProps) {

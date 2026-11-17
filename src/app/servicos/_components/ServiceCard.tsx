@@ -35,8 +35,9 @@ interface Service {
 function WhatsAppButton({ telefone }: { telefone: string | null | undefined }) {
   if (!telefone) return null;
 
-  const cleanNumber = telefone.replace(/\D/g, '');
-  const url = `https://wa.me/244${cleanNumber}`;
+  const digits = telefone.replace(/\D/g, '');
+  const numeroInternacional = digits.startsWith('244') ? digits : `244${digits.replace(/^0+/, '')}`;
+  const url = `https://wa.me/${numeroInternacional}`;
 
   // Link próprio, acima da camada que cobre o cartão.
   return (
@@ -44,7 +45,7 @@ function WhatsAppButton({ telefone }: { telefone: string | null | undefined }) {
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className="relative z-10 inline-flex items-center justify-center gap-1.5 rounded-[4px] bg-orange-500 px-3 py-1.5 text-sm font-heading font-bold text-ink shadow-sm hover:bg-orange-600 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2"
+      className="relative z-10 inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-[4px] bg-orange-500 px-3 py-2 text-sm font-heading font-bold text-ink shadow-sm hover:bg-orange-600 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2"
     >
       <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 16v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h10a2 2 0 012 2v1m-3.678-1.636A16.039 16.039 0 016 12.353 16.083 16.083 0 0112.05 3s10.03 8.347 10.323 9.378a7.97 7.97 0 00-1.677 2.043 7.926 7.926 0 01-3.062.094A11.956 11.956 0 0018 16z" />
