@@ -164,7 +164,6 @@ export async function createProfile(formData: ProfileFormData): Promise<ActionRe
       bio: formData.bio.trim(),
       provincia: formData.provincia.trim(),
       municipio: formData.municipio.trim(),
-      estado: 'pendente',
       avatar_url: formData.avatar_url || null,
       bi_numero: formData.bi_numero?.trim() || null,
       anos_experiencia: formData.anos_experiencia ?? null,
@@ -244,17 +243,32 @@ export async function createService(formData: ServiceFormData): Promise<ActionRe
     return { success: false, error: 'Dados inválidos', fieldErrors }
   }
 
-  const { data: profissional, error: profError } = await supabase
-    .from('profissionais')
-    .select('id, estado')
-    .eq('user_id', user.id)
-    .single()
+  const contexto = await obterContextoUtilizador()
+  let profissionalId: string | null = null
+  let companyId: string | null = null
 
-  if (profError || !profissional) {
-    return { success: false, error: 'Perfil profissional não encontrado. Crie o perfil primeiro.' }
-  }
-  if (profissional.estado !== 'aprovado') {
-    return { success: false, error: 'Apenas profissionais aprovados podem publicar serviços.' }
+  if (contexto.accountType === 'profissional') {
+    const { data: profissional, error: profError } = await supabase
+      .from('profissionais')
+      .select('id, estado')
+      .eq('user_id', user.id)
+      .maybeSingle()
+    if (profError || !profissional || profissional.estado !== 'aprovado') {
+      return { success: false, error: 'Apenas profissionais aprovados podem publicar serviços.' }
+    }
+    profissionalId = profissional.id
+  } else if (contexto.accountType === 'empresa') {
+    const { data: empresa, error: empresaError } = await supabase
+      .from('companies')
+      .select('id, is_approved, estado')
+      .eq('user_id', user.id)
+      .maybeSingle()
+    if (empresaError || !empresa || empresa.is_approved !== true || empresa.estado !== 'aprovado') {
+      return { success: false, error: 'Apenas empresas aprovadas podem publicar serviços.' }
+    }
+    companyId = empresa.id
+  } else {
+    return { success: false, error: 'Este tipo de conta não pode publicar serviços.' }
   }
 
   const baseSlug = generateSlug(formData.titulo)
@@ -278,7 +292,8 @@ export async function createService(formData: ServiceFormData): Promise<ActionRe
   const { error } = await supabase
     .from('servicos')
     .insert({
-      profissional_id: profissional.id,
+      profissional_id: profissionalId,
+      company_id: companyId,
       categoria_id: formData.categoria_id,
       titulo: formData.titulo.trim(),
       slug,
