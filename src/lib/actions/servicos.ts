@@ -260,10 +260,10 @@ export async function createService(formData: ServiceFormData): Promise<ActionRe
   } else if (contexto.accountType === 'empresa') {
     const { data: empresa, error: empresaError } = await supabase
       .from('companies')
-      .select('id, is_approved, estado')
+      .select('id, is_approved')
       .eq('user_id', user.id)
       .maybeSingle()
-    if (empresaError || !empresa || empresa.is_approved !== true || empresa.estado !== 'aprovado') {
+    if (empresaError || !empresa || empresa.is_approved !== true) {
       return { success: false, error: 'Apenas empresas aprovadas podem publicar serviços.' }
     }
     companyId = empresa.id
