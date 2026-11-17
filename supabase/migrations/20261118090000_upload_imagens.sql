@@ -71,18 +71,19 @@ end;
 $$;
 
 revoke all on function private.imagem_publica_aprovada(text,text) from public;
-grant execute on function private.imagem_publica_aprovada(text,text) to anon, authenticated, service_role;
+revoke all on function private.imagem_publica_aprovada(text,text) from anon, authenticated, public;
+grant execute on function private.imagem_publica_aprovada(text,text) to service_role;
 
 -- Wrapper de resultado booleano para a rota server-side; não devolve dados nem caminhos.
 create or replace function public.pode_servir_imagem(p_bucket text, p_name text)
 returns boolean
 language sql
 stable
-security definer
+security invoker
 set search_path = ''
-as $$ select private.imagem_publica_aprovada(p_bucket, p_name) $$;
-revoke all on function public.pode_servir_imagem(text,text) from public;
-grant execute on function public.pode_servir_imagem(text,text) to anon, authenticated, service_role;
+as $ select private.imagem_publica_aprovada(p_bucket, p_name) $;
+revoke all on function public.pode_servir_imagem(text,text) from public, anon, authenticated;
+grant execute on function public.pode_servir_imagem(text,text) to service_role;
 
 -- Buckets sempre privados. O endpoint da aplicação usa service role apenas depois de validar pode_servir_imagem.
 insert into storage.buckets(id,name,public,file_size_limit,allowed_mime_types)
@@ -145,7 +146,7 @@ using (
 -- O bucket clientes-avatars nunca é incluído na função de leitura pública.
 
 -- Verifica referências em todas as tabelas/views públicas; em caso de dúvida, não autoriza apagar.
-create or replace function public.pode_apagar_imagem(p_bucket text, p_name text)
+create or replace function private.pode_apagar_imagem(p_bucket text, p_name text)
 returns boolean
 language plpgsql
 security definer
@@ -172,15 +173,22 @@ begin
       'select exists(select 1 from public.%I as r where position($1 in to_jsonb(r)::text) > 0)',
       v_table.table_name
     ) into v_referenced using p_name;
-    if v_referenced then
-      return false;
-    end if;
+    if v_referenced then return false; end if;
   end loop;
 
   return true;
 end;
 $$;
-revoke all on function public.pode_apagar_imagem(text,text) from public;
+revoke all on function private.pode_apagar_imagem(text,text) from public, anon, authenticated;
+grant execute on function private.pode_apagar_imagem(text,text) to authenticated;
+
+create or replace function public.pode_apagar_imagem(p_bucket text, p_name text)
+returns boolean
+language sql
+security invoker
+set search_path = ''
+as $$ select private.pode_apagar_imagem(p_bucket, p_name) $$;
+revoke all on function public.pode_apagar_imagem(text,text) from public, anon;
 grant execute on function public.pode_apagar_imagem(text,text) to authenticated;
 
 
