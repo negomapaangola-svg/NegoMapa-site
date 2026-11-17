@@ -65,7 +65,7 @@ export function ImageUpload({bucket,folder,value,onChange,multiple=false,label}:
     xhr.setRequestHeader('Authorization','Bearer '+token)
     xhr.setRequestHeader('apikey',key)
     xhr.setRequestHeader('Content-Type',file.type)
-    xhr.setRequestHeader('Cache-Control','max-age=31536000, immutable')
+    xhr.setRequestHeader('Cache-Control','max-age=600')
     xhr.upload.onprogress=e=>{if(e.lengthComputable)cb(Math.round(e.loaded/e.total*100))}
     xhr.onload=()=>xhr.status>=200&&xhr.status<300?resolve():reject(new Error('Upload recusado. Verifique permissões e tamanho.'))
     xhr.onerror=()=>reject(new Error('Falha de rede durante o upload.'))
