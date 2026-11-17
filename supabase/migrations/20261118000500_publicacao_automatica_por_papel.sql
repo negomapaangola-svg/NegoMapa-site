@@ -29,7 +29,6 @@ begin
           where c.id = new.company_id
             and c.user_id = v_uid
             and c.is_approved is true
-            and c.estado = 'aprovado'
        ) then
       raise exception 'Apenas uma conta empresarial activa e aprovada pode publicar vagas.'
         using errcode = '42501';
@@ -62,7 +61,7 @@ begin
      or not exists (
        select 1 from public.companies c
         where c.id = new.company_id and c.user_id = v_uid
-          and c.is_approved is true and c.estado = 'aprovado'
+          and c.is_approved is true
      ) then
     raise exception 'A conta empresarial tem de permanecer activa e aprovada.'
       using errcode = '42501';
@@ -115,7 +114,7 @@ begin
       select exists (
         select 1 from public.companies c
          where c.id = new.company_id and c.user_id = v_uid
-           and c.is_approved is true and c.estado = 'aprovado'
+           and c.is_approved is true
       ) into v_ok;
     end if;
 
@@ -243,7 +242,7 @@ begin
       select exists (
         select 1 from public.companies c
          where c.id = new.company_id and c.user_id = v_uid
-           and c.is_approved is true and c.estado = 'aprovado'
+           and c.is_approved is true
            and negomapa_private.is_account_active(c.user_id)
       ) into v_company_approved;
       if v_company_approved then
