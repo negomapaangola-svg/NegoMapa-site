@@ -7,7 +7,10 @@ type EditorialPageImageProps = {
 
 export function EditorialPageImage({ src, alt }: EditorialPageImageProps) {
   return (
-    <div className="relative mb-6 aspect-[16/6] w-full overflow-hidden rounded-2xl border border-card-border bg-neutral-100 dark:bg-neutral-900 sm:mb-8 sm:aspect-[16/5]">
+    <div className="relative mb-6 aspect-[16/6] w-full overflow-hidden rounded-2xl border border-card-border bg-gradient-to-br from-orange-100 via-amber-50 to-neutral-100 dark:from-neutral-800 dark:via-neutral-900 dark:to-neutral-950 sm:mb-8 sm:aspect-[16/5]">
+      <span aria-hidden="true" className="absolute inset-0 flex items-center justify-center text-sm font-semibold tracking-[0.2em] text-orange-800/60 dark:text-orange-200/60">
+        NEGÓMAPA
+      </span>
       <Image
         src={src}
         alt={alt}
@@ -16,7 +19,7 @@ export function EditorialPageImage({ src, alt }: EditorialPageImageProps) {
         sizes="(max-width: 640px) 100vw, (max-width: 1280px) 92vw, 1200px"
         className="object-cover"
         onError={(event) => {
-          event.currentTarget.style.visibility = 'hidden';
+          event.currentTarget.style.display = 'none';
         }}
       />
     </div>
