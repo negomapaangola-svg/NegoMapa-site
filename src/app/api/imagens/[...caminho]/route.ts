@@ -58,7 +58,7 @@ export async function GET(
     headers: {
       'Content-Type': contentType,
       'Content-Disposition': 'inline',
-      'Cache-Control': 'public, max-age=60, s-maxage=300, stale-while-revalidate=60',
+      'Cache-Control': 'public, max-age=0, s-maxage=0, must-revalidate',
       'X-Content-Type-Options': 'nosniff',
       'Vary': 'Accept-Encoding',
     },
