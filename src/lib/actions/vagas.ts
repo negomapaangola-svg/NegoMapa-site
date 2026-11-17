@@ -214,9 +214,13 @@ export type VagaListItem = {
   encerrada_em: string | null
 }
 
-export async function getUserVagas(companyId?: string): Promise<VagaListItem[]> {
+export type VagasEmpresaResult =
+  | { success: true; data: VagaListItem[] }
+  | { success: false; error: string }
+
+export async function getUserVagasResult(companyId?: string): Promise<VagasEmpresaResult> {
   const company = await getUserCompany(companyId)
-  if (!company) return []
+  if (!company) return { success: false, error: 'Não foi possível identificar a empresa desta sessão.' }
 
   const supabase = await createSupabaseServerClient()
   const { data, error } = await supabase
@@ -227,9 +231,14 @@ export async function getUserVagas(companyId?: string): Promise<VagaListItem[]> 
 
   if (error) {
     console.error('Erro ao buscar vagas da empresa. Código:', error.code)
-    return []
+    return { success: false, error: 'Não foi possível carregar as vagas da empresa. Tente novamente.' }
   }
-  return (data ?? []) as VagaListItem[]
+  return { success: true, data: (data ?? []) as VagaListItem[] }
+}
+
+export async function getUserVagas(companyId?: string): Promise<VagaListItem[]> {
+  const result = await getUserVagasResult(companyId)
+  return result.success ? result.data : []
 }
 
 export type VagaAdminItem = {
