@@ -1,0 +1,12 @@
+begin;
+drop trigger if exists block_admin_email_reuse on auth.users;
+drop function if exists negomapa_private.block_admin_email_reuse();
+drop trigger if exists block_admin_account_type on public.profiles;
+drop function if exists negomapa_private.block_admin_account_type();
+drop policy if exists admin_cannot_insert_companies on public.companies;
+drop policy if exists admin_cannot_insert_profissionais on public.profissionais;
+drop policy if exists admin_cannot_insert_servicos on public.servicos;
+drop policy if exists admin_cannot_insert_produtos on public.produtos;
+drop policy if exists admin_cannot_insert_vagas on public.vagas;
+drop policy if exists only_clients_can_apply on public.candidaturas;
+commit;
