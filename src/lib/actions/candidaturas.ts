@@ -103,6 +103,12 @@ export async function criarCandidatura(vagaId: string, formData: FormData): Prom
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Sessão expirada. Inicie sessão novamente.' }
 
+  // Defesa em profundidade: candidaturas são exclusivas de contas de cliente.
+  const { data: perfil, error: perfilError } = await supabase.from('profiles').select('account_type,is_active').eq('id', user.id).maybeSingle()
+  if (perfilError || perfil?.account_type !== 'cliente' || perfil.is_active !== true) {
+    return { success: false, error: 'Apenas contas de cliente activas podem candidatar-se a vagas.' }
+  }
+
   const nome = String(formData.get('nome_candidato') ?? '').trim()
   const mensagem = String(formData.get('mensagem') ?? '').trim()
   const cvUrl = String(formData.get('cv_url') ?? '').trim()
