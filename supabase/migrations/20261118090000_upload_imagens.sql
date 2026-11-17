@@ -24,7 +24,7 @@ begin
   if p_bucket not in ('profissionais-avatars','profissionais-portfolio','empresas-logos','empresas-portfolio') then
     return false;
   end if;
-  if p_name !~ '^[0-9a-fA-F-]{36}/(avatar|portfolio)/[0-9a-fA-F-]{36}\.(webp|jpg)$' then
+  if p_name !~ '^[0-9a-fA-F-]{36}/(avatar|portfolio)/[0-9a-fA-F-]{36}\.(webp|jpg|png)$' then
     return false;
   end if;
 
@@ -157,7 +157,7 @@ declare
 begin
   if auth.uid() is null
      or p_bucket not in ('profissionais-avatars','empresas-logos','profissionais-portfolio','clientes-avatars','empresas-portfolio')
-     or p_name !~ '^[0-9a-fA-F-]{36}/(avatar|portfolio)/[0-9a-fA-F-]{36}\.(webp|jpg)$'
+     or p_name !~ '^[0-9a-fA-F-]{36}/(avatar|portfolio)/[0-9a-fA-F-]{36}\.(webp|jpg|png)$'
      or split_part(p_name,'/',1) <> auth.uid()::text then
     return false;
   end if;
