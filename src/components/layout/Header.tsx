@@ -32,6 +32,13 @@ export const Header = forwardRef<HTMLElement, { className?: string; hideGlobalSe
       return () => { activo = false; window.removeEventListener('negomapa:auth-logout-started', aoSair) }
     }, [])
 
+    useEffect(() => {
+      const role = contexto?.administrador ? 'admin' : contexto?.accountType ?? null
+      if (role) document.documentElement.dataset.accountRole = role
+      else delete document.documentElement.dataset.accountRole
+      return () => { delete document.documentElement.dataset.accountRole }
+    }, [contexto])
+
     const estaActivo = (href: string) => pathname === href || pathname.startsWith(`${href}/`)
     const linksCabecalho = ['inicio','descobrir','servicos','profissionais','empresas','produtos','vagas'].map((id) => ITENS_NAVEGACAO.find((item) => item.id === id)!).filter(Boolean)
     const publicar = contexto?.administrador ? null : contexto && contexto.profissional && contexto.estadoProfissional === 'aprovado'
