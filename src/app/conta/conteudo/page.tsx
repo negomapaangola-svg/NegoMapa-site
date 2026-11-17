@@ -15,8 +15,8 @@ export default async function ContaConteudoPage() {
   const data = await getContaConteudo()
   return <section className="space-y-5">
     <header><h1 className="text-2xl font-semibold tracking-tight">Conteúdo</h1><p className="mt-1 text-sm text-slate-500">Consulte os registos associados à sua conta.</p></header>
-    {data.type === 'profissional' && <Section title="Serviços" items={data.services} empty="Ainda não tem serviços publicados." href="/servicos" />}
-    {data.type === 'empresa' && <><Section title="Produtos" items={data.products} empty="Ainda não tem produtos." href="/produto" /><Section title="Serviços" items={data.services} empty="Ainda não tem serviços." href="/servicos" /><Section title="Vagas" items={data.jobs} empty="Ainda não tem vagas." href="/empresa/painel/vagas" /></>}
+    {data.type === 'profissional' && <Section title="Serviços" items={data.services} empty="Ainda não tem serviços publicados." href="/cadastrar-servico" />}
+    {data.type === 'empresa' && <><Section title="Produtos" items={data.products} empty="Ainda não tem produtos." href="/empresa/painel" /><Section title="Serviços" items={data.services} empty="Ainda não tem serviços." href="/servicos" /><Section title="Vagas" items={data.jobs} empty="Ainda não tem vagas." href="/empresa/painel/vagas" /></>}
     {data.type === 'cliente' && <><Section title="Pedidos de serviço" items={data.orders} empty="Ainda não criou pedidos." href="/pedidos" /><Section title="Candidaturas" items={data.applications} empty="Ainda não tem candidaturas." href="/candidaturas" /><section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900"><h2 className="font-semibold">Itens guardados</h2><p className="mt-2 text-sm text-slate-500">A lista de favoritos ainda não está disponível na estrutura actual da conta.</p><Link href="/descobrir" className="mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-orange-700 hover:underline dark:text-orange-300">Descobrir serviços e profissionais</Link></section></>}
   </section>
 }

@@ -72,23 +72,6 @@ export async function guardarPerfilConta(form: FormData): Promise<void> {
   if (nome.length < 2 || nome.length > 120 || /[<>]/.test(nome)) redirect('/conta/perfil?erro=nome')
   if (telefone.length > 32 || whatsapp.length > 32) redirect('/conta/perfil?erro=contacto')
 
-  const { error: personalError } = await supabase.from('profiles').update({
-    nome, telefone: telefone || null, whatsapp: whatsapp || null, updated_at: new Date().toISOString(),
-  }).eq('id', user.id)
-  if (personalError) redirect('/conta/perfil?erro=guardar')
-
-  const details = {
-    user_id: user.id,
-    formacao: field(form, 'formacao') || null,
-    preferencias: field(form, 'preferencias') || null,
-    disponibilidade: field(form, 'disponibilidade') || null,
-    tipo_empresa: field(form, 'tipo_empresa') || null,
-    tamanho_empresa: field(form, 'tamanho_empresa') || null,
-    updated_at: new Date().toISOString(),
-  }
-  const { error: detailsError } = await supabase.from('conta_detalhes').upsert(details, { onConflict: 'user_id' })
-  if (detailsError) redirect('/conta/perfil?erro=detalhes')
-
   if (tipo === 'profissional') {
     const avatar = field(form, 'avatar_url')
     if (!validImageUrl(avatar)) redirect('/conta/perfil?erro=avatar')
@@ -128,12 +111,26 @@ export async function guardarPerfilConta(form: FormData): Promise<void> {
     if (error) redirect('/conta/perfil?erro=guardar')
   } else {
     const { error } = await supabase.from('profiles').update({
+      nome, telefone: telefone || null, whatsapp: whatsapp || null,
       localizacao_provincia: field(form, 'provincia') || null,
       localizacao_municipio: field(form, 'municipio') || null,
       localizacao_bairro: field(form, 'bairro') || null,
+      updated_at: new Date().toISOString(),
     }).eq('id', user.id)
     if (error) redirect('/conta/perfil?erro=guardar')
   }
+
+  const details = {
+    user_id: user.id,
+    formacao: field(form, 'formacao') || null,
+    preferencias: field(form, 'preferencias') || null,
+    disponibilidade: field(form, 'disponibilidade') || null,
+    tipo_empresa: field(form, 'tipo_empresa') || null,
+    tamanho_empresa: field(form, 'tamanho_empresa') || null,
+    updated_at: new Date().toISOString(),
+  }
+  const { error: detailsError } = await supabase.from('conta_detalhes').upsert(details, { onConflict: 'user_id' })
+  if (detailsError) redirect('/conta/perfil?erro=detalhes')
 
   revalidatePath('/conta')
   revalidatePath('/conta/perfil')
@@ -184,7 +181,7 @@ export async function getContaMensagens() {
   const ids = (conversations ?? []).map(c => c.id)
   if (!ids.length) return []
   const { data: messages } = await supabase.from('mensagens').select('id,conversa_id,remetente_id,conteudo,lida_em,criada_em').in('conversa_id', ids).order('criada_em', { ascending: false }).limit(100)
-  return messages ?? []
+  return (messages ?? []).map(message => ({ ...message, isMine: message.remetente_id === user.id }))
 }
 
 export async function getContaAvaliacoes() {

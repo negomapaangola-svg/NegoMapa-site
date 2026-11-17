@@ -25,6 +25,11 @@ export default async function ContaConfiguracoesPage({ searchParams }: { searchP
     {params.password && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200">Palavra-passe actualizada.</p>}
     {params.pedido && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200">Pedido de eliminação enviado ao administrador.</p>}
 
+    <section className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+      <div><h2 className="font-semibold">Localização</h2><p className="text-sm text-slate-500">Actualize a província, município e bairro na secção de perfil. A localização GPS é opcional e depende do seu consentimento.</p></div>
+      <a href="/conta/perfil#localizacao-preferencias" className="inline-flex min-h-11 items-center text-sm font-semibold text-orange-700 hover:underline dark:text-orange-300">Gerir localização e preferências</a>
+    </section>
+
     <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
       <div><h2 className="font-semibold">Notificações</h2><p className="text-sm text-slate-500">Escolha como pretende receber actualizações.</p></div>
       <form action={guardarNotificacoesConta} className="space-y-3">
@@ -41,6 +46,11 @@ export default async function ContaConfiguracoesPage({ searchParams }: { searchP
         <div className="sm:col-span-2"><button className="inline-flex min-h-11 items-center rounded-xl bg-slate-900 px-4 text-sm font-semibold text-white hover:bg-slate-700 dark:bg-white dark:text-slate-900">Actualizar palavra-passe</button></div>
       </form>
       <div className="border-t border-slate-100 pt-4 dark:border-slate-800"><h3 className="font-medium">Sessões</h3><p className="mt-1 text-sm text-slate-500">Pode terminar todas as sessões activas, incluindo esta.</p><form action={terminarTodasSessoes} className="mt-3"><button className="inline-flex min-h-11 items-center rounded-xl border border-slate-300 px-4 text-sm font-semibold hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800">Terminar todas as sessões</button></form></div>
+    </section>
+
+    <section className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+      <div><h2 className="font-semibold">Contactar administrador</h2><p className="text-sm text-slate-500">Para apoio ou dúvidas sobre a conta, envie uma mensagem à equipa NegóMapa.</p></div>
+      <a href="/mensagens/administracao" className="inline-flex min-h-11 items-center text-sm font-semibold text-orange-700 hover:underline dark:text-orange-300">Contactar administrador</a>
     </section>
 
     <section className="space-y-3 rounded-2xl border border-red-300 bg-white p-5 dark:border-red-900 dark:bg-slate-900">

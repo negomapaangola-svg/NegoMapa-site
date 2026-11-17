@@ -1,12 +1,13 @@
 import type { Metadata } from 'next'
 import { getContaSnapshot, guardarPerfilConta } from '@/lib/actions/conta'
+import { createSupabaseServerClient } from '@/lib/supabase-server'
 
 export const metadata: Metadata = { title: 'Perfil da conta | NegóMapa' }
 
-function Field({ label, name, value, type = 'text', required = false }: { label: string; name: string; value?: string | null; type?: string; required?: boolean }) {
+function Field({ label, name, value, type = 'text', required = false, readOnly = false }: { label: string; name: string; value?: string | null; type?: string; required?: boolean; readOnly?: boolean }) {
   return <label className="block space-y-1.5 text-sm font-medium text-slate-700 dark:text-slate-200">
     <span>{label}</span>
-    <input name={name} type={type} defaultValue={value ?? ''} required={required} className="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-base text-slate-900 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:focus:ring-orange-950" />
+    <input name={name} type={type} defaultValue={value ?? ''} required={required} readOnly={readOnly} aria-readonly={readOnly} className="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-base text-slate-900 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:focus:ring-orange-950" />
   </label>
 }
 
@@ -21,6 +22,8 @@ function Area({ label, name, value, hint }: { label: string; name: string; value
 export default async function ContaPerfilPage() {
   const data = await getContaSnapshot()
   if (!data) return null
+  const supabase = await createSupabaseServerClient()
+  const { data: categorias } = await supabase.from('categorias').select('id,nome').eq('ativo', true).order('nome')
   const professional = data.professional ?? {}
   const company = data.company ?? {}
   const isProfessional = data.accountType === 'profissional'
@@ -47,14 +50,14 @@ export default async function ContaPerfilPage() {
       <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
         <div><h2 className="font-semibold">Dados de contacto</h2><p className="text-sm text-slate-500">O email é apresentado apenas para consulta e não pode ser alterado aqui.</p></div>
         <Field label="Nome" name="nome" value={isProfessional ? professional.nome : isCompany ? company.name : data.profile.nome} required />
-        <Field label="Email" name="email_visivel" value={data.user.email} type="email" />
+        <Field label="Email" name="email_visivel" value={data.user.email} type="email" readOnly />
         <Field label="Telefone" name="telefone" value={isProfessional ? professional.telefone : isCompany ? company.phone : data.profile.telefone} />
         <Field label="WhatsApp" name="whatsapp" value={isProfessional ? professional.whatsapp : isCompany ? company.whatsapp : data.profile.whatsapp} />
       </section>
 
       {isProfessional && <section className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900 sm:grid-cols-2">
         <div className="sm:col-span-2"><h2 className="font-semibold">Perfil profissional</h2><p className="text-sm text-slate-500">Os dados públicos continuam sujeitos às regras de aprovação.</p></div>
-        <Field label="Categoria (ID)" name="categoria_id" value={professional.categoria_id} />
+        <label className="block space-y-1.5 text-sm font-medium text-slate-700 dark:text-slate-200"><span>Categoria / área</span><select name="categoria_id" defaultValue={professional.categoria_id ?? ''} className="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-base text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-white"><option value="">Seleccione uma categoria</option>{(categorias ?? []).map((item: any) => <option key={item.id} value={item.id}>{item.nome}</option>)}</select></label>
         <Field label="Especialidades / serviços" name="especialidades" value={Array.isArray(professional.especialidades) ? professional.especialidades.join(', ') : ''} />
         <Field label="Província" name="provincia" value={professional.provincia} />
         <Field label="Município" name="municipio" value={professional.municipio} />
@@ -79,7 +82,7 @@ export default async function ContaPerfilPage() {
         <div className="sm:col-span-2"><Field label="Logótipo (URL do armazenamento NegóMapa)" name="logo_url" value={company.logo_url} required /></div>
       </section>}
 
-      {!isProfessional && !isCompany && <section className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900 sm:grid-cols-2">
+      {!isProfessional && !isCompany && <section id="localizacao-preferencias" className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900 sm:grid-cols-2">
         <div className="sm:col-span-2"><h2 className="font-semibold">Preferências do cliente</h2><p className="text-sm text-slate-500">Use estes campos para personalizar a experiência e a localização.</p></div>
         <Field label="Província" name="provincia" value={data.profile.localizacao_provincia} />
         <Field label="Município" name="municipio" value={data.profile.localizacao_municipio} />
