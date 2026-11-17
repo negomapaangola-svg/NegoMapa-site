@@ -30,15 +30,16 @@ export async function obterContextoUtilizador(): Promise<ContextoUtilizador> {
 
   const profissional = profissionalResult.data
   const empresas = empresaResult.data ?? []
+  // O papel administrativo é exclusivo e prevalece sobre qualquer registo legado.
   return {
     autenticado: true,
     userId: user.id,
-    profissional: Boolean(profissional),
-    estadoProfissional: profissional?.estado ?? null,
-    empresa: empresas.length > 0,
-    empresaAprovada: empresas.some((empresa) => empresa.is_approved === true),
+    profissional: administrador ? false : Boolean(profissional),
+    estadoProfissional: administrador ? null : profissional?.estado ?? null,
+    empresa: administrador ? false : empresas.length > 0,
+    empresaAprovada: administrador ? false : empresas.some((empresa) => empresa.is_approved === true),
     administrador,
-    accountType: perfilResult.data?.account_type ?? null,
+    accountType: administrador ? null : perfilResult.data?.account_type ?? null,
   }
 }
 
