@@ -303,7 +303,6 @@ export async function createService(formData: ServiceFormData): Promise<ActionRe
       whatsapp: formData.whatsapp.trim(),
       provincia: formData.provincia.trim(),
       municipio: formData.municipio.trim(),
-      estado: 'pendente',
     })
 
   if (error) {
