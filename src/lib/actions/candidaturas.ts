@@ -82,6 +82,9 @@ export async function listarMinhasCandidaturas(): Promise<Resultado<CandidaturaC
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Sessão expirada. Inicie sessão novamente.' }
 
+  const { data: perfil, error: perfilError } = await supabase.from('profiles').select('account_type,is_active').eq('id', user.id).maybeSingle()
+  if (perfilError || perfil?.account_type !== 'cliente' || perfil.is_active !== true) return { success: false, error: 'Esta área está disponível apenas para contas de cliente activas.' }
+
   const { data, error } = await supabase
     .from('candidaturas')
     .select('id, estado, criada_em, vaga:vagas!vaga_id(titulo, slug, company_id)')
@@ -195,6 +198,9 @@ export async function listarCandidaturasDaEmpresa(empresaActivaId?: string): Pro
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Sessão expirada. Inicie sessão novamente.' }
 
+  const { data: perfil, error: perfilError } = await supabase.from('profiles').select('account_type,is_active').eq('id', user.id).maybeSingle()
+  if (perfilError || perfil?.account_type !== 'empresa' || perfil.is_active !== true) return { success: false, error: 'Esta área está disponível apenas para contas de empresa activas.' }
+
   const { data: empresas, error: erroEmpresa } = await supabase
     .from('companies')
     .select('id')
@@ -270,6 +276,9 @@ export async function atualizarEstadoCandidatura(
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Sessão expirada. Inicie sessão novamente.' }
+
+  const { data: perfil, error: perfilError } = await supabase.from('profiles').select('account_type,is_active').eq('id', user.id).maybeSingle()
+  if (perfilError || perfil?.account_type !== 'empresa' || perfil.is_active !== true) return { success: false, error: 'Apenas contas de empresa activas podem gerir candidaturas.' }
 
   const { data: empresas, error: erroEmpresa } = await supabase.from('companies').select('id').eq('user_id', user.id)
   if (erroEmpresa || !empresas || empresas.length === 0) return { success: false, error: 'Acesso não autorizado.' }
