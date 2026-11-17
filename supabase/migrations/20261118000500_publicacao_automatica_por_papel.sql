@@ -163,7 +163,7 @@ begin
     select exists (
       select 1 from public.companies c
        where c.id = new.company_id and c.user_id = v_uid
-         and c.is_approved is true and c.estado = 'aprovado'
+         and c.is_approved is true
     ) into v_ok;
   end if;
 
@@ -209,7 +209,7 @@ begin
     select exists (
       select 1 from public.companies c
        where c.id = new.company_id and c.user_id = v_uid
-         and c.is_approved is true and c.estado = 'aprovado'
+         and c.is_approved is true
     ) into v_company_approved;
 
     if v_account_type <> 'empresa' or v_active is distinct from true
@@ -269,7 +269,7 @@ begin
     select exists (
       select 1 from public.companies c
        where c.id = new.company_id and c.user_id = v_uid
-         and c.is_approved is true and c.estado = 'aprovado'
+         and c.is_approved is true
          and negomapa_private.is_account_active(c.user_id)
     ) into v_company_approved;
     if v_account_type <> 'empresa' or v_active is distinct from true
