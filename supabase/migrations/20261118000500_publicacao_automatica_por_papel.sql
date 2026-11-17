@@ -239,16 +239,28 @@ begin
        and exists (
          select 1 from public.produto_imagens pi where pi.produto_id = new.id
        ) then
-      select exists (
-        select 1 from public.companies c
-         where c.id = new.company_id and c.user_id = v_uid
-           and c.is_approved is true
-           and negomapa_private.is_account_active(c.user_id)
-      ) into v_company_approved;
-      if v_company_approved then
-        aprovacao_automatica := true;
+      -- Apenas um produto ainda pendente pode receber aprovação automática.
+      -- Uma rejeição administrativa nunca é revertida por um upload posterior.
+      if old.estado_aprovacao = 'pendente' then
+        select exists (
+          select 1 from public.companies c
+           where c.id = new.company_id and c.user_id = v_uid
+             and c.is_approved is true
+             and negomapa_private.is_account_active(c.user_id)
+        ) into v_company_approved;
+        if v_company_approved then
+          aprovacao_automatica := true;
+        else
+          new.estado_aprovacao := old.estado_aprovacao;
+          new.motivo_rejeicao := old.motivo_rejeicao;
+          new.avaliado_em := old.avaliado_em;
+          new.avaliado_por := old.avaliado_por;
+        end if;
       else
-        new.estado_aprovacao := 'pendente';
+        new.estado_aprovacao := old.estado_aprovacao;
+        new.motivo_rejeicao := old.motivo_rejeicao;
+        new.avaliado_em := old.avaliado_em;
+        new.avaliado_por := old.avaliado_por;
       end if;
     else
       raise exception 'Sem permissão para alterar a aprovação do produto.'
