@@ -1,0 +1,16 @@
+begin;
+drop policy if exists empresas_portfolio_public_approved on storage.objects;
+drop policy if exists empresas_portfolio_delete_owner on storage.objects;
+drop policy if exists empresas_portfolio_update_owner on storage.objects;
+drop policy if exists empresas_portfolio_insert_owner on storage.objects;
+drop policy if exists empresas_portfolio_select_owner on storage.objects;
+drop policy if exists clientes_avatar_delete_owner on storage.objects;
+drop policy if exists clientes_avatar_update_owner on storage.objects;
+drop policy if exists clientes_avatar_insert_owner on storage.objects;
+drop policy if exists clientes_avatar_select_owner on storage.objects;
+delete from storage.objects where bucket_id in('clientes-avatars','empresas-portfolio');
+delete from storage.buckets where id in('clientes-avatars','empresas-portfolio');
+update storage.buckets set file_size_limit=1048576 where id='profissionais-avatars';
+update storage.buckets set file_size_limit=2097152 where id='empresas-logos';
+update storage.buckets set file_size_limit=5242880 where id='profissionais-portfolio';
+commit;

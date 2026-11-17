@@ -54,9 +54,9 @@ function validImageUrl(value: string) {
   try {
     const url = new URL(value)
     const base = process.env.NEXT_PUBLIC_SUPABASE_URL
-    return Boolean(base && url.protocol === 'https:' && url.origin === new URL(base).origin && url.pathname.startsWith('/storage/v1/object/public/'))
+    return Boolean(base && url.protocol === 'https:' && url.origin === new URL(base).origin && (url.pathname.startsWith('/storage/v1/object/public/') || url.pathname.startsWith('/storage/v1/object/sign/')))
   } catch {
-    return false
+    return /^[0-9a-f-]{36}\/(avatar|portfolio)\/[a-zA-Z0-9-]+\.(webp|jpg)$/.test(value)
   }
 }
 
