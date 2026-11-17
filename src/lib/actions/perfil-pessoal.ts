@@ -168,6 +168,9 @@ export async function escolherTipoConta(tipo: unknown) {
       auth: { autoRefreshToken: false, persistSession: false },
     })
 
+    const { data: registoAdmin, error: erroAdmin } = await admin.from('admin_users').select('user_id').eq('user_id', user.id).maybeSingle()
+    if (erroAdmin || registoAdmin) return { ok: false, message: 'Contas administrativas não podem escolher um papel de utilizador.' }
+
     const { data: perfil, error: leituraError } = await admin
       .from('profiles')
       .select('account_type')
