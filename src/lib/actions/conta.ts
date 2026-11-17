@@ -111,8 +111,10 @@ export async function guardarPerfilConta(form: FormData): Promise<void> {
     }).eq('user_id', user.id)
     if (error) redirect('/conta/perfil?erro=guardar')
   } else {
+    const avatar = field(form, 'avatar_url')
+    if (avatar && !validImageUrl(avatar)) redirect('/conta/perfil?erro=avatar')
     const { error } = await supabase.from('profiles').update({
-      nome, telefone: telefone || null, whatsapp: whatsapp || null,
+      nome, telefone: telefone || null, whatsapp: whatsapp || null, avatar_url: avatar || null,
       localizacao_provincia: field(form, 'provincia') || null,
       localizacao_municipio: field(form, 'municipio') || null,
       localizacao_bairro: field(form, 'bairro') || null,

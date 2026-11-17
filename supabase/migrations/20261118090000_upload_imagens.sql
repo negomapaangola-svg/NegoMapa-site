@@ -12,4 +12,12 @@ create policy empresas_portfolio_insert_owner on storage.objects for insert to a
 create policy empresas_portfolio_update_owner on storage.objects for update to authenticated using(bucket_id='empresas-portfolio' and (storage.foldername(name))[1]=(select auth.uid())::text) with check(bucket_id='empresas-portfolio' and (storage.foldername(name))[1]=(select auth.uid())::text);
 create policy empresas_portfolio_delete_owner on storage.objects for delete to authenticated using(bucket_id='empresas-portfolio' and (storage.foldername(name))[1]=(select auth.uid())::text);
 create policy empresas_portfolio_public_approved on storage.objects for select to anon,authenticated using(bucket_id='empresas-portfolio' and public.imagem_publica_aprovada(bucket_id,name));
+create or replace function public.imagem_publica_aprovada(p_bucket text,p_name text)
+returns boolean language sql stable security definer set search_path=''
+as $ select case p_bucket
+when 'profissionais-avatars' then exists(select 1 from public.profissionais p where p.estado='aprovado' and strpos(coalesce(p.avatar_url,''),p_name)>0)
+when 'profissionais-portfolio' then exists(select 1 from public.profissionais p where p.estado='aprovado' and strpos(coalesce(p.portfolio::text,''),p_name)>0)
+when 'empresas-logos' then exists(select 1 from public.companies c where c.is_approved=true and strpos(coalesce(c.logo_url,''),p_name)>0)
+when 'empresas-portfolio' then exists(select 1 from public.companies c where c.is_approved=true and strpos(coalesce(c.portfolio::text,''),p_name)>0)
+else false end $;
 commit;
