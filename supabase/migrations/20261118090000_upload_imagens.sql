@@ -183,4 +183,44 @@ $$;
 revoke all on function public.pode_apagar_imagem(text,text) from public;
 grant execute on function public.pode_apagar_imagem(text,text) to authenticated;
 
+
+-- Reescrever URLs históricas para a rota segura; os buckets continuam privados.
+update public.profissionais
+set avatar_url = regexp_replace(
+  avatar_url,
+  'https?://[^/]+/storage/v1/object/(public|sign)/profissionais-avatars/',
+  '/api/imagens/profissionais-avatars/',
+  'g'
+)
+where avatar_url ~ 'https?://[^/]+/storage/v1/object/(public|sign)/profissionais-avatars/';
+
+update public.companies
+set logo_url = regexp_replace(
+  logo_url,
+  'https?://[^/]+/storage/v1/object/(public|sign)/empresas-logos/',
+  '/api/imagens/empresas-logos/',
+  'g'
+)
+where logo_url ~ 'https?://[^/]+/storage/v1/object/(public|sign)/empresas-logos/';
+
+update public.profissionais
+set portfolio = regexp_replace(
+  portfolio::text,
+  'https?://[^/]+/storage/v1/object/(public|sign)/profissionais-portfolio/',
+  '/api/imagens/profissionais-portfolio/',
+  'g'
+)::jsonb
+where portfolio is not null
+  and portfolio::text ~ 'https?://[^/]+/storage/v1/object/(public|sign)/profissionais-portfolio/';
+
+update public.companies
+set portfolio = regexp_replace(
+  portfolio::text,
+  'https?://[^/]+/storage/v1/object/(public|sign)/empresas-portfolio/',
+  '/api/imagens/empresas-portfolio/',
+  'g'
+)::jsonb
+where portfolio is not null
+  and portfolio::text ~ 'https?://[^/]+/storage/v1/object/(public|sign)/empresas-portfolio/';
+
 commit;
