@@ -83,8 +83,13 @@ function validPortfolioItems(value: unknown, bucket: string, userId: string) {
     if (typeof item === 'string') return validImageRef(item, bucket, userId, 'portfolio')
     if (!item || typeof item !== 'object' || Array.isArray(item)) return false
     const record = item as Record<string, unknown>
-    const imageKeys = ['imagem_url', 'image_url', 'foto_url', 'url_imagem']
-    return imageKeys.every(key => record[key] === undefined || record[key] === null || (typeof record[key] === 'string' && validImageRef(record[key] as string, bucket, userId, 'portfolio')))
+    const imageKeys = ['imagem_url', 'image_url', 'foto_url', 'url_imagem', 'url_projeto']
+    return imageKeys.every(key => {
+      const itemValue = record[key]
+      if (itemValue === undefined || itemValue === null) return true
+      if (key === 'url_projeto' && typeof itemValue === 'string' && !itemValue.startsWith('/api/imagens/') && !itemValue.includes('/storage/v1/object/')) return true
+      return typeof itemValue === 'string' && validImageRef(itemValue, bucket, userId, 'portfolio')
+    })
   })
 }
 
