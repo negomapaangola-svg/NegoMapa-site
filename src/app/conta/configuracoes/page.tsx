@@ -30,7 +30,9 @@ export default async function ContaConfiguracoesPage({ searchParams }: { searchP
       <a href="/conta/perfil#localizacao-preferencias" className="inline-flex min-h-11 items-center text-sm font-semibold text-orange-700 hover:underline dark:text-orange-300">Gerir localização e preferências</a>
     </section>
 
-    <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+    <section id="mensagens" className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900"><div><h2 className="font-semibold">Mensagens</h2><p className="text-sm text-slate-500">As conversas e mensagens são privadas e apenas os participantes podem aceder-lhes.</p></div><a href="/conta/mensagens" className="inline-flex min-h-11 items-center text-sm font-semibold text-orange-700">Abrir mensagens</a></section>
+
+<section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
       <div id="notificacoes"><h2 className="font-semibold">Notificações</h2><p className="text-sm text-slate-500">Escolha como pretende receber actualizações.</p></div>
       <form action={guardarNotificacoesConta} className="space-y-3">
         {(['plataforma','email','whatsapp'] as const).map((key) => <label key={key} className="flex min-h-11 items-center gap-3 text-sm"><input type="checkbox" name={key} defaultChecked={Boolean(pref[key])} className="h-5 w-5 rounded border-slate-300 accent-orange-700" /><span>{key === 'plataforma' ? 'Notificações na plataforma' : key === 'email' ? 'Email' : 'WhatsApp'}</span></label>)}
