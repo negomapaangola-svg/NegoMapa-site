@@ -50,6 +50,8 @@ as $$
 $$;
 grant execute on function public.imagem_publica_aprovada(text,text) to anon, authenticated;
 
+create policy empresas_logos_select_admin on storage.objects for select to authenticated using (bucket_id='empresas-logos' and is_admin());
+
 create policy imagens_publicas_aprovadas on storage.objects
 for select to anon, authenticated
 using (
