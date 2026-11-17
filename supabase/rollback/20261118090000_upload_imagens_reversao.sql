@@ -7,6 +7,7 @@ drop policy if exists imagens_dono_update on storage.objects;
 drop policy if exists imagens_dono_delete on storage.objects;
 drop policy if exists imagens_publicas_aprovadas on storage.objects;
 drop function if exists public.pode_apagar_imagem(text,text);
+drop function if exists private.pode_apagar_imagem(text,text);
 drop function if exists public.pode_servir_imagem(text,text);
 drop function if exists private.imagem_publica_aprovada(text,text);
 
