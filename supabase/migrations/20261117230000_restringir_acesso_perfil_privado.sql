@@ -16,7 +16,10 @@ drop policy if exists auth_update_own_company_not_approved on public.companies;
 
 -- The remaining explicit policies already constrain profile and professional
 -- reads/writes to the owner, admins, or approved public records.
--- Companies: owners may update their own operational record, including after approval.
+-- Companies: owners can read only their own private row and update operational data,
+-- including after approval. Approved public data remains exposed through approved-only policies/views.
+create policy companies_select_own on public.companies
+  for select to authenticated using (user_id = (select auth.uid()));
 create policy companies_update_own on public.companies
   for update to authenticated
   using (user_id = (select auth.uid()) and negomapa_private.is_account_active((select auth.uid())))
