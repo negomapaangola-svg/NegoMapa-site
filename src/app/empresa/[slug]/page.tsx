@@ -182,7 +182,7 @@ function EmpresaContent() {
 
         <section aria-label="Contacto principal" className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="w-full sm:max-w-xs"><BotaoContactarEmpresa empresaId={empresa.id} visivel={podeContactar} className="[&>button]:min-h-[44px] [&>button]:w-full" /></div>
-          {empresa.whatsapp && <div className="w-full sm:max-w-xs"><ProfissionalWhatsApp whatsapp={empresa.whatsapp} /></div>}
+          {empresa.whatsapp && <div className="w-full sm:max-w-xs"><ProfissionalWhatsApp whatsapp={empresa.whatsapp} tipoEntidade="empresa" /></div>}
         </section>
 
         {empresa.description && (
@@ -233,7 +233,7 @@ function EmpresaContent() {
           {avaliacoesCarregando ? (
             <p role="status" aria-live="polite" className="py-8 text-center text-neutral-500 dark:text-cream-text/70">Carregando avaliações...</p>
           ) : (
-            <AvaliacoesProfissional avaliacoes={avaliacoes} resumo={media} />
+            <AvaliacoesProfissional avaliacoes={avaliacoes} resumo={media} tipoEntidade="empresa" />
           )}
 
           {userId && <ReviewForm alvo={alvo} userId={userId} />}

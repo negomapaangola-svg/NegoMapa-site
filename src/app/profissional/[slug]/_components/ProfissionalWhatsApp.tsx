@@ -2,17 +2,23 @@ import { Button } from '@/components/ui/Button';
 
 interface ProfissionalWhatsAppProps {
   whatsapp: string | null | undefined;
+  tipoEntidade?: 'profissional' | 'empresa';
 }
 
 /** Contacto WhatsApp: só cria ligação quando o número tem formato válido. */
-export function ProfissionalWhatsApp({ whatsapp }: ProfissionalWhatsAppProps) {
+export function ProfissionalWhatsApp({
+  whatsapp,
+  tipoEntidade = 'profissional',
+}: ProfissionalWhatsAppProps) {
+  const entidade = tipoEntidade === 'empresa' ? 'empresa' : 'profissional';
+  const demonstrativo = tipoEntidade === 'empresa' ? 'esta empresa' : 'este profissional';
   const digitos = (whatsapp ?? '').replace(/\D/g, '');
   const numeroValido = digitos.length === 9 || (digitos.length === 12 && digitos.startsWith('244'));
 
   if (!numeroValido) {
     return (
       <p role="status" className="rounded-xl border border-card-border bg-neutral-50/80 px-4 py-3 text-sm leading-relaxed text-neutral-600 dark:bg-white/5 dark:text-cream-text">
-        Este profissional ainda não disponibilizou um número de WhatsApp válido.
+        {entidade === 'empresa' ? 'Esta empresa' : 'Este profissional'} ainda não disponibilizou um número de WhatsApp válido.
       </p>
     );
   }
@@ -25,7 +31,7 @@ export function ProfissionalWhatsApp({ whatsapp }: ProfissionalWhatsAppProps) {
         href={`https://wa.me/${numero}`}
         target="_blank"
         rel="noopener noreferrer"
-        aria-label="Contactar este profissional pelo WhatsApp (abre numa nova janela)"
+        aria-label={`Contactar ${demonstrativo} pelo WhatsApp (abre numa nova janela)`}
         className="flex min-h-[48px] items-center justify-center gap-3"
       >
         <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">

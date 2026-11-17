@@ -4,10 +4,16 @@ import type { AvaliacaoPublicaProfissional, MediaAvaliacoes } from '@/lib/action
 interface AvaliacoesProfissionalProps {
   avaliacoes: AvaliacaoPublicaProfissional[];
   resumo: MediaAvaliacoes;
+  tipoEntidade?: 'profissional' | 'empresa';
 }
 
 /** Avaliações sem identidade ou contactos do cliente. Emails escritos no comentário são ocultados. */
-export function AvaliacoesProfissional({ avaliacoes, resumo }: AvaliacoesProfissionalProps) {
+export function AvaliacoesProfissional({
+  avaliacoes,
+  resumo,
+  tipoEntidade = 'profissional',
+}: AvaliacoesProfissionalProps) {
+  const entidade = tipoEntidade === 'empresa' ? 'esta empresa' : 'este profissional';
   const comentarioSeguro = (comentario: string) =>
     comentario.replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '[contacto ocultado]');
 
@@ -15,7 +21,7 @@ export function AvaliacoesProfissional({ avaliacoes, resumo }: AvaliacoesProfiss
     <section aria-labelledby="avaliacoes-lista-titulo" className="mt-5">
       <h3 id="avaliacoes-lista-titulo" className="sr-only">Comentários de clientes</h3>
       {resumo.total === 0 || avaliacoes.length === 0 ? (
-        <p className="mt-4 text-sm text-neutral-600 dark:text-cream-text">Ainda não há avaliações para este profissional.</p>
+        <p className="mt-4 text-sm text-neutral-600 dark:text-cream-text">Ainda não há avaliações para {entidade}.</p>
       ) : (
         <ul role="list" className="mt-5 space-y-4">
           {avaliacoes.map((avaliacao) => (
