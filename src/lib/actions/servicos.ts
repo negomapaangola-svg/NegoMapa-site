@@ -234,8 +234,9 @@ export async function createService(formData: ServiceFormData): Promise<ActionRe
     return { success: false, error: 'Utilizador não autenticado' }
   }
 
-  if (!podePublicarServico(await obterContextoUtilizador())) {
-    return { success: false, error: 'Apenas profissionais aprovados podem publicar serviços.' }
+  const contexto = await obterContextoUtilizador()
+  if (!podePublicarServico(contexto)) {
+    return { success: false, error: 'Apenas profissionais ou empresas aprovadas podem publicar serviços.' }
   }
 
   const fieldErrors = validateService(formData)
@@ -243,7 +244,6 @@ export async function createService(formData: ServiceFormData): Promise<ActionRe
     return { success: false, error: 'Dados inválidos', fieldErrors }
   }
 
-  const contexto = await obterContextoUtilizador()
   let profissionalId: string | null = null
   let companyId: string | null = null
 
