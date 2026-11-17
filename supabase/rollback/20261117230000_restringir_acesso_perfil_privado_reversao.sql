@@ -5,6 +5,7 @@ drop trigger if exists guard_profiles_managed_fields on public.profiles;
 drop function if exists negomapa_private.guard_account_managed_fields();
 
 drop policy if exists companies_update_own on public.companies;
+drop policy if exists companies_select_own on public.companies;
 create policy auth_select_approved_and_own_companies on public.companies
   for select to authenticated using (is_approved = true or user_id = auth.uid());
 create policy auth_update_own_company_not_approved on public.companies
