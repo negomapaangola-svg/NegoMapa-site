@@ -105,7 +105,7 @@ export async function guardarPerfilConta(form: FormData): Promise<void> {
     const { error } = await supabase.from('companies').update({
       name: nome, sector: field(form, 'sector') || 'Geral', phone: telefone || null,
       whatsapp: whatsapp || null, province: field(form, 'province') || '', city: field(form, 'city') || null,
-      description: field(form, 'description') || null, horario_atendimento: field(form, 'horario_atendimento') || null,
+      description: field(form, 'description') || null, horario_atendimento: field(form, 'disponibilidade') || null,
       logo_url: logo, portfolio,
     }).eq('user_id', user.id)
     if (error) redirect('/conta/perfil?erro=guardar')
