@@ -26,7 +26,7 @@ export async function GET(
     !UUID.test(ownerId) ||
     !['avatar', 'portfolio'].includes(folder) ||
     (bucket.endsWith('avatars') || bucket === 'empresas-logos' ? folder !== 'avatar' : folder !== 'portfolio') ||
-    !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(webp|jpg)$/i.test(file)
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(webp|jpg|png)$/i.test(file)
   ) {
     return new NextResponse('Not found', { status: 404 })
   }
