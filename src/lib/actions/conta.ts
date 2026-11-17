@@ -74,7 +74,7 @@ function storagePath(value: string, bucket: string): string | null {
 function validImageRef(value: string, bucket: string, userId: string, folder: 'avatar' | 'portfolio') {
   const path = storagePath(value, bucket)
   if (!path || !path.startsWith(userId + '/' + folder + '/')) return false
-  return new RegExp('^' + userId + '/' + folder + '/[0-9a-f-]{36}\\.(webp|jpg)$', 'i').test(path)
+  return new RegExp('^' + userId + '/' + folder + '/[0-9a-f-]{36}\\.(webp|jpg|png)$', 'i').test(path)
 }
 
 function validPortfolioItems(value: unknown, bucket: string, userId: string) {
@@ -102,7 +102,7 @@ function imageRefs(value: unknown, bucket: string, userId: string): string[] {
   }
   collect(value)
   return [...new Set(strings.map(item => storagePath(item, bucket)).filter((path): path is string =>
-    Boolean(path && path.startsWith(userId + '/') && new RegExp('^' + userId + '/(avatar|portfolio)/[0-9a-f-]{36}\\.(webp|jpg)$', 'i').test(path))
+    Boolean(path && path.startsWith(userId + '/') && new RegExp('^' + userId + '/(avatar|portfolio)/[0-9a-f-]{36}\\.(webp|jpg|png)$', 'i').test(path))
   ))]
 }
 
@@ -350,7 +350,7 @@ function imageRefs(value: unknown, bucket: string, userId: string): string[] {
   }
   collect(value)
   return [...new Set(strings.map(item => storagePath(item, bucket)).filter((path): path is string =>
-    Boolean(path && path.startsWith(userId + '/') && /^[0-9a-f-]{36}\\/(avatar|portfolio)\\/[0-9a-f-]{36}\\.(webp|jpg)$/i.test(path))
+    Boolean(path && path.startsWith(userId + '/') && /^[0-9a-f-]{36}\\/(avatar|portfolio)\\/[0-9a-f-]{36}\\.(webp|jpg|png)$/i.test(path))
   ))]
 }
 
