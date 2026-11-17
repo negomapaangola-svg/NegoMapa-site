@@ -60,9 +60,10 @@ Depois da migração: 3 vagas, 0 candidaturas e 0 vagas encerradas. Não houve a
 | Políticas de isolamento candidato/empresa | Confirmadas por introspecção; não houve teste funcional com dois utilizadores |
 | Restrição contra duplicados | PASSOU por introspecção da constraint UNIQUE; tentativa real não executada |
 | Validação de candidatura a vaga encerrada/empresa inactiva | PASSOU por definição instalada da função; sem vaga aprovada para teste funcional |
-| Pesquisa, filtros, detalhe e estados vazios | Revisão estática do código; sem sessão de navegador disponível |
+| Pesquisa, filtros e detalhe | Revisão estática do código; sem sessão de navegador disponível |
+| Erros de carregamento vs. listas vazias | Implementado com estados de erro distintos nas listagens pública e da empresa; lint/build/TypeScript executados no CI |
 | Criação, edição, publicação, encerramento e candidatura com papéis distintos | NÃO EXECUTADO: o projecto tem 0 candidatos activos, 0 vagas aprovadas e 0 candidaturas. Não foram criadas contas nem dados de demonstração |
-| Lint, build e TypeScript | Verificar o resultado do GitHub Actions associado ao commit final do PR antes de declarar aprovado |
+| Lint, build e TypeScript | PASSOU no GitHub Actions (run #123, commit `591e40d8`): lint, build e `tsc --noEmit` concluídos com sucesso. A página pública de vagas foi incluída na lista de lint para a validação do commit seguinte |
 | Preview Vercel | BLOQUEADO pelo limite da equipa: `api-deployments-free-per-day`, mais de 100 deployments; API devolveu HTTP 402 e retry em 24 horas |
 
 ## Riscos restantes
@@ -77,5 +78,5 @@ Depois da migração: 3 vagas, 0 candidaturas e 0 vagas encerradas. Não houve a
 - Fluxo de vaga e candidatura com papéis distintos: PARCIAL — políticas e limites de acesso confirmados; teste end-to-end bloqueado pela ausência de contas/dados elegíveis.
 - Empresa não gere vaga alheia: PARCIAL — acções e RLS limitam por propriedade; teste funcional entre duas empresas não executado.
 - Candidato não vê candidaturas de outros: PARCIAL — política RLS limita ao próprio utilizador; teste funcional com dois candidatos não executado.
-- Erros e estados vazios claros: IMPLEMENTADO por revisão de páginas e formulários.
+- Erros e estados vazios claros: IMPLEMENTADO — as listagens pública e da empresa distinguem falhas de carregamento de listas vazias; páginas de candidaturas já apresentam erros explícitos.
 - PR e preview entregues: PR #39 entregue em Draft; preview BLOQUEADO pelo limite Vercel.
