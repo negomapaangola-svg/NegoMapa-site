@@ -86,7 +86,7 @@ export async function guardarPerfilConta(form: FormData): Promise<void> {
     if (!owned) redirect('/conta/perfil?erro=sem-perfil')
     const { error } = await supabase.from('profissionais').update({
       nome, telefone: telefone || null, whatsapp: whatsapp || null, bio: field(form, 'bio') || null,
-      provincia: field(form, 'provincia') || null, municipio: field(form, 'municipio') || null,
+      provincia: field(form, 'provincia') || null, municipio: field(form, 'municipio') || null, bairro: field(form, 'bairro') || null,
       categoria_id: field(form, 'categoria_id') || null, especialidades,
       disponibilidade: field(form, 'disponibilidade') || null, avatar_url: avatar, portfolio,
     }).eq('user_id', user.id)
@@ -105,6 +105,7 @@ export async function guardarPerfilConta(form: FormData): Promise<void> {
     const { error } = await supabase.from('companies').update({
       name: nome, sector: field(form, 'sector') || 'Geral', phone: telefone || null,
       whatsapp: whatsapp || null, province: field(form, 'province') || '', city: field(form, 'city') || null,
+      bairro: field(form, 'bairro') || null, rua: field(form, 'rua') || null, referencia_localizacao: field(form, 'referencia_localizacao') || null, website: field(form, 'website') || null,
       description: field(form, 'description') || null, horario_atendimento: field(form, 'disponibilidade') || null,
       logo_url: logo, portfolio,
     }).eq('user_id', user.id)

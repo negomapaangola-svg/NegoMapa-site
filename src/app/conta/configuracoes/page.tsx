@@ -53,7 +53,7 @@ export default async function ContaConfiguracoesPage({ searchParams }: { searchP
       <a href="/mensagens/administracao" className="inline-flex min-h-11 items-center text-sm font-semibold text-orange-700 hover:underline dark:text-orange-300">Contactar administrador</a>
     </section>
 
-    <section className="space-y-3 rounded-2xl border border-red-300 bg-white p-5 dark:border-red-900 dark:bg-slate-900">
+    <section id="apagar-conta" className="space-y-3 rounded-2xl border border-red-300 bg-white p-5 dark:border-red-900 dark:bg-slate-900">
       <div><h2 className="font-semibold text-red-700 dark:text-red-300">Zona de perigo</h2><p className="text-sm text-slate-600 dark:text-slate-300">Solicitar a eliminação da conta. O pedido será analisado pelo administrador; esta acção não apaga automaticamente os dados nem a autenticação.</p></div>
       <form action={solicitarEliminacaoConta} className="space-y-3">
         <label className="block space-y-1.5 text-sm font-medium">Motivo do pedido<textarea name="motivo" required minLength={10} maxLength={1000} rows={3} className="w-full rounded-xl border border-slate-300 bg-white px-3 py-3 dark:border-slate-700 dark:bg-slate-950" /></label>

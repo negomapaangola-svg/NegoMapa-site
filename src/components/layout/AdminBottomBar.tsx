@@ -75,11 +75,11 @@ export function AdminBottomBar() {
           </li>
           <li className="flex flex-1">
             <Link
-              href="/editar-perfil"
-              aria-current={pathname === '/editar-perfil' ? 'page' : undefined}
-              className={`${itemBase} ${pathname === '/editar-perfil' ? 'text-orange-400' : ''}`}
+              href="/conta/perfil"
+              aria-current={pathname === '/conta/perfil' ? 'page' : undefined}
+              className={`${itemBase} ${pathname === '/conta/perfil' ? 'text-orange-400' : ''}`}
             >
-              Editar perfil
+              Perfil
             </Link>
           </li>
           <li className="flex flex-1">
