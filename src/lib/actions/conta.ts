@@ -74,7 +74,31 @@ function storagePath(value: string, bucket: string): string | null {
 function validImageRef(value: string, bucket: string, userId: string, folder: 'avatar' | 'portfolio') {
   const path = storagePath(value, bucket)
   if (!path || !path.startsWith(userId + '/' + folder + '/')) return false
-  return new RegExp('^' + userId + '/' + folder + '/[0-9a-f-]{36}\\.(webp|jpg)
+  return new RegExp('^' + userId + '/' + folder + '/[0-9a-f-]{36}\\.(webp|jpg)$', 'i').test(path)
+}
+
+function imageRefs(value: unknown, bucket: string, userId: string): string[] {
+  const strings: string[] = []
+  const collect = (item: unknown) => {
+    if (typeof item === 'string') strings.push(item)
+    else if (Array.isArray(item)) item.forEach(collect)
+    else if (item && typeof item === 'object') Object.values(item as Record<string, unknown>).forEach(collect)
+  }
+  collect(value)
+  return [...new Set(strings.map(item => storagePath(item, bucket)).filter((path): path is string =>
+    Boolean(path && path.startsWith(userId + '/') && new RegExp('^' + userId + '/(avatar|portfolio)/[0-9a-f-]{36}\\.(webp|jpg)$', 'i').test(path))
+  ))]
+}
+
+async function cleanupUnreferencedImages(supabase: any, bucket: string, oldRefs: string[], newRefs: string[]) {
+  const stillUsed = new Set(newRefs)
+  for (const path of [...new Set(oldRefs)]) {
+    if (stillUsed.has(path)) continue
+    const { data, error } = await supabase.rpc('pode_apagar_imagem', { p_bucket: bucket, p_name: path })
+    if (error || data !== true) continue
+    await supabase.storage.from(bucket).remove([path])
+  }
+}
 
 export async function guardarPerfilConta(form: FormData): Promise<void> {
   const { supabase, user } = await authenticated()
