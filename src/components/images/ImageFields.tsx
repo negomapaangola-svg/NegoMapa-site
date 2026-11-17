@@ -33,7 +33,7 @@ function imageEntry(item:unknown,bucket:PortfolioBucket):{ref:string;key:string}
   }
   if(!item||typeof item!=='object')return null
   const record=item as Record<string,unknown>
-  for(const key of ['imagem_url','image_url','foto_url','url_imagem']){
+  for(const key of ['imagem_url','image_url','foto_url','url_imagem','url_projeto']){
     if(typeof record[key]==='string'){
       const ref=normalize(bucket,record[key] as string)
       if(ref)return {ref,key}
