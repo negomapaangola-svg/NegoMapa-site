@@ -26,5 +26,7 @@ create policy admin_cannot_insert_produtos on public.produtos as restrictive for
 drop policy if exists admin_cannot_insert_vagas on public.vagas;
 create policy admin_cannot_insert_vagas on public.vagas as restrictive for insert to authenticated with check (not (select public.is_admin()));
 drop policy if exists only_clients_can_apply on public.candidaturas;
-create policy only_clients_can_apply on public.candidaturas as restrictive for insert to authenticated with check (not (select public.is_admin()) and exists (select 1 from public.profiles p where p.id = (select auth.uid()) and p.account_type = 'cliente' and p.is_active is true));
+create policy only_clients_can_apply on public.candidaturas as restrictive for insert to authenticated with check (not (select public.is_admin()) and exists (select 1 from public.profiles p where p.id = (select auth.uid()) and p.account_type = 'cliente' and p.is_active is true)
+    and not exists (select 1 from public.companies c where c.user_id = (select auth.uid()))
+    and not exists (select 1 from public.profissionais pr where pr.user_id = (select auth.uid())));
 commit;
