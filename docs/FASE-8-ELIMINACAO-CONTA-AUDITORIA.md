@@ -75,6 +75,8 @@ Todos os 12 buckets observados são privados:
 
 A política antiga em `20261009_create_storage_buckets.sql` descreve buckets públicos e políticas que não correspondem à produção. Não usar esse ficheiro como fonte de verdade. A eliminação Storage futura deve gerar um manifesto exacto `(bucket_id, name, owner_id, referência de DB)`, validar cada objecto contra o titular/entidade própria e remover apenas esses paths. Nunca usar `remove('')`, limpeza recursiva de bucket, prefixo aproximado ou URL pública como prova de propriedade. Os buckets permanecem privados.
 
+**Discrepância adicional confirmada no código de upload:** `src/lib/actions/upload.ts` gera paths no formato `<auth.uid()>/<folder>/<UUID>.<extensão>` e declara `empresas-logos`, `profissionais-avatars`, `servicos-imagens`, `vagas-capas` e `documentos-privados`; também declara os primeiros quatro como públicos (excepto documentos). Na lista real de buckets de produção consultada, `servicos-imagens` e `vagas-capas` não existem; existem `servicos` e `vagas` (privados). Além disso, `empresas-logos` e `profissionais-avatars` também estão privados em produção, apesar de `isPublic: true` no helper. O helper não inclui `produtos`, cujo path usa ID da empresa. Isto demonstra que o código de upload e o estado real do Storage divergiram. Antes de remover qualquer ficheiro, é obrigatório reconciliar o bucket real, os chamadores, o path e a referência da linha de negócio; não corrigir esta divergência tornando buckets públicos.
+
 ## 5. Separação de tratamento
 
 ### A. Elegível para eliminação imediata após confirmação/reautenticação
