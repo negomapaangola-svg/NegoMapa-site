@@ -189,4 +189,94 @@ create policy client_only_insert_conversas on public.conversas
     and not exists (select 1 from public.companies c where c.user_id=(select auth.uid()))
   );
 
+
+-- Administrators may moderate other users' records, but cannot operate legacy
+-- company/professional profiles or their own listings as a business account.
+drop policy if exists admin_cannot_update_own_company on public.companies;
+create policy admin_cannot_update_own_company on public.companies
+  as restrictive for update to authenticated
+  using (not (select public.is_admin()) or user_id is distinct from (select auth.uid()))
+  with check (not (select public.is_admin()) or user_id is distinct from (select auth.uid()));
+
+drop policy if exists admin_cannot_delete_own_company on public.companies;
+create policy admin_cannot_delete_own_company on public.companies
+  as restrictive for delete to authenticated
+  using (not (select public.is_admin()) or user_id is distinct from (select auth.uid()));
+
+drop policy if exists admin_cannot_update_own_profissional on public.profissionais;
+create policy admin_cannot_update_own_profissional on public.profissionais
+  as restrictive for update to authenticated
+  using (not (select public.is_admin()) or user_id is distinct from (select auth.uid()))
+  with check (not (select public.is_admin()) or user_id is distinct from (select auth.uid()));
+
+drop policy if exists admin_cannot_delete_own_profissional on public.profissionais;
+create policy admin_cannot_delete_own_profissional on public.profissionais
+  as restrictive for delete to authenticated
+  using (not (select public.is_admin()) or user_id is distinct from (select auth.uid()));
+
+drop policy if exists admin_cannot_update_own_vagas on public.vagas;
+create policy admin_cannot_update_own_vagas on public.vagas
+  as restrictive for update to authenticated
+  using (not (select public.is_admin()) or not exists (select 1 from public.companies c where c.id=vagas.company_id and c.user_id=(select auth.uid())))
+  with check (not (select public.is_admin()) or not exists (select 1 from public.companies c where c.id=vagas.company_id and c.user_id=(select auth.uid())));
+
+drop policy if exists admin_cannot_delete_own_vagas on public.vagas;
+create policy admin_cannot_delete_own_vagas on public.vagas
+  as restrictive for delete to authenticated
+  using (not (select public.is_admin()) or not exists (select 1 from public.companies c where c.id=vagas.company_id and c.user_id=(select auth.uid())));
+
+drop policy if exists admin_cannot_update_own_produtos on public.produtos;
+create policy admin_cannot_update_own_produtos on public.produtos
+  as restrictive for update to authenticated
+  using (not (select public.is_admin()) or not exists (select 1 from public.companies c where c.id=produtos.company_id and c.user_id=(select auth.uid())))
+  with check (not (select public.is_admin()) or not exists (select 1 from public.companies c where c.id=produtos.company_id and c.user_id=(select auth.uid())));
+
+drop policy if exists admin_cannot_delete_own_produtos on public.produtos;
+create policy admin_cannot_delete_own_produtos on public.produtos
+  as restrictive for delete to authenticated
+  using (not (select public.is_admin()) or not exists (select 1 from public.companies c where c.id=produtos.company_id and c.user_id=(select auth.uid())));
+
+drop policy if exists admin_cannot_update_own_servicos on public.servicos;
+create policy admin_cannot_update_own_servicos on public.servicos
+  as restrictive for update to authenticated
+  using (
+    not (select public.is_admin())
+    or (
+      not exists (select 1 from public.companies c where c.id=servicos.company_id and c.user_id=(select auth.uid()))
+      and not exists (select 1 from public.profissionais p where p.id=servicos.profissional_id and p.user_id=(select auth.uid()))
+    )
+  )
+  with check (
+    not (select public.is_admin())
+    or (
+      not exists (select 1 from public.companies c where c.id=servicos.company_id and c.user_id=(select auth.uid()))
+      and not exists (select 1 from public.profissionais p where p.id=servicos.profissional_id and p.user_id=(select auth.uid()))
+    )
+  );
+
+drop policy if exists admin_cannot_delete_own_servicos on public.servicos;
+create policy admin_cannot_delete_own_servicos on public.servicos
+  as restrictive for delete to authenticated
+  using (
+    not (select public.is_admin())
+    or (
+      not exists (select 1 from public.companies c where c.id=servicos.company_id and c.user_id=(select auth.uid()))
+      and not exists (select 1 from public.profissionais p where p.id=servicos.profissional_id and p.user_id=(select auth.uid()))
+    )
+  );
+
+-- Admin messaging is isolated in admin_messages; the user-to-user inbox is
+-- not available to an administrative identity, even if legacy owner rows exist.
+drop policy if exists admin_cannot_use_user_conversations on public.conversas;
+create policy admin_cannot_use_user_conversations on public.conversas
+  as restrictive for all to authenticated
+  using (not (select public.is_admin()))
+  with check (not (select public.is_admin()));
+
+drop policy if exists admin_cannot_use_user_messages on public.mensagens;
+create policy admin_cannot_use_user_messages on public.mensagens
+  as restrictive for all to authenticated
+  using (not (select public.is_admin()))
+  with check (not (select public.is_admin()));
+
 commit;
