@@ -39,4 +39,8 @@ drop policy if exists active_role_message_access on public.mensagens;
 drop policy if exists admin_cannot_insert_avaliacoes on public.avaliacoes;
 drop policy if exists admin_cannot_update_own_avaliacoes on public.avaliacoes;
 drop policy if exists admin_cannot_delete_own_avaliacoes on public.avaliacoes;
+drop policy if exists client_only_preferencias_cliente on public.preferencias_cliente;
+drop policy if exists admin_cannot_use_conta_detalhes on public.conta_detalhes;
+drop policy if exists admin_cannot_use_preferencias_notificacao on public.preferencias_notificacao;
+drop policy if exists admin_cannot_use_notificacoes on public.notificacoes;
 commit;
