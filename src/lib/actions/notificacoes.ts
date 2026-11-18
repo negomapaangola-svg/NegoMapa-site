@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
+import { isAdmin } from '@/lib/auth'
 
 export type Notificacao = {
   id: string
@@ -17,6 +18,7 @@ export type Notificacao = {
 type Resultado<T> = { success: true; data: T } | { success: false; error: string }
 
 export async function listarNotificacoes(): Promise<Resultado<Notificacao[]>> {
+  if (await isAdmin()) return { success: false, error: 'Notificações de utilizador indisponíveis para contas administrativas.' }
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Sessão expirada. Inicie sessão novamente.' }
@@ -37,6 +39,7 @@ export async function listarNotificacoes(): Promise<Resultado<Notificacao[]>> {
 }
 
 export async function contarNotificacoesNaoLidas(): Promise<number> {
+  if (await isAdmin()) return 0
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return 0
@@ -56,6 +59,7 @@ export async function contarNotificacoesNaoLidas(): Promise<number> {
 }
 
 export async function marcarNotificacaoLida(notificacaoId: string): Promise<{ success: boolean; error?: string }> {
+  if (await isAdmin()) return { success: false, error: 'Contas administrativas não podem gerir notificações de utilizador.' }
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Sessão expirada. Inicie sessão novamente.' }
@@ -78,6 +82,7 @@ export async function marcarNotificacaoLida(notificacaoId: string): Promise<{ su
 }
 
 export async function marcarTodasLidas(): Promise<{ success: boolean; error?: string }> {
+  if (await isAdmin()) return { success: false, error: 'Contas administrativas não podem gerir notificações de utilizador.' }
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Sessão expirada. Inicie sessão novamente.' }

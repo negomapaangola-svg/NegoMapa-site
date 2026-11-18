@@ -20,6 +20,7 @@ import {
 } from '@/lib/actions/profissionais-publicos';
 import { obterPerfilProfissionalDoUtilizador } from '@/lib/actions/profissional-painel';
 import { getAvaliacoesPublicasPorProfissional, getMediaAvaliacoes } from '@/lib/actions/avaliacoes';
+import { verificarPodeContactar } from '@/lib/actions/conversas';
 import { EnviarMensagemButton } from './_components/EnviarMensagemButton';
 import { ProfissionalWhatsApp } from './_components/ProfissionalWhatsApp';
 import { AvaliacoesProfissional } from './_components/AvaliacoesProfissional';
@@ -76,12 +77,13 @@ export default async function ProfissionalPublicoPage({ params }: { params: Para
   // A vista profissionais_publicos só devolve registos com estado aprovado.
   if (!profissional) notFound();
 
-  const [contacto, servicos, avaliacoes, resumo, user] = await Promise.all([
+  const [contacto, servicos, avaliacoes, resumo, user, permissaoContacto] = await Promise.all([
     obterProfissionalContactoPorId(profissional.id),
     listarServicosAprovadosDoProfissional(profissional.id),
     getAvaliacoesPublicasPorProfissional(profissional.id),
     getMediaAvaliacoes({ tipo: 'profissional', id: profissional.id }),
     getUser(),
+    verificarPodeContactar({ tipo: 'profissional', id: profissional.id }),
   ]);
 
   const dados: ProfissionalContactoPublico = contacto ?? {
@@ -176,7 +178,7 @@ export default async function ProfissionalPublicoPage({ params }: { params: Para
                 >
                   Ver serviços
                 </a>
-                {user && !eDono && <EnviarMensagemButton profissionalId={dados.id} />}
+                {user && !eDono && permissaoContacto.pode && <EnviarMensagemButton profissionalId={dados.id} />}
               </div>
 
               {!user && (

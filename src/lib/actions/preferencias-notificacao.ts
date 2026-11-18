@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
+import { isAdmin } from '@/lib/auth'
 
 export type PreferenciasNotificacao = {
   plataforma: boolean
@@ -19,6 +20,7 @@ const PREFERENCIAS_PADRAO: PreferenciasNotificacao = {
 }
 
 export async function obterPreferenciasNotificacao(): Promise<Resultado<PreferenciasNotificacao>> {
+  if (await isAdmin()) return { success: false, error: 'Preferências de utilizador indisponíveis para contas administrativas.' }
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -52,6 +54,7 @@ export async function obterPreferenciasNotificacao(): Promise<Resultado<Preferen
 }
 
 export async function guardarPreferenciasNotificacao(formData: FormData): Promise<void> {
+  if (await isAdmin()) redirect('/admin')
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
 

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
+import { isAdmin } from '@/lib/auth'
 
 export type PedidoProfissional = {
   id: string
@@ -35,13 +36,16 @@ const TRANSICOES_PROFISSIONAL: Record<string, string[]> = {
 export async function listarPedidosDoProfissional(): Promise<
   { success: true; data: PedidoProfissional[] } | { success: false; error: string }
 > {
+  if (await isAdmin()) return { success: false, error: 'Contas administrativas não podem utilizar pedidos profissionais.' }
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Sessão expirada. Inicie sessão novamente.' }
+  const { data: conta } = await supabase.from('profiles').select('is_active').eq('id', user.id).maybeSingle()
+  if (conta?.is_active !== true) return { success: false, error: 'A conta não está activa.' }
 
   const { data: perfil, error: erroPerfil } = await supabase
     .from('profissionais')
-    .select('id')
+    .select('id,estado')
     .eq('user_id', user.id)
     .maybeSingle()
 
@@ -49,7 +53,7 @@ export async function listarPedidosDoProfissional(): Promise<
     console.error('Erro ao verificar perfil profissional. Código:', erroPerfil.code)
     return { success: false, error: 'Não foi possível carregar os pedidos.' }
   }
-  if (!perfil) return { success: true, data: [] }
+  if (!perfil || perfil.estado !== 'aprovado') return { success: true, data: [] }
 
   const { data, error } = await supabase
     .from('pedidos_servico')
@@ -74,14 +78,17 @@ export async function atualizarEstadoPedidoProfissional(
   pedidoId: string,
   novoEstado: string
 ): Promise<ResultadoPedidoProfissional> {
+  if (await isAdmin()) return { success: false, error: 'Contas administrativas não podem alterar pedidos profissionais.' }
   if (!UUID_REGEX.test(pedidoId)) return { success: false, error: 'Pedido inválido.' }
 
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Sessão expirada. Inicie sessão novamente.' }
+  const { data: conta } = await supabase.from('profiles').select('is_active').eq('id', user.id).maybeSingle()
+  if (conta?.is_active !== true) return { success: false, error: 'A conta não está activa.' }
 
-  const { data: perfil, error: erroPerfil } = await supabase.from('profissionais').select('id').eq('user_id', user.id).maybeSingle()
-  if (erroPerfil || !perfil) return { success: false, error: 'Perfil profissional não encontrado.' }
+  const { data: perfil, error: erroPerfil } = await supabase.from('profissionais').select('id,estado').eq('user_id', user.id).maybeSingle()
+  if (erroPerfil || !perfil || perfil.estado !== 'aprovado') return { success: false, error: 'Apenas profissionais aprovados podem gerir pedidos.' }
 
   const { data: atual, error: erroLeitura } = await supabase
     .from('pedidos_servico')

@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@supabase/supabase-js'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
+import { isAdmin } from '@/lib/auth'
 
 /** Função que o utilizador desempenha numa conversa. Um utilizador pode ter várias. */
 export type PapelConversa = 'cliente' | 'profissional' | 'empresa'
@@ -42,6 +43,7 @@ export type MensagemConversa = {
 type Resultado<T> = { success: true; data: T } | { success: false; error: string }
 
 export async function listarConversas(): Promise<Resultado<ConversaResumo[]>> {
+  if (await isAdmin()) return { success: false, error: 'As conversas de utilizadores não estão disponíveis para contas administrativas.' }
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Sessão expirada. Inicie sessão novamente.' }
@@ -58,17 +60,22 @@ export async function listarConversas(): Promise<Resultado<ConversaResumo[]>> {
   }
 
   // Perfis e empresas do próprio utilizador (a RLS devolve só os seus registos).
-  const [{ data: perfil }, { data: empresas }] = await Promise.all([
-    supabase.from('profissionais').select('id').eq('user_id', user.id).maybeSingle(),
-    supabase.from('companies').select('id').eq('user_id', user.id),
+  const [{ data: perfilConta }, { data: perfil }, { data: empresas }] = await Promise.all([
+    supabase.from('profiles').select('account_type,is_active').eq('id', user.id).maybeSingle(),
+    supabase.from('profissionais').select('id,estado').eq('user_id', user.id).maybeSingle(),
+    supabase.from('companies').select('id,is_approved,estado').eq('user_id', user.id),
   ])
-  const idsProfissional = new Set(perfil?.id ? [perfil.id] : [])
-  const idsEmpresa = new Set((empresas ?? []).map((e) => e.id))
+  const idsProfissional = new Set(perfilConta?.account_type === 'profissional' && perfilConta.is_active === true && perfil?.estado === 'aprovado' && perfil?.id ? [perfil.id] : [])
+  const idsEmpresa = new Set(perfilConta?.account_type === 'empresa' && perfilConta.is_active === true ? (empresas ?? []).filter((e) => e.is_approved === true && e.estado === 'aprovado').map((e) => e.id) : [])
+  // O papel é determinado exclusivamente por profiles.account_type.
+  // Registos empresariais/profissionais legados (pendentes ou suspensos) não retiram
+  // capacidades de cliente quando a conta continua explicitamente classificada como cliente.
+  const clienteActivo = perfilConta?.account_type === 'cliente' && perfilConta.is_active === true
 
   // A política RLS também permite leitura administrativa. A interface de mensagens,
   // porém, só deve devolver conversas em que a sessão actual é participante efectivo.
   const minhasConversas = (data ?? []).filter((conversa) =>
-    conversa.cliente_id === user.id ||
+    (clienteActivo && conversa.cliente_id === user.id) ||
     Boolean(conversa.profissional_id && idsProfissional.has(conversa.profissional_id)) ||
     Boolean(conversa.empresa_id && idsEmpresa.has(conversa.empresa_id))
   )
@@ -142,6 +149,7 @@ async function utilizadorParticipaNaConversa(
   conversaId: string,
   userId: string
 ): Promise<boolean> {
+  if (await isAdmin()) return false
   if (!UUID_REGEX.test(conversaId)) return false
 
   const { data: conversa, error } = await supabase
@@ -151,15 +159,16 @@ async function utilizadorParticipaNaConversa(
     .maybeSingle()
 
   if (error || !conversa) return false
-  if (conversa.cliente_id === userId) return true
+  if (conversa.cliente_id === userId && await contaClienteActiva(supabase, userId)) return true
 
-  const [{ data: perfil }, { data: empresas }] = await Promise.all([
-    supabase.from('profissionais').select('id').eq('user_id', userId).maybeSingle(),
-    supabase.from('companies').select('id').eq('user_id', userId),
+  const [perfilConta, perfil, empresas] = await Promise.all([
+    supabase.from('profiles').select('account_type,is_active').eq('id', userId).maybeSingle(),
+    supabase.from('profissionais').select('id,estado').eq('user_id', userId).maybeSingle(),
+    supabase.from('companies').select('id,is_approved,estado').eq('user_id', userId),
   ])
-
-  if (conversa.profissional_id && perfil?.id === conversa.profissional_id) return true
-  return Boolean(conversa.empresa_id && (empresas ?? []).some((empresa) => empresa.id === conversa.empresa_id))
+  if (perfilConta.error || perfilConta.data?.is_active !== true) return false
+  if (perfilConta.data.account_type === 'profissional' && conversa.profissional_id && perfil?.data?.id === conversa.profissional_id && perfil?.data?.estado === 'aprovado') return true
+  return Boolean(perfilConta.data.account_type === 'empresa' && conversa.empresa_id && (empresas.data ?? []).some((empresa) => empresa.id === conversa.empresa_id && empresa.is_approved === true && empresa.estado === 'aprovado'))
 }
 
 export async function listarMensagens(conversaId: string): Promise<Resultado<MensagemConversa[]>> {
@@ -218,6 +227,18 @@ export async function enviarMensagem(conversaId: string, conteudo: string): Prom
   }
 
   return { success: true }
+}
+
+async function contaClienteActiva(supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>, userId: string): Promise<boolean> {
+  if (await isAdmin()) return false
+  // O papel e a activação são a fonte de verdade. Não consultar registos de negócio
+  // legados aqui: RLS também autoriza o cliente com base nestes mesmos campos.
+  const { data: perfil, error } = await supabase
+    .from('profiles')
+    .select('account_type,is_active')
+    .eq('id', userId)
+    .maybeSingle()
+  return !error && perfil?.account_type === 'cliente' && perfil.is_active === true
 }
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -297,11 +318,13 @@ async function notificarNovaMensagem(conversaId: string, remetenteId: string): P
 export async function verificarPodeContactar(
   alvo: { tipo: 'profissional' | 'empresa'; id: string }
 ): Promise<{ pode: boolean; motivo?: string }> {
+  if (await isAdmin()) return { pode: false, motivo: 'Contas administrativas não podem utilizar conversas de cliente, profissional ou empresa.' }
   if (!UUID_REGEX.test(alvo.id)) return { pode: false, motivo: 'Destino inválido.' }
 
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { pode: false, motivo: 'Sessão expirada. Inicie sessão novamente.' }
+  if (!(await contaClienteActiva(supabase, user.id))) return { pode: false, motivo: 'Apenas clientes activos podem iniciar conversas.' }
 
   // Confirmação do dono no servidor, independente da sessão do browser e da RLS: só corre com chave de serviço.
   const admin = criarClienteServico()
@@ -362,12 +385,14 @@ export async function verificarPodeContactar(
 export async function verificarPodeContactarEmpresas(
   ids: string[]
 ): Promise<{ success: true; ids: string[] } | { success: false; error: string }> {
+  if (await isAdmin()) return { success: false, error: 'Contas administrativas não podem iniciar conversas de utilizador.' }
   const idsValidos = Array.from(new Set(ids)).filter((id) => UUID_REGEX.test(id)).slice(0, 100)
   if (idsValidos.length === 0) return { success: true, ids: [] }
 
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: true, ids: [] }
+  if (!(await contaClienteActiva(supabase, user.id))) return { success: false, error: 'Apenas clientes activos podem iniciar conversas.' }
 
   const { data: minhas, error: erroMinhas } = await supabase
     .from('companies')
@@ -414,11 +439,13 @@ export async function verificarPodeContactarEmpresas(
 export async function iniciarConversaComEmpresa(
   empresaId: string
 ): Promise<{ success: true; conversaId: string } | { success: false; error: string }> {
+  if (await isAdmin()) return { success: false, error: 'Contas administrativas não podem iniciar conversas de utilizador.' }
   if (!UUID_REGEX.test(empresaId)) return { success: false, error: 'Empresa inválida.' }
 
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Sessão expirada. Inicie sessão novamente.' }
+  if (!(await contaClienteActiva(supabase, user.id))) return { success: false, error: 'Apenas clientes activos podem iniciar conversas.' }
 
   const { data: existente, error: erroLeitura } = await supabase
     .from('conversas')
@@ -474,11 +501,13 @@ export async function iniciarConversaComEmpresa(
 export async function iniciarConversaComProfissional(
   profissionalId: string
 ): Promise<{ success: true; conversaId: string } | { success: false; error: string }> {
+  if (await isAdmin()) return { success: false, error: 'Contas administrativas não podem iniciar conversas de utilizador.' }
   if (!UUID_REGEX.test(profissionalId)) return { success: false, error: 'Profissional inválido.' }
 
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Sessão expirada. Inicie sessão novamente.' }
+  if (!(await contaClienteActiva(supabase, user.id))) return { success: false, error: 'Apenas clientes activos podem iniciar conversas.' }
 
   const { data: existente, error: erroLeitura } = await supabase
     .from('conversas')

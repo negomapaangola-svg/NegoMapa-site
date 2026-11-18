@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { PROVINCIAS } from '@/components/home/constants'
+import { isAdmin } from '@/lib/auth'
 
 type PerfilInput = { nome: string; telefone: string; whatsapp: string; avatar_url: string }
 const emailValido = (v: string) => v.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)
@@ -13,6 +14,7 @@ async function sessao() {
   const supabase = await createSupabaseServerClient()
   const { data: { user }, error } = await supabase.auth.getUser()
   if (error || !user || !user.email || !emailValido(user.email)) throw new Error('Sessão inválida ou email da conta inválido.')
+  if (await isAdmin()) throw new Error('Contas administrativas não podem utilizar operações de perfil de utilizador.')
   return { supabase, user }
 }
 
@@ -167,6 +169,9 @@ export async function escolherTipoConta(tipo: unknown) {
     const admin = createClient(url, key, {
       auth: { autoRefreshToken: false, persistSession: false },
     })
+
+    const { data: registoAdmin, error: erroAdmin } = await admin.from('admin_users').select('user_id').eq('user_id', user.id).maybeSingle()
+    if (erroAdmin || registoAdmin) return { ok: false, message: 'Contas administrativas não podem escolher um papel de utilizador.' }
 
     const { data: perfil, error: leituraError } = await admin
       .from('profiles')

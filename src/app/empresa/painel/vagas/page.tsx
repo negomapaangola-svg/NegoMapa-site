@@ -44,21 +44,19 @@ export default async function EmpresaVagasPage({ searchParams }: { searchParams:
                 Empresa: <span className="font-medium text-ink dark:text-cream">{company.name}</span>
               </p>
             </div>
-            <Link href={`/empresa/painel/vagas/nova?empresa=${encodeURIComponent(company.id)}`}>
-              <Button size="lg">
-                Publicar nova vaga
-              </Button>
-            </Link>
+            {company.is_approved && company.estado === 'aprovado' && <Link href={`/empresa/painel/vagas/nova?empresa=${encodeURIComponent(company.id)}`}>
+              <Button size="lg">Publicar nova vaga</Button>
+            </Link>}
           </div>
 
-          {!company.is_approved && (
+          {(!company.is_approved || company.estado !== 'aprovado') && (
             <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-[4px]">
               <div className="flex items-center gap-2 text-yellow-700 dark:text-yellow-300">
                 <svg className="h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
                 <span className="font-medium">
-                  A sua empresa ainda não foi aprovada. Não é possível publicar vagas.
+                  A sua empresa não está aprovada ou está suspensa. Não é possível publicar vagas.
                 </span>
               </div>
             </div>
@@ -77,11 +75,9 @@ export default async function EmpresaVagasPage({ searchParams }: { searchParams:
               <p className="text-neutral-600 dark:text-cream-text mb-6 max-w-md mx-auto">
                 Comece a atrair candidatos publicando a sua primeira vaga de emprego.
               </p>
-              <Link href="/empresa/painel/vagas/nova">
-                <Button variant="primary" size="lg">
-                  Publicar primeira vaga
-                </Button>
-              </Link>
+              {company.is_approved && company.estado === 'aprovado' ? <Link href={`/empresa/painel/vagas/nova?empresa=${encodeURIComponent(company.id)}`}>
+                <Button variant="primary" size="lg">Publicar primeira vaga</Button>
+              </Link> : <p className="text-sm text-neutral-600 dark:text-cream-text">A publicação ficará disponível após aprovação e activação da empresa.</p>}
             </Card>
           ) : (
             <div className="space-y-4">

@@ -3,43 +3,134 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
+import { isAdmin } from '@/lib/auth'
+
+type ContaProfile = {
+  id: string
+  nome: string | null
+  telefone: string | null
+  whatsapp: string | null
+  avatar_url: string | null
+  account_type: 'profissional' | 'empresa' | 'cliente'
+  localizacao_provincia: string | null
+  localizacao_municipio: string | null
+  localizacao_bairro: string | null
+  is_active: boolean
+}
+type ContaProfessional = {
+  id: string
+  nome: string | null
+  telefone: string | null
+  whatsapp: string | null
+  bio: string | null
+  provincia: string | null
+  municipio: string | null
+  bairro: string | null
+  estado: string
+  avatar_url: string | null
+  categoria_id: string | null
+  especialidades: string[] | null
+  disponibilidade: string | null
+  disponibilidade_dias: string[] | null
+  disponibilidade_horarios: Record<string, boolean> | null
+  portfolio: unknown
+}
+type ContaCompany = {
+  id: string
+  name: string
+  sector: string
+  province: string
+  city: string | null
+  bairro: string | null
+  rua: string | null
+  referencia_localizacao: string | null
+  website: string | null
+  description: string | null
+  whatsapp: string | null
+  phone: string | null
+  logo_url: string | null
+  is_approved: boolean | null
+  estado: string | null
+  horario_atendimento: string | null
+  portfolio: unknown
+}
+type ContaDetails = {
+  formacao?: string | null
+  preferencias?: string | null
+  disponibilidade?: string | null
+  tipo_empresa?: string | null
+  tamanho_empresa?: string | null
+}
+type AvaliacaoConta = { id: string; nota: number; comentario: string | null; created_at: string }
 
 export type ContaSnapshot = {
   user: { id: string; email: string }
-  profile: any
-  professional: any
-  company: any
-  details: any
+  profile: ContaProfile
+  professional: ContaProfessional | null
+  company: ContaCompany | null
+  details: ContaDetails
   accountType: 'profissional' | 'empresa' | 'cliente'
 }
 
-async function authenticated() {
+async function authenticated(allowAdmin = false) {
   const supabase = await createSupabaseServerClient()
   const { data: { user }, error } = await supabase.auth.getUser()
   if (error || !user) redirect('/login?redirectTo=/conta')
+  if (!allowAdmin && await isAdmin()) redirect('/admin')
   return { supabase, user }
 }
 
 export async function getContaSnapshot(): Promise<ContaSnapshot | null> {
   const { supabase, user } = await authenticated()
-  const [profileResult, professionalResult, companyResult, detailsResult] = await Promise.all([
+  const [profileResult, detailsResult] = await Promise.all([
     supabase.from('profiles').select('id,nome,telefone,whatsapp,avatar_url,account_type,localizacao_provincia,localizacao_municipio,localizacao_bairro,is_active').eq('id', user.id).maybeSingle(),
-    supabase.from('profissionais').select('id,nome,telefone,whatsapp,bio,provincia,municipio,bairro,estado,avatar_url,categoria_id,especialidades,disponibilidade,disponibilidade_dias,disponibilidade_horarios,portfolio').eq('user_id', user.id).maybeSingle(),
-    supabase.from('companies').select('id,name,sector,province,city,bairro,rua,referencia_localizacao,website,description,whatsapp,phone,logo_url,is_approved,estado,horario_atendimento,portfolio').eq('user_id', user.id).maybeSingle(),
     supabase.from('conta_detalhes').select('formacao,preferencias,disponibilidade,tipo_empresa,tamanho_empresa').eq('user_id', user.id).maybeSingle(),
   ])
-  if (profileResult.error) throw new Error('Não foi possível carregar o perfil da conta.')
+
+  if (profileResult.error || detailsResult.error) {
+    console.error('Erro ao carregar dados da conta.', {
+      profile: profileResult.error?.code,
+      details: detailsResult.error?.code,
+    })
+    throw new Error('Não foi possível carregar os dados da conta. Actualize a página ou tente novamente.')
+  }
+
   const profile = profileResult.data
   const accountType = profile?.account_type
-  if (accountType !== 'profissional' && accountType !== 'empresa' && accountType !== 'cliente') {
+  if (!profile || (accountType !== 'profissional' && accountType !== 'empresa' && accountType !== 'cliente')) {
     redirect('/escolher-tipo')
   }
+  if (profile.is_active !== true) redirect('/conta?erro=conta-inactiva')
+
+  // A conta cliente não consulta tabelas de negócio: registos legados não
+  // alteram o papel nem podem impedir a leitura do perfil pessoal.
+  let professional: ContaProfessional | null = null
+  let company: ContaCompany | null = null
+
+  if (accountType === 'profissional') {
+    const { data, error } = await supabase.rpc('get_my_professional_account')
+    if (error) {
+      console.error('Erro ao carregar perfil profissional próprio. Código:', error.code)
+      throw new Error('Não foi possível carregar o perfil profissional.')
+    }
+    const row = Array.isArray(data) ? data[0] : data
+    professional = (row as ContaProfessional | null) ?? null
+  } else if (accountType === 'empresa') {
+    const { data, error } = await supabase.rpc('get_my_company_profile')
+    if (error) {
+      console.error('Erro ao carregar perfil empresarial próprio. Código:', error.code)
+      throw new Error('Não foi possível carregar o perfil empresarial.')
+    }
+    const row = Array.isArray(data) ? data[0] : data
+    company = (row as ContaCompany | null) ?? null
+  }
+
   return {
     user: { id: user.id, email: user.email ?? '' },
-    profile: profile ?? {},
-    professional: professionalResult.data ?? null,
-    company: companyResult.data ?? null,
-    details: detailsResult.data ?? {},
+    profile: profile as ContaProfile,
+    professional,
+    company,
+    details: (detailsResult.data as ContaDetails | null) ?? {},
     accountType,
   }
 }
@@ -62,9 +153,10 @@ function validImageUrl(value: string) {
 
 export async function guardarPerfilConta(form: FormData): Promise<void> {
   const { supabase, user } = await authenticated()
-  const { data: profile } = await supabase.from('profiles').select('account_type').eq('id', user.id).maybeSingle()
+  const { data: profile, error: profileError } = await supabase.from('profiles').select('account_type,is_active').eq('id', user.id).maybeSingle()
   const tipo = profile?.account_type
-  if (!['profissional', 'empresa', 'cliente'].includes(tipo)) redirect('/escolher-tipo')
+  if (profileError || !['profissional', 'empresa', 'cliente'].includes(tipo)) redirect('/escolher-tipo')
+  if (profile?.is_active !== true) redirect('/conta/perfil?erro=conta-inactiva')
 
   const nome = field(form, 'nome')
   const telefone = field(form, 'telefone')
@@ -84,13 +176,13 @@ export async function guardarPerfilConta(form: FormData): Promise<void> {
     }
     const { data: owned } = await supabase.from('profissionais').select('id').eq('user_id', user.id).maybeSingle()
     if (!owned) redirect('/conta/perfil?erro=sem-perfil')
-    const { error } = await supabase.from('profissionais').update({
+    const { data: actualizado, error } = await supabase.from('profissionais').update({
       nome, telefone: telefone || null, whatsapp: whatsapp || null, bio: field(form, 'bio') || null,
       provincia: field(form, 'provincia') || null, municipio: field(form, 'municipio') || null, bairro: field(form, 'bairro') || null,
       categoria_id: field(form, 'categoria_id') || null, especialidades,
       disponibilidade: field(form, 'disponibilidade') || null, avatar_url: avatar, portfolio,
-    }).eq('user_id', user.id)
-    if (error) redirect('/conta/perfil?erro=guardar')
+    }).eq('user_id', user.id).select('id').maybeSingle()
+    if (error || !actualizado) redirect('/conta/perfil?erro=guardar')
   } else if (tipo === 'empresa') {
     const logo = field(form, 'logo_url')
     if (!validImageUrl(logo)) redirect('/conta/perfil?erro=avatar')
@@ -102,23 +194,24 @@ export async function guardarPerfilConta(form: FormData): Promise<void> {
     }
     const { data: owned } = await supabase.from('companies').select('id').eq('user_id', user.id).maybeSingle()
     if (!owned) redirect('/conta/perfil?erro=sem-perfil')
-    const { error } = await supabase.from('companies').update({
+    const { data: actualizado, error } = await supabase.from('companies').update({
       name: nome, sector: field(form, 'sector') || 'Geral', phone: telefone || null,
       whatsapp: whatsapp || null, province: field(form, 'province') || '', city: field(form, 'city') || null,
       bairro: field(form, 'bairro') || null, rua: field(form, 'rua') || null, referencia_localizacao: field(form, 'referencia_localizacao') || null, website: field(form, 'website') || null,
       description: field(form, 'description') || null, horario_atendimento: field(form, 'disponibilidade') || null,
       logo_url: logo, portfolio,
-    }).eq('user_id', user.id)
-    if (error) redirect('/conta/perfil?erro=guardar')
+    }).eq('user_id', user.id).select('id').maybeSingle()
+    if (error || !actualizado) redirect('/conta/perfil?erro=guardar')
   } else {
-    const { error } = await supabase.from('profiles').update({
+    // Não enviar updated_at: authenticated não tem UPDATE nessa coluna.
+    // O trigger trg_profiles_updated_at_b2 actualiza-a automaticamente.
+    const { data: actualizado, error } = await supabase.from('profiles').update({
       nome, telefone: telefone || null, whatsapp: whatsapp || null,
       localizacao_provincia: field(form, 'provincia') || null,
       localizacao_municipio: field(form, 'municipio') || null,
       localizacao_bairro: field(form, 'bairro') || null,
-      updated_at: new Date().toISOString(),
-    }).eq('id', user.id)
-    if (error) redirect('/conta/perfil?erro=guardar')
+    }).eq('id', user.id).select('id').maybeSingle()
+    if (error || !actualizado) redirect('/conta/perfil?erro=guardar')
   }
 
   const details = {
@@ -130,8 +223,15 @@ export async function guardarPerfilConta(form: FormData): Promise<void> {
     tamanho_empresa: field(form, 'tamanho_empresa') || null,
     updated_at: new Date().toISOString(),
   }
-  const { error: detailsError } = await supabase.from('conta_detalhes').upsert(details, { onConflict: 'user_id' })
-  if (detailsError) redirect('/conta/perfil?erro=detalhes')
+  const { data: detalhesGuardados, error: detailsError } = await supabase
+    .from('conta_detalhes')
+    .upsert(details, { onConflict: 'user_id' })
+    .select('user_id')
+    .maybeSingle()
+  if (detailsError || detalhesGuardados?.user_id !== user.id) {
+    if (detailsError) console.error('Erro ao guardar dados complementares da conta. Código:', detailsError.code)
+    redirect('/conta/perfil?erro=detalhes')
+  }
 
   revalidatePath('/conta')
   revalidatePath('/conta/perfil')
@@ -193,7 +293,7 @@ export async function getContaAvaliacoes() {
     supabase.from('companies').select('id').eq('user_id', user.id).maybeSingle(),
     supabase.from('avaliacoes').select('id,nota,comentario,created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(50),
   ])
-  let received: any[] = []
+  let received: AvaliacaoConta[] = []
   if (profile?.account_type === 'profissional' && professional.data) {
     const { data } = await supabase.from('avaliacoes').select('id,nota,comentario,created_at').eq('profissional_id', professional.data.id).order('created_at', { ascending: false }).limit(50)
     received = data ?? []
@@ -219,7 +319,7 @@ export async function guardarNotificacoesConta(form: FormData): Promise<void> {
 }
 
 export async function alterarPalavraPasse(form: FormData): Promise<void> {
-  const { supabase } = await authenticated()
+  const { supabase } = await authenticated(true)
   const password = field(form, 'password')
   const confirmation = field(form, 'confirmation')
   if (password.length < 10 || password.length > 128 || password !== confirmation) redirect('/conta/configuracoes?erro=password')
@@ -229,7 +329,7 @@ export async function alterarPalavraPasse(form: FormData): Promise<void> {
 }
 
 export async function terminarTodasSessoes(): Promise<void> {
-  const { supabase } = await authenticated()
+  const { supabase } = await authenticated(true)
   await supabase.auth.signOut({ scope: 'global' })
   redirect('/login?logout=1')
 }

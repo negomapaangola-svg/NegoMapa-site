@@ -3,6 +3,7 @@
 import 'server-only'
 import { createClient } from '@supabase/supabase-js'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
+import { isAdmin } from '@/lib/auth'
 
 type TipoPrestador = 'profissional' | 'empresa'
 type TipoResultado = TipoPrestador | 'servico' | 'produto'
@@ -10,6 +11,7 @@ type TipoResultado = TipoPrestador | 'servico' | 'produto'
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 async function contexto() {
+  if (await isAdmin()) return null
   const supabase = await createSupabaseServerClient()
   const { data: { user }, error } = await supabase.auth.getUser()
   if (error || !user) return null
@@ -115,7 +117,7 @@ export async function obterDistanciasAproximadas(tipo: TipoResultado, idsRecebid
 
     const origemPorId = new Map<string, string>()
     let idsPrestadores = ids
-    let tipoPrestador: TipoPrestador = tipo === 'empresa' || tipo === 'produto' ? 'empresa' : 'profissional'
+    const tipoPrestador: TipoPrestador = tipo === 'empresa' || tipo === 'produto' ? 'empresa' : 'profissional'
 
     if (tipo === 'servico') {
       const { data } = await ctx.admin.from('servicos').select('id,profissional_id')

@@ -10,6 +10,7 @@ import { NotificacoesBotao } from './NotificacoesBotao';
 import { PesquisaGlobal } from './PesquisaGlobal';
 import { useTemaEscuro } from '@/hooks/useTemaEscuro';
 import { obterContextoNavegacao } from '@/lib/actions/permissoes';
+import { createBrowserSupabaseClient } from '@/lib/supabase-browser';
 import { ITENS_NAVEGACAO } from '@/lib/navegacao';
 
 type Contexto = Awaited<ReturnType<typeof obterContextoNavegacao>>
@@ -29,14 +30,33 @@ export const Header = forwardRef<HTMLElement, { className?: string; hideGlobalSe
       carregar()
       const aoSair = () => setContexto({ autenticado:false, profissional:false, estadoProfissional:null, empresa:false, empresaAprovada:false, administrador:false, accountType:null })
       window.addEventListener('negomapa:auth-logout-started', aoSair)
-      return () => { activo = false; window.removeEventListener('negomapa:auth-logout-started', aoSair) }
-    }, [])
+      const supabase = createBrowserSupabaseClient()
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((evento, sessao) => {
+        if (evento === 'SIGNED_OUT' || !sessao) {
+          aoSair()
+          return
+        }
+        if (evento === 'SIGNED_IN' || evento === 'USER_UPDATED') {
+          void obterContextoNavegacao().then((c) => { if (activo) setContexto(c) }).catch(() => {
+            if (activo) setContexto({ autenticado:false, profissional:false, estadoProfissional:null, empresa:false, empresaAprovada:false, administrador:false, accountType:null })
+          })
+        }
+      })
+      return () => { activo = false; subscription.unsubscribe(); window.removeEventListener('negomapa:auth-logout-started', aoSair) }
+    }, [pathname])
+
+    useEffect(() => {
+      const role = contexto?.administrador ? 'admin' : contexto?.empresa ? 'empresa' : contexto?.profissional ? 'profissional' : contexto?.accountType ?? null
+      if (role) document.documentElement.dataset.accountRole = role
+      else delete document.documentElement.dataset.accountRole
+      return () => { delete document.documentElement.dataset.accountRole }
+    }, [contexto])
 
     const estaActivo = (href: string) => pathname === href || pathname.startsWith(`${href}/`)
     const linksCabecalho = ['inicio','descobrir','servicos','profissionais','empresas','produtos','vagas'].map((id) => ITENS_NAVEGACAO.find((item) => item.id === id)!).filter(Boolean)
-    const publicar = contexto?.administrador ? null : contexto && contexto.profissional && contexto.estadoProfissional === 'aprovado'
+    const publicar = contexto?.administrador || contexto?.accountType === 'cliente' ? null : contexto && contexto.accountType === 'profissional' && contexto.profissional && contexto.estadoProfissional === 'aprovado'
       ? { href:'/cadastrar-servico', label:'Publicar serviço' }
-      : contexto?.empresa && contexto.empresaAprovada ? { href:'/empresa/painel/vagas/nova', label:'Publicar vaga' } : null
+      : contexto?.accountType === 'empresa' && contexto.empresa && contexto.empresaAprovada ? { href:'/empresa/painel/vagas/nova', label:'Publicar vaga' } : null
 
     return <>
       <a href="#main-content" className="skip-link">Ir para o conteúdo principal</a>
@@ -54,7 +74,7 @@ export const Header = forwardRef<HTMLElement, { className?: string; hideGlobalSe
               <Link href="/descobrir" aria-label="Pesquisar" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-card-border bg-white/70 text-navy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:bg-navy-dark/70 dark:text-cream md:hidden"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></Link>
               {publicar && <Link href={publicar.href} className="hidden min-h-11 shrink-0 items-center rounded-full bg-orange-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-orange-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 xl:inline-flex">{publicar.label}</Link>}
               <AuthUserMenu />
-              {contexto?.autenticado && <NotificacoesBotao />}
+              {contexto?.autenticado && !contexto.administrador && <NotificacoesBotao />}
               <button type="button" onClick={() => setMenuAberto(true)} aria-expanded={menuAberto} aria-controls="mobile-menu" aria-label="Abrir menu" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-card-border bg-white/70 text-navy transition-colors hover:border-orange-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:bg-navy-dark/70 dark:text-cream xl:hidden"><IconeMenu /></button>
             </div>
           </div>
