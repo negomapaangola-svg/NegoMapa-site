@@ -2,6 +2,7 @@ import { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { isAdmin } from '@/lib/auth'
+import { obterContextoUtilizador } from '@/lib/permissoes'
 import { MainLayout } from '@/components/layout/MainLayout'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card'
 import { ProfileForm } from './_components/ProfileForm'
@@ -23,6 +24,9 @@ async function getProfile() {
 
 export default async function CadastrarServicoPage() {
   if (await isAdmin()) redirect('/admin')
+  const contexto = await obterContextoUtilizador()
+  if (contexto.empresa) redirect('/empresa/painel')
+  if (contexto.accountType && contexto.accountType !== 'cliente' && !contexto.profissional) redirect('/')
   const supabase = await createSupabaseServerClient()
 
   const { data: { user } } = await supabase.auth.getUser()
