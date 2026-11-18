@@ -1,7 +1,8 @@
 import { Metadata } from 'next'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { getUser } from '@/lib/auth'
+import { getUser, isAdmin } from '@/lib/auth'
+import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { MainLayout } from '@/components/layout/MainLayout'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { listarMinhasCandidaturas } from '@/lib/actions/candidaturas'
@@ -32,6 +33,7 @@ const ESTADO_ESTILO: Record<string, string> = {
 }
 
 export default async function CandidaturasPage() {
+  if (await isAdmin()) redirect('/admin')
   const user = await getUser()
   if (!user) {
     redirect('/login?redirectTo=/candidaturas')
