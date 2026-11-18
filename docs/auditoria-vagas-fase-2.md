@@ -113,20 +113,22 @@ Depois do `ROLLBACK`, consulta de confirmação devolveu 0 utilizadores, 0 empre
 
 ## Eliminação de vagas — decisão recomendada
 
-**Recomendação: opção A — não permitir eliminação pelo proprietário; usar apenas encerramento.**
+**Decisão implementada: opção A — o proprietário não pode eliminar vagas; o encerramento (`encerrada_em`) é o mecanismo normal de retirada.**
 
 Evidência real das chaves estrangeiras:
-- `candidaturas.vaga_id → vagas.id ON DELETE CASCADE`
-- `avaliacoes.vaga_id → vagas.id ON DELETE CASCADE`
-- `denuncias.vaga_id → vagas.id ON DELETE CASCADE`
+- `candidaturas.vaga_id → vagas.id ON DELETE RESTRICT`
+- `avaliacoes.vaga_id → vagas.id ON DELETE RESTRICT`
+- `denuncias.vaga_id → vagas.id ON DELETE RESTRICT`
 
-A tabela `notificacoes` guarda `referencia_id` sem FK para vagas: as notificações não são apagadas em cascata e podem ficar com referências órfãs. A única tabela encontrada com nome de auditoria é `admin_account_deletion_audit`; não foi encontrada tabela de auditoria específica das alterações de vagas.
+A tabela `notificacoes` mantém `referencia_id` polimórfica, sem FK genérica. A migração acrescenta um trigger que valida referências para `vaga_aprovada` e `vaga_rejeitada`, e impede apagar uma vaga enquanto existirem notificações desses tipos. A verificação pós-migração encontrou zero referências inválidas. A única tabela encontrada com nome de auditoria é `admin_account_deletion_audit`; não foi encontrada tabela de auditoria específica das alterações de vagas.
 
 **Risco confirmado:** a política actual `vagas_delete_auth` permite ao proprietário eliminar a própria vaga por API directa. O teste confirmou que Empresa A não consegue eliminar a vaga B; não foi executada eliminação da vaga própria. A política não foi alterada nesta fase, por falta de decisão explícita de implementação. A recomendação A exige uma alteração posterior autorizada para retirar essa permissão ao proprietário.
 
 ## Migração e reversão
 
-- Migração aditiva: `20261117231159_vagas_encerramento_seguro.sql`.
+- Migração aditiva inicial: `20261117231159_vagas_encerramento_seguro.sql`.
+- Migração aplicada em produção: `20261118134305_proibir_eliminacao_vagas_preservar_historico` (`supabase/migrations/20261118145000_proibir_eliminacao_vagas_preservar_historico.sql`).
+- Reversão versionada: `supabase/rollback/20261118145000_proibir_eliminacao_vagas_preservar_historico_reversao.sql`. A reversão restaura deliberadamente a política antiga e os `CASCADE`; não foi executada.
 - Reversão: `supabase/rollback/20261117231159_vagas_encerramento_seguro_reversao.sql`.
 - Simulação SQL com ROLLBACK e aplicação posterior verificada.
 - A reversão aborta se existirem vagas com `encerrada_em IS NOT NULL`; não foi executada.
@@ -143,7 +145,7 @@ A tabela `notificacoes` guarda `referencia_id` sem FK para vagas: as notificaç�
 
 1. Os dados sintéticos foram transaccionais e revertidos; não existem contas persistentes com credenciais para login no preview.
 2. O teste end-to-end de browser, formulários, notificações, estados de loading e mensagens não pôde ser executado nesta sessão.
-3. A política `vagas_delete_auth` continua a permitir ao proprietário eliminar a própria vaga, com perda em cascata de candidaturas, avaliações e denúncias. Recomendação A aguarda decisão explícita para alteração.
+3. Correcção de eliminação aplicada: proprietário bloqueado por RLS; FKs de candidaturas, avaliações e denúncias em `RESTRICT`; notificações de vaga validadas e protegidas.
 4. A regra de aprovação automática permanece inalterada. O trigger existente define `aprovado` na inserção de vagas; alterações posteriores de estado são recusadas para não-administradores.
 5. As vulnerabilidades npm acima permanecem pendentes de tratamento numa fase autorizada.
 
@@ -151,9 +153,51 @@ A tabela `notificacoes` guarda `referencia_id` sem FK para vagas: as notificaç�
 
 - Fluxo com papéis distintos: PARCIAL — 23 testes SQL/RLS passaram; teste de browser ainda pendente.
 - Empresa não gere vaga alheia: CUMPRIDO ao nível de RLS (editar, encerrar e eliminar vaga B recusados).
+- Proprietário não elimina a própria vaga via API: CUMPRIDO (DELETE directo como `authenticated` devolveu zero linhas).
+- Encerramento pelo proprietário: CUMPRIDO.
+- Histórico de candidaturas, avaliações e denúncias: CUMPRIDO (FK `RESTRICT`, teste de eliminação privilegiada recusado e quatro registos confirmados).
+- Notificações de vaga: CUMPRIDO (referência inexistente recusada por `23503`; notificação válida preservada; zero referências inválidas após rollback).
 - Candidato não vê candidaturas de outros: CUMPRIDO ao nível de RLS (testes A↔B passaram).
 - Empresa não vê candidaturas de vagas alheias: CUMPRIDO ao nível de RLS.
 - Candidatura duplicada, vaga encerrada e empresa inactiva: CUMPRIDO ao nível de RLS/constraint.
 - Erros e estados vazios: PARCIAL — revisão estática; falta validação interactiva no browser.
 - PR e preview: PR #39 aberto em Draft; preview READY e associado ao commit indicado na entrega.
 - Fase 2 pronta para revisão final: SIM, com as limitações e a decisão de eliminação explicitamente assinaladas; não equivale a aprovação para merge.
+
+
+## Adenda — decisão de eliminação implementada e revalidação
+
+Data: 18-11-2026
+
+### Alteração aplicada em produção
+
+- Removida a política permissiva \`vagas_delete_auth\`.
+- Criada a política RLS **restritiva** \`vagas_no_owner_delete\` para \`authenticated\`, com predicado que exclui o proprietário da operação DELETE. A regra prevalece sobre políticas permissivas.
+- Alteradas as FKs \`candidaturas_vaga_id_fkey\`, \`avaliacoes_vaga_id_fkey\` e \`denuncias_vaga_id_fkey\` para \`ON DELETE RESTRICT\`.
+- Criado trigger de validação das referências de notificações dos tipos \`vaga_aprovada\` e \`vaga_rejeitada\`; referências nulas ou inexistentes são recusadas com SQLSTATE \`23503\`.
+- Criado trigger que bloqueia a eliminação de uma vaga que ainda tenha notificações históricas desses tipos.
+- Não foi adicionada qualquer acção de eliminação à interface; o componente de acções da vaga oferece edição e encerramento, não eliminação.
+- O encerramento normal por \`encerrada_em\` e a regra automática de aprovação da Fase 7 foram mantidos.
+
+### Testes repetidos — 23 controlos SQL/RLS
+
+Os 23 controlos anteriores foram repetidos com cinco identidades sintéticas, três empresas e cinco vagas. Os controlos cobriram edição/encerramento, isolamento entre empresas e candidatos, candidatura válida, duplicados, vaga encerrada, empresa inactiva, estado de aprovação, descoberta pública e protecção das candidaturas. **23/23 PASS**. O INSERT de candidatura a vaga aberta foi aceite e a candidatura ficou visível ao próprio candidato; os testes de vaga encerrada e empresa inactiva foram recusados por RLS.
+
+### Testes adicionais — 5 controlos
+
+| Teste | Resultado | Evidência |
+|---|---|---|
+| Proprietário não elimina a própria vaga pela API | PASS | DELETE sob role \`authenticated\` devolveu 0 linhas |
+| Encerramento continua permitido ao proprietário | PASS | UPDATE de \`encerrada_em\` afectou 1 linha |
+| Tentativa privilegiada de apagar vaga com histórico | PASS | FK \`RESTRICT\` recusou DELETE |
+| Candidaturas, avaliações, denúncias e notificação válidas preservadas | PASS | Os quatro registos permaneceram após a tentativa de DELETE |
+| Notificação com referência de vaga inexistente | PASS | Trigger recusou INSERT com SQLSTATE \`23503\` |
+
+### Limpeza e integridade
+
+- Todos os dados de teste foram criados dentro de uma única transacção e revertidos com \`ROLLBACK\`.
+- Consulta posterior confirmou zero registos TESTE nas tabelas \`auth.users\`, \`companies\`, \`vagas\`, \`candidaturas\`, \`avaliacoes\`, \`denuncias\` e \`notificacoes\`.
+- As FKs das três tabelas de histórico estão em \`RESTRICT\`.
+- RLS permanece activo; a migração não alterou a configuração RLS das tabelas.
+- A verificação de notificações existentes encontrou zero referências inválidas para tipos de notificação de vaga.
+- A migração consta no histórico Supabase como versão \`20261118134305\`. A reversão não foi executada.
