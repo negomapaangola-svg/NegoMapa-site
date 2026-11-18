@@ -41,17 +41,20 @@ jobs:
         shell: bash
         env:
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           set -euo pipefail
-          if [[ -n "${PR_BASE_SHA:-}" ]]; then
-            BASE_SHA="$(git merge-base "$PR_BASE_SHA" "$GITHUB_SHA")"
+          if [[ -n "${PR_BASE_SHA:-}" && -n "${PR_HEAD_SHA:-}" ]]; then
+            HEAD_SHA="$PR_HEAD_SHA"
+            BASE_SHA="$(git merge-base "$PR_BASE_SHA" "$HEAD_SHA")"
           else
+            HEAD_SHA="$GITHUB_SHA"
             git fetch origin main
-            BASE_SHA="$(git merge-base origin/main "$GITHUB_SHA")"
+            BASE_SHA="$(git merge-base origin/main "$HEAD_SHA")"
           fi
 
           mapfile -t FILES < <(
-            git diff --name-only --diff-filter=ACMR "$BASE_SHA" "$GITHUB_SHA" -- \
+            git diff --name-only --diff-filter=ACMR "$BASE_SHA" "$HEAD_SHA" -- \
               '*.js' '*.jsx' '*.ts' '*.tsx' '*.mjs' '*.cjs'
           )
 
