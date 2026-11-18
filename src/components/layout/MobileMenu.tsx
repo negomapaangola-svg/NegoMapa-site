@@ -1,8 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
 import { logoutAction } from '@/lib/actions/logout';
 import { obterContextoNavegacao } from '@/lib/actions/permissoes';
 import { GRUPOS_MENU_MOBILE, ITENS_NAVEGACAO, podeVerItem, type ItemNavegacao } from '@/lib/navegacao';
@@ -48,12 +47,24 @@ function IconeMenu({ id }: { id: string }) {
   </span>;
 }
 
+function subscreverPesquisa(callback: () => void) {
+  window.addEventListener('popstate', callback);
+  return () => window.removeEventListener('popstate', callback);
+}
+
+function obterPesquisaActual() {
+  return window.location.search;
+}
+
+function obterPesquisaServidor() {
+  return '';
+}
+
 interface MobileMenuProps { aberto: boolean; onFechar: () => void; pathname: string }
 
 export function MobileMenu({ aberto, onFechar, pathname }: MobileMenuProps) {
   const painelRef = useRef<HTMLDivElement>(null);
-  const searchParams = useSearchParams();
-  const queryActual = searchParams.toString();
+  const queryActual = useSyncExternalStore(subscreverPesquisa, obterPesquisaActual, obterPesquisaServidor);
   const [contexto, setContexto] = useState<Contexto | null>(null);
 
   useEffect(() => {
