@@ -75,11 +75,9 @@ export default async function EmpresaVagasPage({ searchParams }: { searchParams:
               <p className="text-neutral-600 dark:text-cream-text mb-6 max-w-md mx-auto">
                 Comece a atrair candidatos publicando a sua primeira vaga de emprego.
               </p>
-              <Link href="/empresa/painel/vagas/nova">
-                <Button variant="primary" size="lg">
-                  Publicar primeira vaga
-                </Button>
-              </Link>
+              {company.is_approved && company.estado === 'aprovado' ? <Link href={`/empresa/painel/vagas/nova?empresa=${encodeURIComponent(company.id)}`}>
+                <Button variant="primary" size="lg">Publicar primeira vaga</Button>
+              </Link> : <p className="text-sm text-neutral-600 dark:text-cream-text">A publicação ficará disponível após aprovação e activação da empresa.</p>}
             </Card>
           ) : (
             <div className="space-y-4">
