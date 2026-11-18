@@ -14,6 +14,7 @@ import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { formatCurrency } from '@/lib/utils';
 import { getUser } from '@/lib/auth';
 import { getMediaAvaliacoes, getAvaliacoesPorAlvo, type AlvoAvaliacao } from '@/lib/actions/avaliacoes';
+import { verificarPodeContactar } from '@/lib/actions/conversas';
 import { type AlvoDenuncia } from '@/lib/actions/denuncias';
 import {
   obterIdsProfissionaisPublicos,
@@ -163,8 +164,9 @@ export default async function ServicoPage({ params }: { params: Promise<{ slug: 
     await obterProfissionalContactoPorId(service.profissional_id);
   if (!profissional) notFound();
 
-  const [user, media, avaliacoes, relacionados] = await Promise.all([
+  const [user, permissaoContacto, media, avaliacoes, relacionados] = await Promise.all([
     getUser(),
+    verificarPodeContactar({ tipo: 'profissional', id: profissional.id }),
     getMediaAvaliacoes({ tipo: 'servico', id: service.id }),
     getAvaliacoesPorAlvo({ tipo: 'servico', id: service.id }),
     getRelatedServices(service),
@@ -356,9 +358,9 @@ export default async function ServicoPage({ params }: { params: Promise<{ slug: 
                 </p>
                 {!ehProprio && (
                   <div className="mt-4">
-                    {user ? (
-                      <BotoesContactoServico servicoId={service.id} profissionalId={profissional.id} ehProfissional={ehProfissional} />
-                    ) : (
+                    {user && permissaoContacto.pode ? (
+                      <BotoesContactoServico servicoId={service.id} profissionalId={profissional.id} ehProfissional={false} />
+                    ) : !user ? (
                       <div className="space-y-3">
                         <p className="text-sm text-neutral-600 dark:text-cream-text">Entre na sua conta ou crie uma para pedir orçamento ou enviar mensagem.</p>
                         <Link
