@@ -12,5 +12,6 @@ export async function obterContextoNavegacao() {
     empresaAprovada: contexto.empresaAprovada,
     administrador: contexto.administrador,
     accountType: contexto.accountType,
+    contaAtiva: contexto.contaAtiva,
   }
 }
