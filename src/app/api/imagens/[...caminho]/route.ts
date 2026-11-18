@@ -71,7 +71,7 @@ export async function GET(
   }
 
   const userSupabase = await createSupabaseServerClient()
-  const { data: { user } } = await userSupabase.auth.getUser().then(result => result)
+  const { data: { user } } = await userSupabase.auth.getUser()
   if (user?.id === ownerId) {
     // Leitura privada do próprio dono através do JWT e das políticas RLS existentes.
     const { data: image, error } = await userSupabase.storage.from(bucket).download(path)
