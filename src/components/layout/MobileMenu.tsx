@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { logoutAction } from '@/lib/actions/logout';
 import { obterContextoNavegacao } from '@/lib/actions/permissoes';
 import { GRUPOS_MENU_MOBILE, ITENS_NAVEGACAO, podeVerItem, type ItemNavegacao } from '@/lib/navegacao';
@@ -52,12 +52,9 @@ interface MobileMenuProps { aberto: boolean; onFechar: () => void; pathname: str
 
 export function MobileMenu({ aberto, onFechar, pathname }: MobileMenuProps) {
   const painelRef = useRef<HTMLDivElement>(null);
-  const [queryActual, setQueryActual] = useState('');
+  const searchParams = useSearchParams();
+  const queryActual = searchParams.toString();
   const [contexto, setContexto] = useState<Contexto | null>(null);
-
-  useEffect(() => {
-    if (aberto) setQueryActual(window.location.search);
-  }, [aberto, pathname]);
 
   useEffect(() => {
     if (!aberto) return;
