@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createBrowserSupabaseClient } from '@/lib/supabase-browser'
 import { processImage } from '@/lib/image-processing'
+import { guardarReferenciasImagem } from '@/lib/actions/conta'
 
 type Bucket='profissionais-avatars'|'empresas-logos'|'profissionais-portfolio'|'empresas-portfolio'|'clientes-avatars'
 type Props={bucket:Bucket;folder:'avatar'|'portfolio';value:string[];onChange:(v:string[])=>void;multiple?:boolean;label:string}
@@ -86,26 +87,42 @@ export function ImageUpload({bucket,folder,value,onChange,multiple=false,label}:
         await send(item.file,path,n=>setProgress(Math.round((i*100+n)/pending.length)))
         added.push(bucket==='clientes-avatars'?path:publicRoute(bucket,path))
       }
-      onChange([...value,...added])
+      const next=[...value,...added]
+      const saved=await guardarReferenciasImagem({bucket,folder,refs:next})
+      if(!saved.ok)throw new Error(saved.error??'Não foi possível guardar a referência da imagem.')
+      onChange(next)
       pending.forEach(x=>URL.revokeObjectURL(x.url))
       setPending([])
-      setNotice('Upload concluído. Guarde as alterações do perfil para confirmar as referências.')
+      setNotice('Upload e gravação concluídos. A imagem ficará disponível após novo login.')
     }catch(e){setError(e instanceof Error?e.message:'Erro no upload.')}
     finally{setBusy(false)}
   }
 
-  const removeExisting=(index:number)=>{
+  const removeExisting=async(index:number)=>{
     const next=value.filter((_,i)=>i!==index)
-    onChange(next)
-    setNotice('Referência removida. O ficheiro só será apagado depois de guardar e confirmar que não é partilhado.')
+    setBusy(true);setError('');setNotice('')
+    try{
+      const saved=await guardarReferenciasImagem({bucket,folder,refs:next})
+      if(!saved.ok)throw new Error(saved.error??'Não foi possível remover a referência.')
+      onChange(next)
+      setNotice('Referência removida e guardada. O ficheiro só é apagado quando não tem outras referências.')
+    }catch(e){setError(e instanceof Error?e.message:'Não foi possível remover a imagem.')}
+    finally{setBusy(false)}
   }
   const removePending=(id:string)=>{
     setPending(old=>{const item=old.find(x=>x.id===id);if(item)URL.revokeObjectURL(item.url);return old.filter(x=>x.id!==id)})
   }
-  const move=(index:number,direction:number)=>{
+  const move=async(index:number,direction:number)=>{
     const target=index+direction
     if(target<0||target>=value.length)return
-    const next=[...value];[next[index],next[target]]=[next[target],next[index]];onChange(next)
+    const next=[...value];[next[index],next[target]]=[next[target],next[index]]
+    setBusy(true);setError('')
+    try{
+      const saved=await guardarReferenciasImagem({bucket,folder,refs:next})
+      if(!saved.ok)throw new Error(saved.error??'Não foi possível guardar a ordem do portfólio.')
+      onChange(next)
+    }catch(e){setError(e instanceof Error?e.message:'Não foi possível guardar a ordem.')}
+    finally{setBusy(false)}
   }
 
   useEffect(()=>{
