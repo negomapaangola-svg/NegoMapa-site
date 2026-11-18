@@ -172,3 +172,61 @@ Nenhuma destas operações destrutivas deve ser testada na base de produção.
 - A migração de auto-eliminação e os testes ainda não existem.
 
 **Conclusão:** inventário de schema, FKs, buckets e políticas observado actualizado; a política de retenção está separada em eliminação, anonimização e pendência legal. Não considerar a Fase 8 concluída nem pronta para revisão final até implementação, migração, CI e testes de integração sintéticos estarem aprovados.
+
+
+## 10. Reconciliação de Storage e callers — verificação em 2026-11-18
+
+### 10.1 Chamadores e configuração encontrados na branch
+
+| Local | Referência/caller | Bucket | Path ou comportamento |
+|---|---|---|---|
+| `src/lib/actions/upload.ts` | helper `uploadFile` | `empresas-logos`, `profissionais-avatars`, `servicos-imagens`, `vagas-capas`, `documentos-privados` | Gera `<auth.uid>/<folder>/<uuid>.<ext>`; para quatro buckets de imagem chama `getPublicUrl`; para documentos devolve apenas o path. |
+| `src/components/ui/FileUpload.tsx` | consumidor de `uploadFile` | `empresas-logos`, `profissionais-avatars`, `servicos-imagens`, `documentos-privados` | Declara os três primeiros como públicos; `vagas-capas` nem sequer está no tipo/config deste componente. O preview só usa URL quando `isPublic`; paths privados não são apresentados. |
+| `src/app/cadastrar-empresa/page.tsx` | upload directo pelo cliente Supabase | `empresas-logos`, `documentos-privados` | Logótipo: `<uid>/logotipo-<timestamp>.<ext>`; comprovativo: `<uid>/legalizacao-<timestamp>.<ext>`. |
+| `src/lib/actions/conversao-conta.ts` | persistência dos campos | — | Guarda `logoPath` em `companies.logo_url` e `documentoPath` em `companies.documento_legalizacao_path`. |
+| `src/lib/actions/empresas.ts` | leitura administrativa | `empresas-logos`, `documentos-privados` | Usa `createSignedUrl` no servidor para abrir logótipo e comprovativo. |
+| `src/app/empresa/[slug]/page.tsx` | página pública de empresa | — | Só apresenta `logo_url` quando `isHttpsUrl` é verdadeiro; um path Storage relativo não é convertido em URL assinada nesta página. |
+| `src/app/profissional/[slug]/page.tsx` | página pública de profissional | — | Passa `avatar_url` directamente para `Avatar`/`AppImage`; não assina o path. |
+| `src/components/ui/Avatar.tsx`, `CompanyLogo.tsx`, `AppImage.tsx` | renderização | — | `AppImage` passa a string directamente a `next/image`; não resolve paths privados. |
+| `src/app/cadastrar-profissional/_components/etapas.tsx` | campo de foto do cadastro | — | A foto escolhida fica apenas no formulário; o texto da interface diz que ainda não é enviada. |
+
+O helper inclui `servicos-imagens` e `vagas-capas`, mas o inventário de produção contém `servicos` e `vagas`. Não foi encontrado um formulário de criação de serviço/vaga que efectue upload para esses dois nomes. A pesquisa de código do GitHub não devolveu resultados indexados para os nomes; por isso, a tabela acima enumera os chamadores explícitos verificados e não afirma que a pesquisa indexada constitua uma varredura textual integral de todos os ficheiros.
+
+### 10.2 Paths encontrados na base de dados — amostras anonimizadas
+
+A consulta de produção foi apenas de leitura e ocultou o UID e os identificadores dos ficheiros:
+
+- `companies.logo_url`: 3 valores não nulos. Dois têm formato `<uid>/logotipo-<timestamp>.jpg`; um tem formato legado `/api/imagens/empresas-logos/<id>/avatar/<id>.webp`.
+- `profissionais.avatar_url`: 1 valor não nulo, formato legado `/api/imagens/profissionais-avatars/<id>/avatars/<id>.jpg`.
+- `companies.documento_legalizacao_path`, `companies.documento_legalizacao_url`, `companies.documents_url`, `profiles.avatar_url` e `candidaturas.cv_url`: sem valores não nulos no resultado consultado.
+- Objectos reais observados: 3 em `empresas-logos`, 1 em `profissionais-avatars`, 1 em `documentos-privados`. Os objectos observados começam por UID, mas a referência DB com rota `/api/imagens/...` não foi demonstrada como correspondência exacta ao objecto.
+- Não existe no tree desta branch qualquer route handler `src/app/api/imagens/.../route.ts`; os dois formatos `/api/imagens/...` não têm endpoint correspondente nesta versão do código.
+
+### 10.3 Apresentação proposta para buckets privados
+
+1. Guardar sempre `bucket + object_path` em colunas dedicadas (não URL pública e não rota antiga). Normalizar valores antigos só depois de mapear cada um para um objecto real.
+2. Para comprovativos, BI, CVs e documentos: não renderizar em páginas públicas; disponibilizar apenas a utilizadores autorizados, através de uma Server Action/Route Handler que valida sessão, papel, ownership e finalidade e gera URL assinada de curta duração.
+3. Para logótipos/avatares usados em páginas públicas: manter o bucket privado e emitir URL assinada curta apenas depois de confirmar no servidor que a empresa/profissional está aprovado e publicado. Não devolver a service-role key ao browser. Se a URL expirar, a página volta a pedi-la ao endpoint autorizado.
+4. Para previews de uploads ainda não enviados, usar apenas object URL local criada no browser e revogá-la quando deixar de ser usada; depois do upload, trocar por URL assinada.
+5. `AppImage` deve receber uma URL assinada pronta ou um fallback; não deve tentar transformar um path Storage em URL pública.
+
+### 10.4 Plano de reconciliação sem tocar em produção
+
+- Fase A: manter os 12 buckets de produção privados; não criar aliases nem buckets novos.
+- Fase B: corrigir o contrato de código para usar nomes reais (`servicos`, `vagas`) apenas após localizar todos os callers e confirmar políticas de ownership; remover os nomes antigos do helper.
+- Fase C: centralizar uploads e paths em helper único, guardar bucket/path separados e migrar referências antigas por correspondência exacta com `storage.objects`. Paths sem correspondência ficam marcados para revisão manual e nunca entram no manifesto de eliminação.
+- Fase D: criar endpoint servidor de URL assinada para imagens públicas publicadas e endpoint privado autenticado para documentos; não adicionar policy `anon SELECT`.
+- Fase E: testar no Supabase local e Preview com dados TESTE, sem executar limpeza nesta etapa. Só depois apresentar migração para eventual aprovação de produção.
+
+### 10.5 Runner Supabase local — preparado, validação pendente
+
+- Adicionado `supabase/config.toml` com os 12 buckets observados configurados como privados, Auth local habilitado e confirmação de email desactivada apenas no stack local.
+- Adicionado `.github/workflows/supabase-local.yml`, com Supabase CLI 3.2.0, stack Docker efémera no runner GitHub, sem `supabase link`, sem credenciais remotas e sem comandos de produção.
+- Adicionado `supabase/tests/fase8_local_invariants.sql` para verificar aplicação das migrações, RLS em tabelas públicas, existência de Auth/Storage, conjunto exacto dos buckets e ausência de leitura anónima nos buckets de imagem privados.
+- O job não cria utilizadores nem ficheiros. A etapa de testes funcionais com dados TESTE fica reservada à fase final.
+- A migração histórica `20261009_create_storage_buckets.sql` contém SQL executável que cria `empresas-logos`, `profissionais-avatars` e `servicos-imagens` como públicos e adiciona policies de leitura sem restrição de papel, apesar do comentário de topo dizer “NÃO APLICAR”. O teste local foi desenhado para detectar esta divergência; não se deve editar essa migração histórica.
+- O workflow ainda precisa de executar para comprovar se toda a cadeia de migrações inicia. Não foi executado rollback; a reversibilidade será revista estaticamente e, se necessário, validada numa execução isolada que não faça rollback de dados.
+
+### 10.6 Estado desta etapa
+
+Nenhuma conta, ficheiro ou dado foi criado ou eliminado. Nenhuma migração foi aplicada em produção. Nenhum bucket ou policy de produção foi alterado. A implementação de eliminação autónoma continua suspensa até o runner local passar e a divergência histórica de Storage estar resolvida por migração forward-only.
