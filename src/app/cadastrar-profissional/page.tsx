@@ -1,5 +1,7 @@
 import type { Metadata } from "next"
-import { MainLayout } from "@/components/layout/MainLayout"
+import { MainLayout } from '@/components/layout/MainLayout'
+import { isAdmin } from '@/lib/auth'
+import { redirect } from 'next/navigation'
 import { getActiveCategories } from "@/lib/actions/servicos"
 import { CadastroProfissionalForm } from "./_components/CadastroProfissionalForm"
 
@@ -9,6 +11,7 @@ export const metadata: Metadata = {
 }
 
 export default async function CadastrarProfissionalPage() {
+  if (await isAdmin()) redirect('/admin')
   // Carrega categorias activas; a gravação é feita pela Server Action no envio.
   const categorias = await getActiveCategories()
 
