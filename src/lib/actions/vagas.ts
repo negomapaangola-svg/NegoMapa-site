@@ -176,6 +176,7 @@ export type EmpresaPainel = {
 }
 
 export async function getUserCompanies(): Promise<EmpresaPainel[] | null> {
+  if (await isAdmin()) return null
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
