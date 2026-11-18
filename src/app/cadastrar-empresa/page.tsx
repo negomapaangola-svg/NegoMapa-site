@@ -66,13 +66,11 @@ export default function CadastrarEmpresaPage() {
           .eq("user_id", current.id)
           .maybeSingle()
         setExistingCompany(empresa ?? null)
-        if (!empresa) {
-          const permissao = await verificarPodeCriarEmpresa()
-          if (!permissao.success) {
-            setAcessoBloqueado(permissao.error ?? 'Esta conta não pode criar uma empresa.')
-            setLoading(false)
-            return
-          }
+        const permissao = await verificarPodeCriarEmpresa()
+        if (permissao.isAdmin || (!empresa && !permissao.success)) {
+          setAcessoBloqueado(permissao.error ?? 'Esta conta não pode criar uma empresa.')
+          setLoading(false)
+          return
         }
 
         // Categorias para a etapa 3 (se falhar, a etapa mostra uma mensagem)
