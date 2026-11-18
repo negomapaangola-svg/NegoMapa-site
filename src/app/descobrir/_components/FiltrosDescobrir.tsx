@@ -93,7 +93,7 @@ export function FiltrosDescobrir({ params, categorias, municipios }: FiltrosDesc
 
   return (
     <div className="space-y-4">
-      <div id="painel-filtros-descobrir" className="grid gap-3 sm:grid-cols-2 md:grid-cols-4" gap-3 md:grid md:grid-cols-4`}>
+      <div id="painel-filtros-descobrir" className="grid gap-3 sm:grid-cols-2 md:grid-cols-4">
         <CampoSelect id="filtro-categoria" rotulo="Categoria" value={params.categoria} onChange={(v) => aplicar({ categoria: v })}>
           <option value="">Todas as categorias</option>
           {categorias.map((c) => (
