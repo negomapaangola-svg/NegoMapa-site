@@ -40,6 +40,7 @@ export default function CadastrarEmpresaPage() {
   const [loading, setLoading] = React.useState(true)
   const [user, setUser] = React.useState<any>(null)
   const [existingCompany, setExistingCompany] = React.useState<any>(null)
+  const [acessoBloqueado, setAcessoBloqueado] = React.useState<string | null>(null)
   const [categorias, setCategorias] = React.useState<CategoriaOpcao[]>([])
   const [submitting, setSubmitting] = React.useState(false)
   const [submitError, setSubmitError] = React.useState<string | null>(null)
@@ -65,6 +66,14 @@ export default function CadastrarEmpresaPage() {
           .eq("user_id", current.id)
           .maybeSingle()
         setExistingCompany(empresa ?? null)
+        if (!empresa) {
+          const permissao = await verificarPodeCriarEmpresa()
+          if (!permissao.success) {
+            setAcessoBloqueado(permissao.error ?? 'Esta conta não pode criar uma empresa.')
+            setLoading(false)
+            return
+          }
+        }
 
         // Categorias para a etapa 3 (se falhar, a etapa mostra uma mensagem)
         const { data: cats } = await supabase
@@ -240,6 +249,10 @@ export default function CadastrarEmpresaPage() {
         </div>
       </MainLayout>
     )
+  }
+
+  if (acessoBloqueado) {
+    return <MainLayout><section className="min-h-[60vh] px-4 py-12"><div className="mx-auto max-w-xl rounded-xl border border-neutral-200 bg-white p-6 text-center shadow-sm dark:border-neutral-800 dark:bg-neutral-900"><h1 className="text-xl font-semibold text-ink dark:text-cream">Cadastro indisponível</h1><p role="alert" className="mt-3 text-sm text-neutral-600 dark:text-neutral-300">{acessoBloqueado}</p><Link href="/" className="mt-5 inline-flex min-h-11 items-center rounded-lg px-4 text-sm font-semibold text-orange-700 underline dark:text-orange-300">Voltar ao início</Link></div></section></MainLayout>
   }
 
   // Visitante anónimo: confirmação de email enviada
