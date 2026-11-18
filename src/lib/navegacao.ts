@@ -14,8 +14,8 @@ export const ITENS_NAVEGACAO: ItemNavegacao[] = [
  {id:'pesquisar',rotulo:'Pesquisar',rota:'/descobrir',regras:['publico'],locais:['cabecalho']},
  {id:'publicar-servico',rotulo:'Publicar serviço',rota:'/cadastrar-servico',regras:['profissional_aprovado'],locais:['cabecalho','menu_mobile']},
  {id:'publicar-vaga',rotulo:'Publicar vaga',rota:'/empresa/painel/vagas/nova',regras:['empresa_aprovada'],locais:['cabecalho','menu_mobile']},
- {id:'cadastrar-empresa',rotulo:'Cadastrar empresa',rota:'/cadastrar-empresa',regras:['cliente_sem_perfil'],locais:['menu_mobile']},
- {id:'cadastrar-profissional',rotulo:'Cadastrar profissional',rota:'/cadastrar-profissional',regras:['cliente_sem_perfil'],locais:['menu_mobile']},
+ {id:'cadastrar-empresa',rotulo:'Cadastrar empresa',rota:'/cadastrar-empresa',regras:['cliente_sem_perfil'],locais:[]},
+ {id:'cadastrar-profissional',rotulo:'Cadastrar profissional',rota:'/cadastrar-profissional',regras:['cliente_sem_perfil'],locais:[]},
  {id:'entrar',rotulo:'Entrar',rota:'/login',regras:['visitante'],locais:['menu_mobile']},
  {id:'registar',rotulo:'Registar',rota:'/registar',regras:['visitante'],locais:['menu_mobile']},
  {id:'perfil',rotulo:'Perfil',rota:'/conta/perfil',regras:['utilizador'],locais:['menu_mobile']},
@@ -43,15 +43,15 @@ export function podeVerItem(item: ItemNavegacao, c: ContextoNavegacao): boolean 
    case 'publico': return true
    case 'visitante': return !c.autenticado
    case 'autenticado': return c.autenticado
-   case 'profissional': return c.profissional
+   case 'profissional': return !c.administrador && c.accountType === 'profissional' && c.profissional
    case 'profissional_aprovado': return !c.administrador && c.profissional && c.estadoProfissional === 'aprovado'
-   case 'empresa': return c.empresa
-   case 'empresa_aprovada': return !c.administrador && c.empresa && c.empresaAprovada
+   case 'empresa': return !c.administrador && c.accountType === 'empresa' && c.empresa
+   case 'empresa_aprovada': return !c.administrador && c.accountType === 'empresa' && c.empresa && c.empresaAprovada
    case 'administrador': return c.administrador
    case 'sem_empresa': return c.autenticado && !c.empresa
    case 'sem_profissional': return c.autenticado && !c.profissional
-   case 'cliente_sem_perfil': return c.autenticado && !c.administrador && c.accountType === 'cliente' && !c.profissional && !c.empresa
-   case 'cliente': return c.autenticado && !c.administrador && c.accountType === 'cliente' && !c.profissional && !c.empresa
+   case 'cliente_sem_perfil': return c.autenticado && !c.administrador && c.accountType === 'cliente'
+   case 'cliente': return c.autenticado && !c.administrador && c.accountType === 'cliente'
    case 'utilizador': return c.autenticado && !c.administrador
   }
  })
