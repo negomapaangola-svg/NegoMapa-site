@@ -1,57 +1,43 @@
 begin;
 
--- Restaura as vistas públicas anteriores.
-create or replace view negomapa_private.v_empresas_publicas as
+-- Repor as vistas públicas originais e remover as vistas segregadas da Fase 6.
+create or replace view public.empresas_publicas
+with (security_invoker = true) as
 select
-  c.id, c.name, c.slug, c.sector, c.province, c.city, c.bairro, c.rua,
-  c.referencia_localizacao, c.description, c.horario_atendimento,
-  c.is_verified, c.is_approved, c.whatsapp, c.logo_url, c.portfolio
-from public.companies c;
+  id, name, slug, sector, province, city, bairro, rua,
+  referencia_localizacao, description, horario_atendimento,
+  is_verified, is_approved, whatsapp, logo_url, portfolio
+from negomapa_private.v_empresas_publicas;
 
-create or replace view negomapa_private.v_profissionais_publicos as
+create or replace view public.profissionais_publicos
+with (security_invoker = true) as
 select
-  p.id, p.nome, p.slug, p.categoria_id, c.nome as categoria,
-  p.provincia, p.municipio, p.anos_experiencia, p.bio, p.whatsapp,
-  p.avatar_url, p.portfolio, p.disponibilidade_dias,
-  p.disponibilidade_horarios, p.especialidades, p.experiencia_faixa,
-  p.faixa_preco_desde
-from public.profissionais p
-left join public.categorias c on c.id = p.categoria_id;
+  id, nome, slug, categoria_id, categoria, provincia, municipio,
+  anos_experiencia, bio, whatsapp, avatar_url, portfolio,
+  disponibilidade_dias, disponibilidade_horarios, especialidades,
+  experiencia_faixa, faixa_preco_desde
+from negomapa_private.v_profissionais_publicos;
 
--- Restaura os helpers anteriores.
+revoke select on negomapa_private.v_empresas_publicas_fase6 from anon, authenticated;
+revoke select on negomapa_private.v_profissionais_publicos_fase6 from anon, authenticated;
+drop view if exists negomapa_private.v_empresas_publicas_fase6;
+drop view if exists negomapa_private.v_profissionais_publicos_fase6;
+
 create or replace function public.empresa_aprovada(p_id uuid)
-returns boolean
-language sql
-stable
-security definer
-set search_path = ''
+returns boolean language sql stable security definer set search_path = ''
 as $function$
-  select exists (
-    select 1 from public.companies e
-    where e.id = p_id and e.is_approved = true
-  )
+  select exists (select 1 from public.companies e where e.id = p_id and e.is_approved = true)
 $function$;
 
 create or replace function public.perfil_profissional_aprovado(p_id uuid)
-returns boolean
-language sql
-stable
-security definer
-set search_path = ''
+returns boolean language sql stable security definer set search_path = ''
 as $function$
-  select exists (
-    select 1 from public.profissionais p
-    where p.id = p_id and p.estado = 'aprovado'
-  )
+  select exists (select 1 from public.profissionais p where p.id = p_id and p.estado = 'aprovado')
 $function$;
 
--- Restaura a policy anterior, com a mesma lógica de autorização original.
 drop policy if exists conversas_insert_cliente on public.conversas;
-create policy conversas_insert_cliente
-  on public.conversas
-  as permissive
-  for insert
-  to authenticated
+create policy conversas_insert_cliente on public.conversas
+  as permissive for insert to authenticated
   with check (
     cliente_id = (select auth.uid())
     and ((empresa_id is null) or not (empresa_id in (
