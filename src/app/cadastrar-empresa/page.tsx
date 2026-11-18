@@ -164,6 +164,10 @@ export default function CadastrarEmpresaPage() {
   // Envio final (etapa 6). Os dados ficam no formulário se algo falhar.
   const handleSubmit = async (d: DadosEmpresa) => {
     setSubmitError(null)
+    if (!user) {
+      setSubmitError('Inicie sessão para concluir o registo da empresa.')
+      return
+    }
 
     if (d.logotipo) {
       const erro = validarFicheiro(d.logotipo, LOGOTIPO)
