@@ -153,7 +153,7 @@ create policy client_only_update_pedidos_servico on public.pedidos_servico
     and not (select public.is_admin())
     and not exists (select 1 from public.profissionais pr where pr.user_id=(select auth.uid()))
     and not exists (select 1 from public.companies c where c.user_id=(select auth.uid()))
-    or profissional_id = (select negomapa_private.profissional_aprovado_id())
+    or (not (select public.is_admin()) and profissional_id = (select public.profissional_aprovado_id()))
   )
   with check (
     (cliente_id = (select auth.uid())
@@ -161,7 +161,32 @@ create policy client_only_update_pedidos_servico on public.pedidos_servico
       and not (select public.is_admin())
       and not exists (select 1 from public.profissionais pr where pr.user_id=(select auth.uid()))
       and not exists (select 1 from public.companies c where c.user_id=(select auth.uid())))
-    or profissional_id = (select negomapa_private.profissional_aprovado_id())
+    or (not (select public.is_admin()) and profissional_id = (select public.profissional_aprovado_id()))
+  );
+
+drop policy if exists client_only_select_pedidos_servico on public.pedidos_servico;
+create policy client_only_select_pedidos_servico on public.pedidos_servico
+  as restrictive for select to authenticated
+  using (
+    (cliente_id <> (select auth.uid()) or (
+      exists (select 1 from public.profiles p where p.id=(select auth.uid()) and p.account_type='cliente' and p.is_active is true)
+      and not (select public.is_admin())
+      and not exists (select 1 from public.profissionais pr where pr.user_id=(select auth.uid()))
+      and not exists (select 1 from public.companies c where c.user_id=(select auth.uid()))
+    ))
+    or (not (select public.is_admin()) and profissional_id = (select public.profissional_aprovado_id()))
+    or (select public.is_admin())
+  );
+
+drop policy if exists client_only_insert_conversas on public.conversas;
+create policy client_only_insert_conversas on public.conversas
+  as restrictive for insert to authenticated
+  with check (
+    cliente_id = (select auth.uid())
+    and exists (select 1 from public.profiles p where p.id=(select auth.uid()) and p.account_type='cliente' and p.is_active is true)
+    and not (select public.is_admin())
+    and not exists (select 1 from public.profissionais pr where pr.user_id=(select auth.uid()))
+    and not exists (select 1 from public.companies c where c.user_id=(select auth.uid()))
   );
 
 commit;
