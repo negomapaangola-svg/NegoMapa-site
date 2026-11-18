@@ -20,4 +20,16 @@ drop policy if exists client_only_insert_pedidos_servico on public.pedidos_servi
 drop policy if exists client_only_update_pedidos_servico on public.pedidos_servico;
 drop policy if exists client_only_select_pedidos_servico on public.pedidos_servico;
 drop policy if exists client_only_insert_conversas on public.conversas;
+drop policy if exists admin_cannot_update_own_company on public.companies;
+drop policy if exists admin_cannot_delete_own_company on public.companies;
+drop policy if exists admin_cannot_update_own_profissional on public.profissionais;
+drop policy if exists admin_cannot_delete_own_profissional on public.profissionais;
+drop policy if exists admin_cannot_update_own_vagas on public.vagas;
+drop policy if exists admin_cannot_delete_own_vagas on public.vagas;
+drop policy if exists admin_cannot_update_own_produtos on public.produtos;
+drop policy if exists admin_cannot_delete_own_produtos on public.produtos;
+drop policy if exists admin_cannot_update_own_servicos on public.servicos;
+drop policy if exists admin_cannot_delete_own_servicos on public.servicos;
+drop policy if exists admin_cannot_use_user_conversations on public.conversas;
+drop policy if exists admin_cannot_use_user_messages on public.mensagens;
 commit;
