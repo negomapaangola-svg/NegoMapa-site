@@ -122,13 +122,13 @@ Evidência real das chaves estrangeiras:
 
 A tabela `notificacoes` mantém `referencia_id` polimórfica, sem FK genérica. A migração acrescenta um trigger que valida referências para `vaga_aprovada` e `vaga_rejeitada`, e impede apagar uma vaga enquanto existirem notificações desses tipos. A verificação pós-migração encontrou zero referências inválidas. A única tabela encontrada com nome de auditoria é `admin_account_deletion_audit`; não foi encontrada tabela de auditoria específica das alterações de vagas.
 
-**Risco confirmado:** a política actual `vagas_delete_auth` permite ao proprietário eliminar a própria vaga por API directa. O teste confirmou que Empresa A não consegue eliminar a vaga B; não foi executada eliminação da vaga própria. A política não foi alterada nesta fase, por falta de decisão explícita de implementação. A recomendação A exige uma alteração posterior autorizada para retirar essa permissão ao proprietário.
+**Correcção aplicada:** removida a política permissiva `vagas_delete_auth` e criada a política RLS restritiva `vagas_no_owner_delete`, que impede o proprietário de apagar a própria vaga através da API. As três FKs de histórico passaram de `CASCADE` para `RESTRICT`; assim, mesmo operações privilegiadas não apagam candidaturas, avaliações ou denúncias ao tentar eliminar uma vaga com histórico. O encerramento pelo proprietário continua permitido.
 
 ## Migração e reversão
 
 - Migração aditiva inicial: `20261117231159_vagas_encerramento_seguro.sql`.
-- Migração aplicada em produção: `20261118134305_proibir_eliminacao_vagas_preservar_historico` (`supabase/migrations/20261118145000_proibir_eliminacao_vagas_preservar_historico.sql`).
-- Reversão versionada: `supabase/rollback/20261118145000_proibir_eliminacao_vagas_preservar_historico_reversao.sql`. A reversão restaura deliberadamente a política antiga e os `CASCADE`; não foi executada.
+- Migração aplicada em produção: `20261118134305_proibir_eliminacao_vagas_preservar_historico` (`supabase/migrations/20261118134305_proibir_eliminacao_vagas_preservar_historico.sql`).
+- Reversão versionada: `supabase/rollback/20261118134305_proibir_eliminacao_vagas_preservar_historico_reversao.sql`. A reversão restaura deliberadamente a política antiga e os `CASCADE`; não foi executada.
 - Reversão: `supabase/rollback/20261117231159_vagas_encerramento_seguro_reversao.sql`.
 - Simulação SQL com ROLLBACK e aplicação posterior verificada.
 - A reversão aborta se existirem vagas com `encerrada_em IS NOT NULL`; não foi executada.
