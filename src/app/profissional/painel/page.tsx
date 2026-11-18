@@ -1,7 +1,7 @@
 import { Metadata } from 'next'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { getUser } from '@/lib/auth'
+import { getUser, isAdmin } from '@/lib/auth'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { MainLayout } from '@/components/layout/MainLayout'
 import { Avatar } from '@/components/ui/Avatar'
@@ -23,6 +23,7 @@ function dataLegivel(valor: string | null) {
 }
 
 export default async function ProfissionalPainelPage() {
+  if (await isAdmin()) redirect('/admin')
   const user = await getUser()
   if (!user) redirect('/login?redirectTo=/profissional/painel')
   const perfil = await obterPerfilProfissionalDoUtilizador()
