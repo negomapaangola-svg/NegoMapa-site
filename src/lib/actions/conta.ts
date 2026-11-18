@@ -127,7 +127,6 @@ export async function guardarPerfilConta(form: FormData): Promise<void> {
       localizacao_provincia: field(form, 'provincia') || null,
       localizacao_municipio: field(form, 'municipio') || null,
       localizacao_bairro: field(form, 'bairro') || null,
-      updated_at: new Date().toISOString(),
     }).eq('id', user.id).select('id').maybeSingle()
     if (error || !actualizado) redirect('/conta/perfil?erro=guardar')
   }
