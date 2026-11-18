@@ -174,7 +174,7 @@ export async function guardarReferenciasImagem(input: {
   const { supabase, user } = await authenticated()
   const { data: profile, error: profileError } = await supabase.from('profiles')
     .select('account_type').eq('id', user.id).maybeSingle()
-  if (profileError) return { ok: false, error: 'Não foi possível validar a conta.' }
+  if (profileError || !profile) return { ok: false, error: 'Não foi possível validar a conta.' }
 
   const expected: Record<string, { avatar: string; portfolio?: string }> = {
     profissional: { avatar: 'profissionais-avatars', portfolio: 'profissionais-portfolio' },
@@ -185,7 +185,7 @@ export async function guardarReferenciasImagem(input: {
   if (!account || (input.folder === 'avatar' ? input.bucket !== account.avatar : input.bucket !== account.portfolio)) {
     return { ok: false, error: 'O tipo de conta não tem permissão para este armazenamento.' }
   }
-  if (!Array.isArray(input.refs) || input.refs.length > 12 || (input.folder === 'avatar' && input.refs.length > 1)) {
+  if (!Array.isArray(input.refs) || input.refs.some(ref => typeof ref !== 'string') || input.refs.length > 12 || (input.folder === 'avatar' && input.refs.length > 1)) {
     return { ok: false, error: 'Lista de imagens inválida.' }
   }
 
@@ -315,7 +315,7 @@ export async function guardarPerfilConta(form: FormData): Promise<void> {
       nome, telefone: telefone || null, whatsapp: whatsapp || null, bio: field(form, 'bio') || null,
       provincia: field(form, 'provincia') || null, municipio: field(form, 'municipio') || null, bairro: field(form, 'bairro') || null,
       categoria_id: field(form, 'categoria_id') || null, especialidades,
-      disponibilidade: field(form, 'disponibilidade') || null, avatar_url: avatar, portfolio,
+      disponibilidade: field(form, 'disponibilidade') || null, avatar_url: avatar || null, portfolio,
     }).eq('user_id', user.id)
     if (error) redirect('/conta/perfil?erro=guardar')
   } else if (tipo === 'empresa') {
@@ -334,7 +334,7 @@ export async function guardarPerfilConta(form: FormData): Promise<void> {
       whatsapp: whatsapp || null, province: field(form, 'province') || '', city: field(form, 'city') || null,
       bairro: field(form, 'bairro') || null, rua: field(form, 'rua') || null, referencia_localizacao: field(form, 'referencia_localizacao') || null, website: field(form, 'website') || null,
       description: field(form, 'description') || null, horario_atendimento: field(form, 'disponibilidade') || null,
-      logo_url: logo, portfolio,
+      logo_url: logo || null, portfolio,
     }).eq('id', owned.id).eq('user_id', user.id)
     if (error) redirect('/conta/perfil?erro=guardar')
   } else {
