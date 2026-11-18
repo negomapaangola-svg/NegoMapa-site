@@ -503,6 +503,7 @@ export async function iniciarConversaComProfissional(
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Sessão expirada. Inicie sessão novamente.' }
+  if (!(await contaClienteActiva(supabase, user.id))) return { success: false, error: 'Apenas clientes activos podem iniciar conversas.' }
 
   const { data: existente, error: erroLeitura } = await supabase
     .from('conversas')
