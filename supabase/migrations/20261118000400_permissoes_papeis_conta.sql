@@ -34,7 +34,7 @@ create policy only_clients_can_apply on public.candidaturas as restrictive for i
 do $guard$
 declare t text;
 begin
-  foreach t in array array['profiles','companies','profissionais','candidaturas','vagas','servicos','produtos','admin_users'] loop
+  foreach t in array array['profiles','companies','profissionais','candidaturas','vagas','servicos','produtos','admin_users','pedidos_servico','conversas','mensagens','avaliacoes','preferencias_cliente','conta_detalhes','preferencias_notificacao','notificacoes'] loop
     if not exists (
       select 1 from pg_class c join pg_namespace n on n.oid=c.relnamespace
       where n.nspname='public' and c.relname=t and c.relrowsecurity
@@ -434,5 +434,42 @@ drop policy if exists admin_cannot_delete_own_avaliacoes on public.avaliacoes;
 create policy admin_cannot_delete_own_avaliacoes on public.avaliacoes
   as restrictive for delete to authenticated
   using (not (select public.is_admin()) or user_id is distinct from (select auth.uid()));
+
+
+-- Client-only preferences and account-only settings cannot be used by admins.
+drop policy if exists client_only_preferencias_cliente on public.preferencias_cliente;
+create policy client_only_preferencias_cliente on public.preferencias_cliente
+  as restrictive for all to authenticated
+  using (
+    not (select public.is_admin())
+    and exists (select 1 from public.profiles p where p.id=(select auth.uid()) and p.account_type='cliente' and p.is_active is true)
+    and not exists (select 1 from public.profissionais pr where pr.user_id=(select auth.uid()))
+    and not exists (select 1 from public.companies c where c.user_id=(select auth.uid()))
+  )
+  with check (
+    not (select public.is_admin())
+    and user_id=(select auth.uid())
+    and exists (select 1 from public.profiles p where p.id=(select auth.uid()) and p.account_type='cliente' and p.is_active is true)
+    and not exists (select 1 from public.profissionais pr where pr.user_id=(select auth.uid()))
+    and not exists (select 1 from public.companies c where c.user_id=(select auth.uid()))
+  );
+
+drop policy if exists admin_cannot_use_conta_detalhes on public.conta_detalhes;
+create policy admin_cannot_use_conta_detalhes on public.conta_detalhes
+  as restrictive for all to authenticated
+  using (not (select public.is_admin()))
+  with check (not (select public.is_admin()));
+
+drop policy if exists admin_cannot_use_preferencias_notificacao on public.preferencias_notificacao;
+create policy admin_cannot_use_preferencias_notificacao on public.preferencias_notificacao
+  as restrictive for all to authenticated
+  using (not (select public.is_admin()))
+  with check (not (select public.is_admin()));
+
+drop policy if exists admin_cannot_use_notificacoes on public.notificacoes;
+create policy admin_cannot_use_notificacoes on public.notificacoes
+  as restrictive for all to authenticated
+  using (not (select public.is_admin()))
+  with check (not (select public.is_admin()));
 
 commit;
