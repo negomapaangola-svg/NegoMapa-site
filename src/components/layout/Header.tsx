@@ -43,7 +43,7 @@ export const Header = forwardRef<HTMLElement, { className?: string; hideGlobalSe
         }
       })
       return () => { activo = false; subscription.unsubscribe(); window.removeEventListener('negomapa:auth-logout-started', aoSair) }
-    }, [])
+    }, [pathname])
 
     useEffect(() => {
       const role = contexto?.administrador ? 'admin' : contexto?.empresa ? 'empresa' : contexto?.profissional ? 'profissional' : contexto?.accountType ?? null
