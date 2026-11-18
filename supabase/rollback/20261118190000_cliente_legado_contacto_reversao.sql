@@ -193,4 +193,7 @@ create policy active_role_message_access on public.mensagens
     )
   );
 
+-- Reverte apenas os privilégios concedidos por esta migração.
+revoke select on public.companies, public.profissionais from authenticated;
+
 commit;
