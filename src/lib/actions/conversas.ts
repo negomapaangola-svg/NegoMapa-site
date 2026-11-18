@@ -65,9 +65,9 @@ export async function listarConversas(): Promise<Resultado<ConversaResumo[]>> {
     supabase.from('profissionais').select('id,estado').eq('user_id', user.id).maybeSingle(),
     supabase.from('companies').select('id,is_approved,estado').eq('user_id', user.id),
   ])
-  const idsProfissional = new Set(perfilConta?.is_active === true && perfil?.estado === 'aprovado' && perfil?.id ? [perfil.id] : [])
-  const idsEmpresa = new Set(perfilConta?.is_active === true ? (empresas ?? []).filter((e) => e.is_approved === true && e.estado === 'aprovado').map((e) => e.id) : [])
-  const clienteActivo = perfilConta?.account_type === 'cliente' && perfilConta.is_active === true && !perfil?.id && !(empresas ?? []).length
+  const idsProfissional = new Set(perfilConta?.account_type === 'profissional' && perfilConta.is_active === true && perfil?.estado === 'aprovado' && perfil?.id ? [perfil.id] : [])
+  const idsEmpresa = new Set(perfilConta?.account_type === 'empresa' && perfilConta.is_active === true ? (empresas ?? []).filter((e) => e.is_approved === true && e.estado === 'aprovado').map((e) => e.id) : [])
+  const clienteActivo = perfilConta?.account_type === 'cliente' && perfilConta.is_active === true
 
   // A política RLS também permite leitura administrativa. A interface de mensagens,
   // porém, só deve devolver conversas em que a sessão actual é participante efectivo.
@@ -159,13 +159,13 @@ async function utilizadorParticipaNaConversa(
   if (conversa.cliente_id === userId && await contaClienteActiva(supabase, userId)) return true
 
   const [perfilConta, perfil, empresas] = await Promise.all([
-    supabase.from('profiles').select('is_active').eq('id', userId).maybeSingle(),
+    supabase.from('profiles').select('account_type,is_active').eq('id', userId).maybeSingle(),
     supabase.from('profissionais').select('id,estado').eq('user_id', userId).maybeSingle(),
     supabase.from('companies').select('id,is_approved,estado').eq('user_id', userId),
   ])
-  if (perfilConta.data?.is_active !== true) return false
-  if (conversa.profissional_id && perfil?.data?.id === conversa.profissional_id && perfil?.data?.estado === 'aprovado') return true
-  return Boolean(conversa.empresa_id && (empresas.data ?? []).some((empresa) => empresa.id === conversa.empresa_id && empresa.is_approved === true && empresa.estado === 'aprovado'))
+  if (perfilConta.error || perfilConta.data?.is_active !== true) return false
+  if (perfilConta.data.account_type === 'profissional' && conversa.profissional_id && perfil?.data?.id === conversa.profissional_id && perfil?.data?.estado === 'aprovado') return true
+  return Boolean(perfilConta.data.account_type === 'empresa' && conversa.empresa_id && (empresas.data ?? []).some((empresa) => empresa.id === conversa.empresa_id && empresa.is_approved === true && empresa.estado === 'aprovado'))
 }
 
 export async function listarMensagens(conversaId: string): Promise<Resultado<MensagemConversa[]>> {
@@ -228,13 +228,14 @@ export async function enviarMensagem(conversaId: string, conteudo: string): Prom
 
 async function contaClienteActiva(supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>, userId: string): Promise<boolean> {
   if (await isAdmin()) return false
-  const [perfil, profissional, empresa] = await Promise.all([
-    supabase.from('profiles').select('account_type,is_active').eq('id', userId).maybeSingle(),
-    supabase.from('profissionais').select('id').eq('user_id', userId).limit(1).maybeSingle(),
-    supabase.from('companies').select('id').eq('user_id', userId).limit(1).maybeSingle(),
-  ])
-  return !perfil.error && perfil.data?.account_type === 'cliente' && perfil.data.is_active === true
-    && !profissional.error && !profissional.data && !empresa.error && !empresa.data
+  const { data: perfil, error } = await supabase
+    .from('profiles')
+    .select('account_type,is_active')
+    .eq('id', userId)
+    .maybeSingle()
+  // O papel é determinado pelo perfil. Registos de negócio legados não alteram
+  // a identidade nem retiram a um cliente activo a capacidade de contactar.
+  return !error && perfil?.account_type === 'cliente' && perfil.is_active === true
 }
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
