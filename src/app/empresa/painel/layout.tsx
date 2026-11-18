@@ -8,6 +8,6 @@ export default async function EmpresaPainelLayout({ children }: { children: Reac
   if (!user) redirect('/login?redirectTo=/empresa/painel')
   if (await isAdmin()) redirect('/admin')
   const contexto = await obterContextoUtilizador()
-  if (contexto.profissional) redirect('/profissional/painel')
+  if (!contexto.empresa) redirect('/conta')
   return children
 }
