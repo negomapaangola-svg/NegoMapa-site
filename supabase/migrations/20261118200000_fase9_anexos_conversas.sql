@@ -20,10 +20,11 @@ revoke all on public.mensagem_anexos from public, anon, authenticated;
 grant select, insert on public.mensagem_anexos to authenticated;
 
 create policy mensagem_anexos_select_participante on public.mensagem_anexos
-  for select to authenticated using (public.conversa_participante(conversa_id));
+  for select to authenticated using (negomapa_private.is_account_active((select auth.uid())) and public.conversa_participante(conversa_id));
 create policy mensagem_anexos_insert_remetente on public.mensagem_anexos
   for insert to authenticated with check (
     remetente_id = (select auth.uid())
+    and negomapa_private.is_account_active((select auth.uid()))
     and public.conversa_participante(conversa_id)
     and exists (
       select 1 from public.mensagens m
@@ -68,14 +69,16 @@ create policy conversas_anexos_insert_participante on storage.objects
   for insert to authenticated with check (
     bucket_id = 'conversas-anexos'
     and exists (select 1 from public.conversas c
-      where c.id::text = (storage.foldername(name))[1] and public.conversa_participante(c.id))
+      where c.id::text = (storage.foldername(name))[1] and negomapa_private.is_account_active((select auth.uid()))
+        and public.conversa_participante(c.id))
   );
 drop policy if exists conversas_anexos_delete_participante on storage.objects;
 create policy conversas_anexos_delete_participante on storage.objects
   for delete to authenticated using (
     bucket_id = 'conversas-anexos'
     and exists (select 1 from public.conversas c
-      where c.id::text = (storage.foldername(name))[1] and public.conversa_participante(c.id))
+      where c.id::text = (storage.foldername(name))[1] and negomapa_private.is_account_active((select auth.uid()))
+        and public.conversa_participante(c.id))
   );
 
 create or replace function public.perfis_remetentes_conversa(p_conversa_id uuid, p_user_ids uuid[])
@@ -89,6 +92,7 @@ as $$
     and exists (
       select 1 from public.conversas c
       where c.id = p_conversa_id
+        and negomapa_private.is_account_active(auth.uid())
         and public.conversa_participante(c.id)
         and (
           p.id = c.cliente_id
@@ -108,7 +112,8 @@ language plpgsql security invoker set search_path = ''
 as $$
 declare v_mensagem_id uuid;
 begin
-  if auth.uid() is null or not public.conversa_participante(p_conversa_id)
+  if auth.uid() is null or not negomapa_private.is_account_active(auth.uid())
+    or not public.conversa_participante(p_conversa_id)
     or p_storage_path not like p_conversa_id::text || '/%'
     or p_mime_type not in ('application/pdf','image/jpeg','image/png','image/webp','text/plain')
     or p_tamanho_bytes not between 1 and 10485760
