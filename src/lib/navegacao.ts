@@ -1,7 +1,7 @@
 import type { ContextoUtilizador } from '@/lib/permissoes'
 export type LocalNavegacao = 'cabecalho' | 'menu_mobile' | 'rodape'
 export type ContextoNavegacao = Omit<ContextoUtilizador, 'userId'>
-type Regra = 'publico' | 'autenticado' | 'profissional' | 'profissional_aprovado' | 'empresa' | 'empresa_aprovada' | 'administrador' | 'visitante' | 'sem_empresa' | 'sem_profissional' | 'cliente_sem_perfil'
+type Regra = 'publico' | 'autenticado' | 'profissional' | 'profissional_aprovado' | 'empresa' | 'empresa_aprovada' | 'administrador' | 'visitante' | 'sem_empresa' | 'sem_profissional' | 'cliente_sem_perfil' | 'cliente' | 'utilizador'
 export type ItemNavegacao = { id: string; rotulo: string; rota: string; icone?: string; regras: Regra[]; locais: LocalNavegacao[] }
 export const ITENS_NAVEGACAO: ItemNavegacao[] = [
  {id:'inicio',rotulo:'Início',rota:'/',regras:['publico'],locais:['cabecalho','menu_mobile']},
@@ -18,13 +18,13 @@ export const ITENS_NAVEGACAO: ItemNavegacao[] = [
  {id:'cadastrar-profissional',rotulo:'Cadastrar profissional',rota:'/cadastrar-profissional',regras:['cliente_sem_perfil'],locais:['menu_mobile']},
  {id:'entrar',rotulo:'Entrar',rota:'/login',regras:['visitante'],locais:['menu_mobile']},
  {id:'registar',rotulo:'Registar',rota:'/registar',regras:['visitante'],locais:['menu_mobile']},
- {id:'perfil',rotulo:'Perfil',rota:'/conta/perfil',regras:['autenticado'],locais:['menu_mobile']},
- {id:'configuracoes',rotulo:'Configurações',rota:'/configuracoes',regras:['autenticado'],locais:['menu_mobile']},
- {id:'candidaturas',rotulo:'Candidaturas',rota:'/candidaturas',regras:['autenticado'],locais:['menu_mobile']},
- {id:'mensagens',rotulo:'Mensagens',rota:'/mensagens',regras:['autenticado'],locais:['menu_mobile']},
- {id:'pedidos',rotulo:'Pedidos',rota:'/pedidos',regras:['autenticado'],locais:['menu_mobile']},
- {id:'notificacoes',rotulo:'Notificações',rota:'/notificacoes',regras:['autenticado'],locais:['menu_mobile']},
- {id:'preferencias',rotulo:'Preferências de notificação',rota:'/preferencias-notificacoes',regras:['autenticado'],locais:['menu_mobile']},
+ {id:'perfil',rotulo:'Perfil',rota:'/conta/perfil',regras:['utilizador'],locais:['menu_mobile']},
+ {id:'configuracoes',rotulo:'Configurações',rota:'/configuracoes',regras:['utilizador'],locais:['menu_mobile']},
+ {id:'candidaturas',rotulo:'Candidaturas',rota:'/candidaturas',regras:['cliente'],locais:['menu_mobile']},
+ {id:'mensagens',rotulo:'Mensagens',rota:'/mensagens',regras:['utilizador'],locais:['menu_mobile']},
+ {id:'pedidos',rotulo:'Pedidos',rota:'/pedidos',regras:['cliente'],locais:['menu_mobile']},
+ {id:'notificacoes',rotulo:'Notificações',rota:'/notificacoes',regras:['utilizador'],locais:['menu_mobile']},
+ {id:'preferencias',rotulo:'Preferências de notificação',rota:'/preferencias-notificacoes',regras:['utilizador'],locais:['menu_mobile']},
  {id:'painel-profissional',rotulo:'Painel do profissional',rota:'/profissional/painel',regras:['profissional'],locais:['menu_mobile']},
  {id:'painel-empresa',rotulo:'Painel da empresa',rota:'/empresa/painel',regras:['empresa'],locais:['menu_mobile']},
  {id:'administracao',rotulo:'Administração',rota:'/admin',regras:['administrador'],locais:['menu_mobile']},
@@ -50,7 +50,9 @@ export function podeVerItem(item: ItemNavegacao, c: ContextoNavegacao): boolean 
    case 'administrador': return c.administrador
    case 'sem_empresa': return c.autenticado && !c.empresa
    case 'sem_profissional': return c.autenticado && !c.profissional
-   case 'cliente_sem_perfil': return c.autenticado && c.accountType === 'cliente' && !c.profissional && !c.empresa
+   case 'cliente_sem_perfil': return c.autenticado && !c.administrador && c.accountType === 'cliente' && !c.profissional && !c.empresa
+   case 'cliente': return c.autenticado && !c.administrador && c.accountType === 'cliente' && !c.profissional && !c.empresa
+   case 'utilizador': return c.autenticado && !c.administrador
   }
  })
 }
