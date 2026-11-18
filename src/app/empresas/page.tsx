@@ -75,7 +75,7 @@ function EmpresasContent() {
   return (
     <main className="min-h-[60vh] bg-cream px-4 py-8 dark:bg-navy-dark sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl space-y-6">
-        <EditorialPageImage src="/images/home/empresas.webp" alt="Empresário angolano à entrada da sua loja" />
+        <EditorialPageImage src="/images/home/empresas.webp" alt="Pequeno empresário à entrada da sua loja" />
         <PageHeader title="Empresas" description="Encontre empresas perto de si." />
         <SearchBar action="/empresas" defaultValue={nome} placeholder="Pesquisar empresa" onSearch={setNome} />
         <FilterChips value={setor} onChange={setSetor} items={[{label:"Todas",value:""}, ...setores.map((s)=>({label:s,value:s}))]} />
