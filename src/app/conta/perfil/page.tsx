@@ -12,7 +12,7 @@ export default async function ContaPerfilPage({searchParams}:{searchParams:Promi
  const [data,params]=await Promise.all([getContaSnapshot(),searchParams]); if(!data)return null
  const supabase=await createSupabaseServerClient()
  const {data:categorias}=await supabase.from('categorias').select('id,nome').eq('ativo',true).order('nome')
- const p=data.professional??{}, c=data.company??{}, pro=data.accountType==='profissional', emp=data.accountType==='empresa'
+ const p=data.professional ?? ({} as NonNullable<typeof data.professional>), c=data.company ?? ({} as NonNullable<typeof data.company>), pro=data.accountType==='profissional', emp=data.accountType==='empresa'
  const name=pro?p.nome:emp?c.name:data.profile.nome, avatar=pro?p.avatar_url:emp?c.logo_url:data.profile.avatar_url
  const kind=pro?'Profissional':emp?'Empresa':'Cliente'
  const status=pro?(p.estado??'Pendente'):emp?(c.is_approved?'Aprovada':c.estado??'Pendente'):(data.profile.is_active===false?'Inactiva':'Activa')
