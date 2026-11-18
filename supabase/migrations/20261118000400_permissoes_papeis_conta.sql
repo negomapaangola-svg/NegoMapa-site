@@ -279,4 +279,143 @@ create policy admin_cannot_use_user_messages on public.mensagens
   using (not (select public.is_admin()))
   with check (not (select public.is_admin()));
 
+
+-- Candidate and employer access is state-aware, including pending/suspended owners.
+drop policy if exists role_scoped_candidaturas_select on public.candidaturas;
+create policy role_scoped_candidaturas_select on public.candidaturas
+  as restrictive for select to authenticated
+  using (
+    (select public.is_admin())
+    or (
+      user_id = (select auth.uid())
+      and exists (select 1 from public.profiles p where p.id=(select auth.uid()) and p.account_type='cliente' and p.is_active is true)
+      and not exists (select 1 from public.companies c where c.user_id=(select auth.uid()))
+      and not exists (select 1 from public.profissionais pr where pr.user_id=(select auth.uid()))
+    )
+    or (
+      empresa_dona_da_vaga(vaga_id)
+      and exists (
+        select 1 from public.vagas v join public.companies c on c.id=v.company_id
+        where v.id=candidaturas.vaga_id and c.user_id=(select auth.uid())
+          and c.is_approved is true and coalesce(c.estado,'aprovado')='aprovado'
+          and negomapa_private.is_account_active(c.user_id)
+      )
+    )
+  );
+
+drop policy if exists approved_company_update_candidaturas on public.candidaturas;
+create policy approved_company_update_candidaturas on public.candidaturas
+  as restrictive for update to authenticated
+  using (
+    (select public.is_admin())
+    or (
+      empresa_dona_da_vaga(vaga_id)
+      and exists (
+        select 1 from public.vagas v join public.companies c on c.id=v.company_id
+        where v.id=candidaturas.vaga_id and c.user_id=(select auth.uid())
+          and c.is_approved is true and coalesce(c.estado,'aprovado')='aprovado'
+          and negomapa_private.is_account_active(c.user_id)
+      )
+    )
+  )
+  with check (
+    (select public.is_admin())
+    or (
+      empresa_dona_da_vaga(vaga_id)
+      and exists (
+        select 1 from public.vagas v join public.companies c on c.id=v.company_id
+        where v.id=candidaturas.vaga_id and c.user_id=(select auth.uid())
+          and c.is_approved is true and coalesce(c.estado,'aprovado')='aprovado'
+          and negomapa_private.is_account_active(c.user_id)
+      )
+    )
+  );
+
+-- User-to-user conversations require an active client or an approved,
+-- active professional/company owner. Pending/suspended providers lose access.
+drop policy if exists active_role_conversation_access on public.conversas;
+create policy active_role_conversation_access on public.conversas
+  as restrictive for all to authenticated
+  using (
+    not (select public.is_admin())
+    and (
+      (cliente_id=(select auth.uid())
+        and exists (select 1 from public.profiles p where p.id=(select auth.uid()) and p.account_type='cliente' and p.is_active is true)
+        and not exists (select 1 from public.profissionais pr where pr.user_id=(select auth.uid()))
+        and not exists (select 1 from public.companies c where c.user_id=(select auth.uid())))
+      or
+      (profissional_id is not null and exists (
+        select 1 from public.profissionais p where p.id=conversas.profissional_id
+          and p.user_id=(select auth.uid()) and p.estado='aprovado'
+          and negomapa_private.is_account_active(p.user_id)
+      ))
+      or
+      (empresa_id is not null and exists (
+        select 1 from public.companies c where c.id=conversas.empresa_id
+          and c.user_id=(select auth.uid()) and c.is_approved is true
+          and coalesce(c.estado,'aprovado')='aprovado'
+          and negomapa_private.is_account_active(c.user_id)
+      ))
+    )
+  )
+  with check (
+    not (select public.is_admin())
+    and cliente_id=(select auth.uid())
+    and exists (select 1 from public.profiles p where p.id=(select auth.uid()) and p.account_type='cliente' and p.is_active is true)
+    and not exists (select 1 from public.profissionais pr where pr.user_id=(select auth.uid()))
+    and not exists (select 1 from public.companies c where c.user_id=(select auth.uid()))
+  );
+
+drop policy if exists active_role_message_access on public.mensagens;
+create policy active_role_message_access on public.mensagens
+  as restrictive for all to authenticated
+  using (
+    not (select public.is_admin())
+    and exists (
+      select 1 from public.conversas cv
+      where cv.id=mensagens.conversa_id
+        and (
+          (cv.cliente_id=(select auth.uid())
+            and exists (select 1 from public.profiles p where p.id=(select auth.uid()) and p.account_type='cliente' and p.is_active is true)
+            and not exists (select 1 from public.profissionais pr where pr.user_id=(select auth.uid()))
+            and not exists (select 1 from public.companies c where c.user_id=(select auth.uid())))
+          or (cv.profissional_id is not null and exists (
+            select 1 from public.profissionais p where p.id=cv.profissional_id
+              and p.user_id=(select auth.uid()) and p.estado='aprovado'
+              and negomapa_private.is_account_active(p.user_id)
+          ))
+          or (cv.empresa_id is not null and exists (
+            select 1 from public.companies c where c.id=cv.empresa_id
+              and c.user_id=(select auth.uid()) and c.is_approved is true
+              and coalesce(c.estado,'aprovado')='aprovado'
+              and negomapa_private.is_account_active(c.user_id)
+          ))
+        )
+    )
+  )
+  with check (
+    not (select public.is_admin())
+    and exists (
+      select 1 from public.conversas cv
+      where cv.id=mensagens.conversa_id
+        and (
+          (cv.cliente_id=(select auth.uid())
+            and exists (select 1 from public.profiles p where p.id=(select auth.uid()) and p.account_type='cliente' and p.is_active is true)
+            and not exists (select 1 from public.profissionais pr where pr.user_id=(select auth.uid()))
+            and not exists (select 1 from public.companies c where c.user_id=(select auth.uid())))
+          or (cv.profissional_id is not null and exists (
+            select 1 from public.profissionais p where p.id=cv.profissional_id
+              and p.user_id=(select auth.uid()) and p.estado='aprovado'
+              and negomapa_private.is_account_active(p.user_id)
+          ))
+          or (cv.empresa_id is not null and exists (
+            select 1 from public.companies c where c.id=cv.empresa_id
+              and c.user_id=(select auth.uid()) and c.is_approved is true
+              and coalesce(c.estado,'aprovado')='aprovado'
+              and negomapa_private.is_account_active(c.user_id)
+          ))
+        )
+    )
+  );
+
 commit;
