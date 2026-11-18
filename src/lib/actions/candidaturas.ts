@@ -209,6 +209,8 @@ export async function listarCandidaturasDaEmpresa(empresaActivaId?: string): Pro
     .from('companies')
     .select('id')
     .eq('user_id', user.id)
+    .eq('is_approved', true)
+    .eq('estado', 'aprovado')
 
   if (erroEmpresa) {
     console.error('Erro ao verificar empresas do utilizador. Código:', erroEmpresa.code)
