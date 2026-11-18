@@ -38,4 +38,4 @@ Esta matriz define as capacidades de conta autenticada. As políticas RLS e as S
 
 ## Reversão
 
-Remover as funções block_admin_email_reuse e block_admin_account_type, os respectivos triggers e as seis políticas adicionadas. A migração não elimina linhas existentes. Ainda não foi aplicada à base de dados de produção.
+Executar o script versionado em supabase/rollback/20261118060000_permissoes_papeis_conta_reversao.sql: remove as duas funções e triggers e todas as políticas aditivas desta fase. Não elimina nem actualiza linhas existentes. A migração não elimina linhas existentes. Ainda não foi aplicada à base de dados de produção.
