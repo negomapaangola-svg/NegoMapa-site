@@ -44,7 +44,7 @@ export function podeVerItem(item: ItemNavegacao, c: ContextoNavegacao): boolean 
    case 'visitante': return !c.autenticado
    case 'autenticado': return c.autenticado
    case 'profissional': return !c.administrador && c.accountType === 'profissional' && c.profissional
-   case 'profissional_aprovado': return !c.administrador && c.profissional && c.estadoProfissional === 'aprovado'
+   case 'profissional_aprovado': return !c.administrador && c.accountType === 'profissional' && c.profissional && c.estadoProfissional === 'aprovado'
    case 'empresa': return !c.administrador && c.accountType === 'empresa' && c.empresa
    case 'empresa_aprovada': return !c.administrador && c.accountType === 'empresa' && c.empresa && c.empresaAprovada
    case 'administrador': return c.administrador
