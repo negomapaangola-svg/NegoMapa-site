@@ -230,3 +230,16 @@ A consulta de produção foi apenas de leitura e ocultou o UID e os identificado
 ### 10.6 Estado desta etapa
 
 Nenhuma conta, ficheiro ou dado foi criado ou eliminado. Nenhuma migração foi aplicada em produção. Nenhum bucket ou policy de produção foi alterado. A implementação de eliminação autónoma continua suspensa até o runner local passar e a divergência histórica de Storage estar resolvida por migração forward-only.
+
+
+### 10.7 Histórico de migrações e impedimento do runner
+
+- Primeira execução real do runner, Actions #44384295962, passou a validação de `config.toml` e iniciou a stack, mas falhou ao aplicar migrações: `duplicate key value violates unique constraint "schema_migrations_pkey"`, versão `20261003`.
+- A árvore da branch contém vários prefixos duplicados: `20261003` (3 ficheiros), `20261011` (2), `20261012` (2), `20261027` (2), `20261028` (2), `20261101` (5), `20261110` (2) e `20261112` (3).
+- A listagem read-only do histórico de migrações de produção devolveu versões únicas de 14 dígitos, começando em `20261027201608`; não contém uma versão `20261003`. O histórico remoto e os nomes/versões dos ficheiros locais não são directamente equivalentes.
+- Não executar `db pull` ou `db push` para “corrigir” isto: `db pull` pode registar a migração no histórico remoto e `db push` pode alterar produção. Nenhum dos dois foi executado.
+- Foi adicionado `.github/scripts/prepare-supabase-local.sh`: copia apenas a pasta `supabase/` para `$RUNNER_TEMP/negomapa-supabase-local` e renumera os ficheiros nessa cópia descartável, em ordem lexical, com versões únicas de 14 dígitos. Os ficheiros versionados na branch e o histórico de produção não são renomeados.
+- O workflow executa a stack a partir dessa cópia temporária, sem `supabase link`, tokens ou credenciais remotas. A nova execução ainda está pendente/em curso; não declarar as migrações validadas até terminar.
+- A configuração Auth local foi actualizada de `enable_signup` para `enabled`, para evitar a opção obsoleta indicada pelo CLI 3.2.0.
+
+Não foi executado rollback nem qualquer comando que altere o Supabase de produção.
