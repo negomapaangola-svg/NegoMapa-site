@@ -58,6 +58,7 @@ create policy conversas_anexos_select_participante on storage.objects
     bucket_id = 'conversas-anexos'
     and exists (select 1 from public.conversas c
       where c.id::text = (storage.foldername(name))[1]
+        and negomapa_private.is_account_active((select auth.uid()))
         and public.conversa_participante(c.id)
         and exists (
           select 1 from public.mensagem_anexos ma
