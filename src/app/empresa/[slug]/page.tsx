@@ -142,6 +142,11 @@ function EmpresaContent() {
   const temEnderecoDetalhado = empresa.rua || empresa.bairro || empresa.referencia_localizacao
   const localizacao = [empresa.city, empresa.province].filter(Boolean).join(", ")
   const temPortfolio = Array.isArray(empresa.portfolio) && empresa.portfolio.length > 0
+  // As referências privadas migradas são servidas pela rota autenticada/pública controlada.
+  const logoSrc = typeof empresa.logo_url === "string" &&
+    (empresa.logo_url.startsWith("/api/imagens/") || isHttpsUrl(empresa.logo_url))
+    ? empresa.logo_url
+    : null
 
   return (
     <MainLayout>
@@ -155,9 +160,9 @@ function EmpresaContent() {
 
         <Card variant="muted" padding="md">
           <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center">
-            {isHttpsUrl(empresa.logo_url) ? (
+            {logoSrc ? (
               <img
-                src={empresa.logo_url}
+                src={logoSrc}
                 alt={`Logótipo de ${empresa.name}`}
                 className="h-20 w-20 shrink-0 rounded-2xl border border-neutral-100 bg-white object-contain p-2 dark:border-neutral-700 dark:bg-neutral-800"
               />
