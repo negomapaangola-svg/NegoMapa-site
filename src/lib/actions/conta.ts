@@ -73,8 +73,15 @@ function storagePath(value: string, bucket: string): string | null {
 
 function validImageRef(value: string, bucket: string, userId: string, folder: 'avatar' | 'portfolio') {
   const path = storagePath(value, bucket)
-  if (!path || !path.startsWith(userId + '/' + folder + '/')) return false
-  return new RegExp('^' + userId + '/' + folder + '/[0-9a-f-]{36}\\.(webp|jpg|png)$', 'i').test(path)
+  if (!path) return false
+  if (new RegExp('^' + userId + '/' + folder + '/[0-9a-f-]{36}\\.(webp|jpg|png)$', 'i').test(path)) return true
+  if (folder === 'avatar' && bucket === 'profissionais-avatars') {
+    return new RegExp('^' + userId + '/avatars/[0-9a-f-]{36}\\.(webp|jpg|png)$', 'i').test(path)
+  }
+  if (folder === 'avatar' && bucket === 'empresas-logos') {
+    return new RegExp('^' + userId + '/logotipo-[0-9]+\\.(webp|jpg|png)$', 'i').test(path)
+  }
+  return false
 }
 
 function validPortfolioItems(value: unknown, bucket: string, userId: string) {
@@ -183,7 +190,6 @@ export async function guardarReferenciasImagem(input: {
   }
 
   const refs = [...new Set(input.refs)]
-  const paths: string[] = []
   for (const ref of refs) {
     const path = storagePath(ref, input.bucket)
     if (!path || !path.startsWith(user.id + '/') || !validImageRef(ref, input.bucket, user.id, input.folder)) {
@@ -196,7 +202,6 @@ export async function guardarReferenciasImagem(input: {
     if (error || !files?.some(file => file.name === filename)) {
       return { ok: false, error: 'A imagem não foi encontrada no armazenamento privado.' }
     }
-    paths.push(path)
   }
 
   const oldRefs: string[] = []
