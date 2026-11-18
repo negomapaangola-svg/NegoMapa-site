@@ -1,5 +1,5 @@
 'use client'
-import {useState} from 'react'
+import {useEffect,useState} from 'react'
 import {ImageUpload} from '@/components/images/ImageUpload'
 
 type Bucket='profissionais-avatars'|'empresas-logos'|'clientes-avatars'
@@ -48,6 +48,14 @@ export function ImageFields({bucket,avatar,avatarName,portfolioBucket,portfolio=
     const entry=imageEntry(item,portfolioBucket)
     return entry?[entry.ref]:[]
   }):[])
+  useEffect(()=>{setA(avatar?[normalize(bucket,avatar)]:[])},[avatar,bucket])
+  useEffect(()=>{
+    setPortfolioData(portfolio)
+    setP(portfolioBucket?portfolio.flatMap(item=>{
+      const entry=imageEntry(item,portfolioBucket)
+      return entry?[entry.ref]:[]
+    }):[])
+  },[portfolio,portfolioBucket])
   const changePortfolio=(next:string[])=>{
     if(!portfolioBucket)return
     const entries=portfolioData.map(item=>({item,entry:imageEntry(item,portfolioBucket)}))
