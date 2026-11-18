@@ -1,0 +1,68 @@
+project_id = "negomapa-fase8-local"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 17
+
+[studio]
+enabled = true
+port = 54323
+
+[auth]
+enabled = true
+site_url = "http://127.0.0.1:3000"
+additional_redirect_urls = ["http://127.0.0.1:3000"]
+jwt_expiry = 3600
+
+[auth.email]
+enabled = true
+enable_confirmations = false
+
+[storage]
+enabled = true
+file_size_limit = "50MiB"
+
+# Os 12 buckets observados em produção são sempre privados no ambiente local.
+[storage.buckets."clientes-avatars"]
+public = false
+
+[storage.buckets."company-files"]
+public = false
+
+[storage.buckets."documentos-privados"]
+public = false
+
+[storage.buckets."empresas"]
+public = false
+
+[storage.buckets."empresas-logos"]
+public = false
+
+[storage.buckets."empresas-portfolio"]
+public = false
+
+[storage.buckets."produtos"]
+public = false
+
+[storage.buckets."profissionais"]
+public = false
+
+[storage.buckets."profissionais-avatars"]
+public = false
+
+[storage.buckets."profissionais-portfolio"]
+public = false
+
+[storage.buckets."servicos"]
+public = false
+
+[storage.buckets."vagas"]
+public = false

@@ -3,7 +3,7 @@ name: Validate
 on:
   push:
     branches:
-      - feat/admin-painel-completo
+      - feat/eliminacao-conta
   pull_request:
     branches:
       - main
@@ -20,11 +20,13 @@ jobs:
   validate:
     name: Changed-file lint, build and TypeScript
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Node.js 20
         uses: actions/setup-node@v4
@@ -35,8 +37,31 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Lint changed files
-        run: npx eslint src/app/admin/_components/AdminActivityCharts.tsx src/app/admin/page.tsx src/lib/actions/admin-foundation.ts src/app/admin/contas/page.tsx src/app/admin/contas/_components/AdminAccountDeletionPanel.tsx src/lib/actions/admin-account-deletion.ts src/lib/actions/login.ts src/proxy.ts src/app/login/page.tsx src/lib/navegacao.ts
+      - name: Lint changed JavaScript and TypeScript files
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${BASE_SHA:-}" || "${BASE_SHA}" =~ ^0+$ ]] || ! git cat-file -e "${BASE_SHA}^{commit}" 2>/dev/null; then
+            git fetch origin main --depth=1
+            BASE_SHA="$(git merge-base origin/main "${HEAD_SHA}")"
+          fi
+
+          mapfile -d '' changed_files < <(
+            git diff --name-only -z "${BASE_SHA}" "${HEAD_SHA}" -- \
+              '*.js' '*.jsx' '*.mjs' '*.cjs' '*.ts' '*.tsx'
+          )
+
+          if (("${#changed_files[@]}" == 0)); then
+            echo "No changed JavaScript/TypeScript files to lint."
+          else
+            printf 'Linting %s changed file(s):\n' "${#changed_files[@]}"
+            printf ' - %s\n' "${changed_files[@]}"
+            npx eslint "${changed_files[@]}"
+          fi
 
       - name: Build
         run: npm run build
