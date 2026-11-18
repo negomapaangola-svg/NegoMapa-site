@@ -10,6 +10,7 @@ import { NotificacoesBotao } from './NotificacoesBotao';
 import { PesquisaGlobal } from './PesquisaGlobal';
 import { useTemaEscuro } from '@/hooks/useTemaEscuro';
 import { obterContextoNavegacao } from '@/lib/actions/permissoes';
+import { createBrowserSupabaseClient } from '@/lib/supabase-browser';
 import { ITENS_NAVEGACAO } from '@/lib/navegacao';
 
 type Contexto = Awaited<ReturnType<typeof obterContextoNavegacao>>
@@ -29,7 +30,19 @@ export const Header = forwardRef<HTMLElement, { className?: string; hideGlobalSe
       carregar()
       const aoSair = () => setContexto({ autenticado:false, profissional:false, estadoProfissional:null, empresa:false, empresaAprovada:false, administrador:false, accountType:null })
       window.addEventListener('negomapa:auth-logout-started', aoSair)
-      return () => { activo = false; window.removeEventListener('negomapa:auth-logout-started', aoSair) }
+      const supabase = createBrowserSupabaseClient()
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((evento, sessao) => {
+        if (evento === 'SIGNED_OUT' || !sessao) {
+          aoSair()
+          return
+        }
+        if (evento === 'SIGNED_IN' || evento === 'USER_UPDATED') {
+          void obterContextoNavegacao().then((c) => { if (activo) setContexto(c) }).catch(() => {
+            if (activo) setContexto({ autenticado:false, profissional:false, estadoProfissional:null, empresa:false, empresaAprovada:false, administrador:false, accountType:null })
+          })
+        }
+      })
+      return () => { activo = false; subscription.unsubscribe(); window.removeEventListener('negomapa:auth-logout-started', aoSair) }
     }, [])
 
     useEffect(() => {
