@@ -261,7 +261,7 @@ export default async function ServicosPage({
     <MainLayout>
       <section className="py-16 lg:py-24 bg-cream dark:bg-navy-dark" aria-labelledby="servicos-title">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <EditorialPageImage src="/images/home/servicos.webp" alt="Técnico angolano a trabalhar numa instalação" />
+          <EditorialPageImage src="/images/home/servicos.webp" alt="Técnico angolano a trabalhar numa instalação eléctrica" />
           <div className="text-center max-w-3xl mx-auto mb-12">
             <h1 id="servicos-title" className="text-4xl sm:text-5xl font-bold tracking-tight text-ink dark:text-cream">
               Serviços Profissionais
