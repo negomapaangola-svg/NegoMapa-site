@@ -5,12 +5,70 @@ import { redirect } from 'next/navigation'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { isAdmin } from '@/lib/auth'
 
+type ContaProfile = {
+  id: string
+  nome: string | null
+  telefone: string | null
+  whatsapp: string | null
+  avatar_url: string | null
+  account_type: 'profissional' | 'empresa' | 'cliente'
+  localizacao_provincia: string | null
+  localizacao_municipio: string | null
+  localizacao_bairro: string | null
+  is_active: boolean
+}
+type ContaProfessional = {
+  id: string
+  nome: string | null
+  telefone: string | null
+  whatsapp: string | null
+  bio: string | null
+  provincia: string | null
+  municipio: string | null
+  bairro: string | null
+  estado: string
+  avatar_url: string | null
+  categoria_id: string | null
+  especialidades: string[] | null
+  disponibilidade: string | null
+  disponibilidade_dias: string[] | null
+  disponibilidade_horarios: Record<string, boolean> | null
+  portfolio: unknown
+}
+type ContaCompany = {
+  id: string
+  name: string
+  sector: string
+  province: string
+  city: string | null
+  bairro: string | null
+  rua: string | null
+  referencia_localizacao: string | null
+  website: string | null
+  description: string | null
+  whatsapp: string | null
+  phone: string | null
+  logo_url: string | null
+  is_approved: boolean | null
+  estado: string | null
+  horario_atendimento: string | null
+  portfolio: unknown
+}
+type ContaDetails = {
+  formacao?: string | null
+  preferencias?: string | null
+  disponibilidade?: string | null
+  tipo_empresa?: string | null
+  tamanho_empresa?: string | null
+}
+type AvaliacaoConta = { id: string; nota: number; comentario: string | null; created_at: string }
+
 export type ContaSnapshot = {
   user: { id: string; email: string }
-  profile: any
-  professional: any
-  company: any
-  details: any
+  profile: ContaProfile
+  professional: ContaProfessional | null
+  company: ContaCompany | null
+  details: ContaDetails
   accountType: 'profissional' | 'empresa' | 'cliente'
 }
 
@@ -41,12 +99,12 @@ export async function getContaSnapshot(): Promise<ContaSnapshot | null> {
   }
   const profile = profileResult.data
   const accountType = profile?.account_type
-  if (accountType !== 'profissional' && accountType !== 'empresa' && accountType !== 'cliente') {
+  if (!profile || (accountType !== 'profissional' && accountType !== 'empresa' && accountType !== 'cliente')) {
     redirect('/escolher-tipo')
   }
   return {
     user: { id: user.id, email: user.email ?? '' },
-    profile: profile ?? {},
+    profile,
     professional: professionalResult.data ?? null,
     company: companyResult.data ?? null,
     details: detailsResult.data ?? {},
@@ -210,7 +268,7 @@ export async function getContaAvaliacoes() {
     supabase.from('companies').select('id').eq('user_id', user.id).maybeSingle(),
     supabase.from('avaliacoes').select('id,nota,comentario,created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(50),
   ])
-  let received: any[] = []
+  let received: AvaliacaoConta[] = []
   if (profile?.account_type === 'profissional' && professional.data) {
     const { data } = await supabase.from('avaliacoes').select('id,nota,comentario,created_at').eq('profissional_id', professional.data.id).order('created_at', { ascending: false }).limit(50)
     received = data ?? []
