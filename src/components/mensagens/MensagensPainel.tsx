@@ -60,7 +60,8 @@ function formatarDataLista(valor: string): string {
 
 export function MensagensPainel({ conversas: conversasIniciais, userId, basePath, conversaInicial }: Props) {
   const router = useRouter()
-  const [conversas, setConversas] = React.useState<ConversaResumo[]>(conversasIniciais)
+  const [conversasLocais, setConversasLocais] = React.useState<ConversaResumo[] | null>(null)
+  const conversas = conversasLocais ?? conversasIniciais
   const [selecionada, setSelecionada] = React.useState<string | null>(
     conversaInicial && conversasIniciais.some((c) => c.id === conversaInicial) ? conversaInicial : null
   )
@@ -70,10 +71,6 @@ export function MensagensPainel({ conversas: conversasIniciais, userId, basePath
   const [anexoPendente, setAnexoPendente] = React.useState(false)
   const [pending, startTransition] = React.useTransition()
   const fimRef = React.useRef<HTMLDivElement>(null)
-
-  React.useEffect(() => {
-    setConversas(conversasIniciais)
-  }, [conversasIniciais])
 
   const conversaAtual = conversas.find((c) => c.id === selecionada) ?? null
 
@@ -87,16 +84,13 @@ export function MensagensPainel({ conversas: conversasIniciais, userId, basePath
     } else {
       setErro(resultado.error)
     }
-    setConversas((anteriores) =>
+    setConversasLocais((anteriores) =>
       anteriores.map((c) => (c.id === conversaId ? { ...c, nao_lidas: 0 } : c))
     )
   }, [])
 
   React.useEffect(() => {
-    if (!selecionada) {
-      setMensagens([])
-      return
-    }
+    if (!selecionada) return
     carregar(selecionada)
     const intervalo = window.setInterval(() => carregar(selecionada), INTERVALO_ATUALIZACAO_MS)
     return () => window.clearInterval(intervalo)
