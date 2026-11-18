@@ -1,6 +1,6 @@
 import { Metadata } from 'next'
 import { redirect } from 'next/navigation'
-import { getUser } from '@/lib/auth'
+import { getUser, isAdmin } from '@/lib/auth'
 import { MainLayout } from '@/components/layout/MainLayout'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { listarNotificacoes } from '@/lib/actions/notificacoes'
@@ -12,6 +12,7 @@ export const metadata: Metadata = {
 }
 
 export default async function NotificacoesPage() {
+  if (await isAdmin()) redirect('/admin')
   const user = await getUser()
   if (!user) {
     redirect('/login?redirectTo=/notificacoes')
