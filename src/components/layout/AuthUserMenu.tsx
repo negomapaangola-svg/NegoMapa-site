@@ -49,7 +49,7 @@ export function AuthUserMenu({ variante = 'cabecalho', onNavigate }: { variante?
     })
     const pararAcompanharSistema = acompanharSistema()
     return () => { activo = false; subscription.unsubscribe(); window.removeEventListener('negomapa:auth-logout-started', aoSair); pararAcompanharSistema() }
-  }, [])
+  }, [pathname])
 
   if (!contexto) return null
   const lista = variante === 'lista'
