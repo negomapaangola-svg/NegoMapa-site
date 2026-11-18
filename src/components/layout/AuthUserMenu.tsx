@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { logoutAction } from '@/lib/actions/logout'
 import { obterContextoNavegacao } from '@/lib/actions/permissoes'
+import { createBrowserSupabaseClient } from '@/lib/supabase-browser'
 import { acompanharSistema, definirTema } from '@/lib/tema'
 import { GRUPOS_MENU_MOBILE, ITENS_NAVEGACAO, podeVerItem, type ItemNavegacao } from '@/lib/navegacao'
 
@@ -26,12 +27,24 @@ export function AuthUserMenu({ variante = 'cabecalho', onNavigate }: { variante?
     carregar()
     const aoSair = () => { setContexto({ autenticado:false, profissional:false, estadoProfissional:null, empresa:false, empresaAprovada:false, administrador:false, accountType:null }); setAberto(false) }
     window.addEventListener('negomapa:auth-logout-started', aoSair)
+    const supabase = createBrowserSupabaseClient()
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((evento, sessao) => {
+      if (evento === 'SIGNED_OUT' || !sessao) {
+        aoSair()
+        return
+      }
+      if (evento === 'SIGNED_IN' || evento === 'USER_UPDATED') {
+        void obterContextoNavegacao().then((c) => { if (activo) setContexto(c) }).catch(() => {
+          if (activo) setContexto({ autenticado:false, profissional:false, estadoProfissional:null, empresa:false, empresaAprovada:false, administrador:false, accountType:null })
+        })
+      }
+    })
     try {
       const escolha = localStorage.getItem('negomapa-tema')
       setTema(escolha === 'claro' || escolha === 'escuro' ? escolha : 'sistema')
     } catch { setTema('sistema') }
     const pararAcompanharSistema = acompanharSistema()
-    return () => { activo = false; window.removeEventListener('negomapa:auth-logout-started', aoSair); pararAcompanharSistema() }
+    return () => { activo = false; subscription.unsubscribe(); window.removeEventListener('negomapa:auth-logout-started', aoSair); pararAcompanharSistema() }
   }, [])
 
   if (!contexto) return null
