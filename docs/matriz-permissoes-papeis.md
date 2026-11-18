@@ -5,7 +5,7 @@ Esta matriz define as capacidades de conta autenticada. As políticas RLS e as S
 | Capacidade | Admin | Cliente | Profissional | Empresa |
 |---|---:|---:|---:|---:|
 | Aceder à administração/moderação | Sim | Não | Não | Não |
-| Criar perfil de cliente/profissional/empresa | Não | Não (já tem papel) | Não (já tem papel) | Não (já tem papel) |
+| Criar perfil profissional/empresa a partir de cliente | Não | Sim, apenas uma conversão e sem perfil existente | Não | Não |
 | Publicar serviços | Não | Não | Sim, após aprovação | Sim, conforme fluxo empresarial |
 | Publicar produtos | Não | Não | Não | Sim, conforme aprovação |
 | Publicar vagas | Não | Não | Não | Sim, após aprovação |
@@ -22,6 +22,7 @@ Esta matriz define as capacidades de conta autenticada. As políticas RLS e as S
 - Políticas RLS restritivas impedem INSERT administrativo em empresas, profissionais, serviços, produtos e vagas.
 - A candidatura exige papel cliente activo e rejeita explicitamente administradores, profissionais e empresas.
 - Pedidos de serviço e início de conversas como cliente exigem cliente activo sem perfil empresarial/profissional associado.
+- Profissionais e empresas pendentes/suspensos não publicam nem gerem candidaturas/conversas; a publicação exige estado aprovado e conta activa.
 - Administradores não podem operar registos empresariais/profissionais legados próprios; continuam a poder moderar registos de terceiros.
 - O menu autenticado oculta perfil, candidaturas, pedidos e conversas para admin; as rotas e Server Actions repetem as verificações.
 
