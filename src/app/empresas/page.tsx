@@ -9,6 +9,7 @@ import { ordenarPorDistanciaEAdministrativa, type LocalizacaoAdministrativa } fr
 import { obterDistanciasAproximadas } from "@/lib/actions/proximidade"
 import { PageHeader, SearchBar, FilterChips, SettingsSheet, ResultsHeader, CompanyCard, LoadingSkeleton, ErrorState } from "@/components/ui/CatalogComponents"
 import { EmptyState } from "@/components/ui/EmptyState"
+import { EditorialPageImage } from "@/components/ui/EditorialPageImage"
 
 type Empresa = {
   id: string; name: string; sector: string | null; province: string | null;
@@ -56,7 +57,7 @@ function EmpresasContent() {
 
   React.useEffect(() => {
     const ids = empresas.map((empresa) => empresa.id)
-    if (ids.length === 0) { setIdsContactaveis(new Set()); return }
+    if (ids.length === 0) return
     let activo = true
     verificarPodeContactarEmpresas(ids).then((resultado) => {
       if (activo) setIdsContactaveis(new Set(resultado.success ? resultado.ids : []))
@@ -74,6 +75,7 @@ function EmpresasContent() {
   return (
     <main className="min-h-[60vh] bg-cream px-4 py-8 dark:bg-navy-dark sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl space-y-6">
+        <EditorialPageImage src="/images/home/empresas.webp" alt="Pequeno empresário à entrada da sua loja" />
         <PageHeader title="Empresas" description="Encontre empresas perto de si." />
         <SearchBar action="/empresas" defaultValue={nome} placeholder="Pesquisar empresa" onSearch={setNome} />
         <FilterChips value={setor} onChange={setSetor} items={[{label:"Todas",value:""}, ...setores.map((s)=>({label:s,value:s}))]} />
