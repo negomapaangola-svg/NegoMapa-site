@@ -117,7 +117,7 @@ export async function obterDistanciasAproximadas(tipo: TipoResultado, idsRecebid
 
     const origemPorId = new Map<string, string>()
     let idsPrestadores = ids
-    let tipoPrestador: TipoPrestador = tipo === 'empresa' || tipo === 'produto' ? 'empresa' : 'profissional'
+    const tipoPrestador: TipoPrestador = tipo === 'empresa' || tipo === 'produto' ? 'empresa' : 'profissional'
 
     if (tipo === 'servico') {
       const { data } = await ctx.admin.from('servicos').select('id,profissional_id')
