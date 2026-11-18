@@ -67,9 +67,10 @@ export async function listarConversas(): Promise<Resultado<ConversaResumo[]>> {
   ])
   const idsProfissional = new Set(perfilConta?.account_type === 'profissional' && perfilConta.is_active === true && perfil?.estado === 'aprovado' && perfil?.id ? [perfil.id] : [])
   const idsEmpresa = new Set(perfilConta?.account_type === 'empresa' && perfilConta.is_active === true ? (empresas ?? []).filter((e) => e.is_approved === true && e.estado === 'aprovado').map((e) => e.id) : [])
+  // O papel é determinado exclusivamente por profiles.account_type.
+  // Registos empresariais/profissionais legados (pendentes ou suspensos) não retiram
+  // capacidades de cliente quando a conta continua explicitamente classificada como cliente.
   const clienteActivo = perfilConta?.account_type === 'cliente' && perfilConta.is_active === true
-    && perfil?.estado !== 'aprovado'
-    && !(empresas ?? []).some((e) => e.is_approved === true && (e.estado === 'aprovado' || e.estado === null))
 
   // A política RLS também permite leitura administrativa. A interface de mensagens,
   // porém, só deve devolver conversas em que a sessão actual é participante efectivo.
@@ -230,21 +231,14 @@ export async function enviarMensagem(conversaId: string, conteudo: string): Prom
 
 async function contaClienteActiva(supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>, userId: string): Promise<boolean> {
   if (await isAdmin()) return false
-  const [perfilResult, profissionalResult, empresasResult] = await Promise.all([
-    supabase.from('profiles').select('account_type,is_active').eq('id', userId).maybeSingle(),
-    supabase.from('profissionais').select('estado').eq('user_id', userId).maybeSingle(),
-    supabase.from('companies').select('is_approved,estado').eq('user_id', userId),
-  ])
-  const perfil = perfilResult.data
-  const temProfissionalAprovado = profissionalResult.data?.estado === 'aprovado'
-  const temEmpresaAprovada = (empresasResult.data ?? []).some(
-    (empresa) => empresa.is_approved === true && (empresa.estado === 'aprovado' || empresa.estado === null)
-  )
-  // Registos legados pendentes/suspensos não retiram capacidades de cliente;
-  // uma identidade empresarial/profissional efectivamente aprovada continua separada.
-  return !perfilResult.error && !profissionalResult.error && !empresasResult.error
-    && perfil?.account_type === 'cliente' && perfil.is_active === true
-    && !temProfissionalAprovado && !temEmpresaAprovada
+  // O papel e a activação são a fonte de verdade. Não consultar registos de negócio
+  // legados aqui: RLS também autoriza o cliente com base nestes mesmos campos.
+  const { data: perfil, error } = await supabase
+    .from('profiles')
+    .select('account_type,is_active')
+    .eq('id', userId)
+    .maybeSingle()
+  return !error && perfil?.account_type === 'cliente' && perfil.is_active === true
 }
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
