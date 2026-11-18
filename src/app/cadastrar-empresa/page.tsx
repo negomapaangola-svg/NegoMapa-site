@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import type { User } from "@supabase/supabase-js"
 import Link from "next/link"
 import { createBrowserSupabaseClient } from "@/lib/supabase-browser"
 import { Button } from "@/components/ui/Button"
@@ -38,8 +39,8 @@ function extensaoDe(file: File): string {
 
 export default function CadastrarEmpresaPage() {
   const [loading, setLoading] = React.useState(true)
-  const [user, setUser] = React.useState<any>(null)
-  const [existingCompany, setExistingCompany] = React.useState<any>(null)
+  const [user, setUser] = React.useState<User | null>(null)
+  const [existingCompany, setExistingCompany] = React.useState<{ id: string; name: string; slug: string; is_approved: boolean | null } | null>(null)
   const [acessoBloqueado, setAcessoBloqueado] = React.useState<string | null>(null)
   const [categorias, setCategorias] = React.useState<CategoriaOpcao[]>([])
   const [submitting, setSubmitting] = React.useState(false)
