@@ -105,13 +105,13 @@ Depois do `ROLLBACK`, consulta de confirmação devolveu 0 utilizadores, 0 empre
 
 ### Limite do teste funcional no preview
 
-- Preview Vercel READY e associado ao commit indicado na secção de entrega.
+- A validação de browser continua pendente: esta sessão não dispõe de navegador interactivo com sessões autenticadas TESTE. O SHA e o preview READY mais recentes são registados no PR #39; previews de commits anteriores não são usados como evidência.
 - O ambiente desta sessão não disponibiliza um navegador interactivo autenticado para clicar nos formulários, iniciar sessão e capturar screenshots.
-- A tentativa de abrir a URL pelo leitor web devolveu erro interno de acesso; não foi possível fazer teste visual/end-to-end do formulário, notificações, mensagens de loading ou estados vazios.
+- A tentativa de abrir a URL pelo leitor web devolveu erro interno de acesso e não existe nesta sessão uma ferramenta de browser interactivo; não foi possível executar testes E2E autenticados em telemóvel e computador, nem capturar screenshots de formulários, notificações, loading, sucesso, erro ou estados vazios.
 - Os controlos acima são testes SQL/RLS com identidades autenticadas simuladas na transacção, não devem ser confundidos com teste de interface no browser.
 - Mensagens e estados vazios foram revistos estaticamente no código e validados por lint/build/TypeScript, mas não por screenshots ou interacção real.
 
-## Eliminação de vagas — decisão recomendada
+## Eliminação de vagas — decisão aplicada
 
 **Decisão implementada: opção A — o proprietário não pode eliminar vagas; o encerramento (`encerrada_em`) é o mecanismo normal de retirada.**
 
@@ -137,7 +137,7 @@ A tabela `notificacoes` mantém `referencia_id` polimórfica, sem FK genérica. 
 ## CI, preview e vulnerabilidades
 
 - GitHub Actions run #127: lint dos ficheiros alterados, `npm run build` e `npx tsc --noEmit` passaram em Node 24.
-- A Vercel aceitou novo deployment após o limite diário ter sido restabelecido; deployment READY associado ao commit documentado abaixo.
+- A Vercel concluiu o build do commit final da revisão com estado READY; o SHA e URL exactos estão registados no PR #39. O build confirmou compilação Next.js e TypeScript.
 - `npm ci` identificou 20 vulnerabilidades no conjunto de dependências: 6 moderadas, 13 altas e 1 crítica. Não foi executado `npm audit fix`, por estar fora do âmbito.
 - Build Vercel reportou aviso de ESLint 9.39.5 deprecated, aviso de configuração npm `cache-dir` desconhecida e install script pendente de aprovação para `unrs-resolver@1.12.2`. Não foram alteradas dependências.
 
