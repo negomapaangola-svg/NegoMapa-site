@@ -50,10 +50,10 @@ async function validarClienteSemPerfil(supabase: Awaited<ReturnType<typeof creat
 export async function verificarPodeCriarEmpresa() {
   const supabase = await createSupabaseServerClient()
   const { data: { user }, error } = await supabase.auth.getUser()
-  if (error || !user) return { success: false, error: 'Inicie sessão para continuar.' }
+  if (error || !user) return { success: false, error: 'Inicie sessão para continuar.', isAdmin: false }
   if (await isAdmin()) return { success: false, error: 'Contas administrativas não podem utilizar o cadastro empresarial.', isAdmin: true }
   const validacao = await validarClienteSemPerfil(supabase, user.id)
-  return validacao.ok ? { success: true } : { success: false, error: validacao.message }
+  return validacao.ok ? { success: true, isAdmin: false } : { success: false, error: validacao.message, isAdmin: false }
 }
 
 export async function criarEmpresaPendente(dados: DadosEmpresaPendente) {
