@@ -35,7 +35,7 @@ export function DescobrirPage({ params, categorias, municipios, totalPaginas, se
   return (
     <section className="bg-cream py-10 dark:bg-navy-dark lg:py-16" aria-labelledby="descobrir-titulo">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <EditorialPageImage src={ehProdutos ? "/images/home/produtos.webp" : "/images/home/servicos.webp"} alt={ehProdutos ? "Produtos de empresas angolanas" : "Profissional angolano a prestar um serviço"} />
+        <EditorialPageImage src={ehProdutos ? "/images/home/produtos.webp" : "/images/home/servicos.webp"} alt={ehProdutos ? "Produtos disponíveis numa empresa angolana" : "Técnico angolano a trabalhar numa instalação eléctrica"} />
         <PageHeader title="Descobrir" description={ehProdutos
           ? 'Encontre produtos de empresas angolanas por pesquisa, categoria, província, preço e estado.'
           : 'Encontre serviços em Angola por pesquisa, categoria, província, preço e avaliação.'} />
