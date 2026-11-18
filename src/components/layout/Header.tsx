@@ -33,7 +33,7 @@ export const Header = forwardRef<HTMLElement, { className?: string; hideGlobalSe
     }, [])
 
     useEffect(() => {
-      const role = contexto?.administrador ? 'admin' : contexto?.accountType ?? null
+      const role = contexto?.administrador ? 'admin' : contexto?.empresa ? 'empresa' : contexto?.profissional ? 'profissional' : contexto?.accountType ?? null
       if (role) document.documentElement.dataset.accountRole = role
       else delete document.documentElement.dataset.accountRole
       return () => { delete document.documentElement.dataset.accountRole }
