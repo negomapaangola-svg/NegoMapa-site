@@ -418,4 +418,21 @@ create policy active_role_message_access on public.mensagens
     )
   );
 
+
+drop policy if exists admin_cannot_insert_avaliacoes on public.avaliacoes;
+create policy admin_cannot_insert_avaliacoes on public.avaliacoes
+  as restrictive for insert to authenticated
+  with check (not (select public.is_admin()));
+
+drop policy if exists admin_cannot_update_own_avaliacoes on public.avaliacoes;
+create policy admin_cannot_update_own_avaliacoes on public.avaliacoes
+  as restrictive for update to authenticated
+  using (not (select public.is_admin()) or user_id is distinct from (select auth.uid()))
+  with check (not (select public.is_admin()) or user_id is distinct from (select auth.uid()));
+
+drop policy if exists admin_cannot_delete_own_avaliacoes on public.avaliacoes;
+create policy admin_cannot_delete_own_avaliacoes on public.avaliacoes
+  as restrictive for delete to authenticated
+  using (not (select public.is_admin()) or user_id is distinct from (select auth.uid()));
+
 commit;
