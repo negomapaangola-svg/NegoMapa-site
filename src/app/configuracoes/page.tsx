@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { getUser } from '@/lib/auth'
+import { getUser, isAdmin } from '@/lib/auth'
 import { MainLayout } from '@/components/layout/MainLayout'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card'
 export const metadata: Metadata = { title: 'Configurações | NegóMapa', description: 'Gira as preferências, notificações e privacidade da sua conta NegóMapa.', robots: { index: false, follow: false } }
@@ -12,6 +12,7 @@ const itens = [
  {id:'privacidade',titulo:'Privacidade',descricao:'Consulte a política de privacidade e saiba como os dados são tratados.',href:'/privacidade',acao:'Consultar política'},
 ]
 export default async function ConfiguracoesPage() {
+ if (await isAdmin()) redirect('/admin')
  const user = await getUser()
  if (!user) redirect('/login?redirectTo=/configuracoes')
  return <MainLayout><main id="main-content" className="min-h-[60vh] bg-cream px-4 py-10 dark:bg-navy-dark sm:py-14">
