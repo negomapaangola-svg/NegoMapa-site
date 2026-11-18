@@ -156,6 +156,32 @@ create policy active_role_message_access on public.mensagens
 
 -- Os SELECTs usados pelo contexto e pelo perfil precisam de privilégio SQL;
 -- as policies RLS existentes continuam a limitar linhas públicas aprovadas e registos próprios.
+
+-- Clientes activos mantêm as preferências mesmo que existam registos de negócio legados.
+-- A classificação account_type continua a ser a fonte de verdade do papel.
+drop policy if exists client_only_preferencias_cliente on public.preferencias_cliente;
+create policy client_only_preferencias_cliente on public.preferencias_cliente
+  as restrictive for all to authenticated
+  using (
+    not (select public.is_admin())
+    and exists (
+      select 1 from public.profiles p
+      where p.id = (select auth.uid())
+        and p.account_type = 'cliente'
+        and p.is_active is true
+    )
+  )
+  with check (
+    not (select public.is_admin())
+    and user_id = (select auth.uid())
+    and exists (
+      select 1 from public.profiles p
+      where p.id = (select auth.uid())
+        and p.account_type = 'cliente'
+        and p.is_active is true
+    )
+  );
+
 grant select on public.companies, public.profissionais to authenticated;
 
 commit;
