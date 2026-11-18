@@ -34,12 +34,13 @@ export async function obterContextoUtilizador(): Promise<ContextoUtilizador> {
   return {
     autenticado: true,
     userId: user.id,
-    profissional: Boolean(profissional),
-    estadoProfissional: profissional?.estado ?? null,
-    empresa: empresas.length > 0,
-    empresaAprovada: empresas.some((empresa) => empresa.is_approved === true),
+    // O papel administrativo é mutuamente exclusivo, conforme a matriz da Fase 6.
+    profissional: administrador ? false : Boolean(profissional),
+    estadoProfissional: administrador ? null : profissional?.estado ?? null,
+    empresa: administrador ? false : empresas.length > 0,
+    empresaAprovada: administrador ? false : empresas.some((empresa) => empresa.is_approved === true),
     administrador,
-    accountType: perfilResult.data?.account_type ?? null,
+    accountType: administrador ? null : perfilResult.data?.account_type ?? null,
     contaAtiva: perfilResult.data?.is_active === true,
   }
 }
