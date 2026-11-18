@@ -10,6 +10,8 @@ Esta matriz define as capacidades de conta autenticada. As políticas RLS e as S
 | Publicar produtos | Não | Não | Não | Sim, conforme aprovação |
 | Publicar vagas | Não | Não | Não | Sim, após aprovação |
 | Candidatar-se a vagas | Não | Sim | Não | Não |
+| Criar pedidos de serviço | Não | Sim | Não | Não |
+| Iniciar conversas como cliente | Não | Sim | Não | Não |
 | Gerir candidaturas recebidas | Não | Não | Não | Sim, apenas nas suas vagas |
 | Editar dados pessoais da própria conta | Apenas dados administrativos permitidos | Sim | Sim | Sim |
 
@@ -19,6 +21,9 @@ Esta matriz define as capacidades de conta autenticada. As políticas RLS e as S
 - Um utilizador em admin_users não pode receber account_type de cliente, profissional ou empresa.
 - Políticas RLS restritivas impedem INSERT administrativo em empresas, profissionais, serviços, produtos e vagas.
 - A candidatura exige papel cliente activo e rejeita explicitamente administradores, profissionais e empresas.
+- Pedidos de serviço e início de conversas como cliente exigem cliente activo sem perfil empresarial/profissional associado.
+- Administradores não podem operar registos empresariais/profissionais legados próprios; continuam a poder moderar registos de terceiros.
+- O menu autenticado oculta perfil, candidaturas, pedidos e conversas para admin; as rotas e Server Actions repetem as verificações.
 
 ## Plano de validação
 
@@ -26,6 +31,8 @@ Esta matriz define as capacidades de conta autenticada. As políticas RLS e as S
 |---|---|---|---|---|
 | Inserir empresa/profissional/serviço/produto/vaga | Rejeitado | Rejeitado para papel incompatível | Só serviço próprio | Só conteúdo empresarial próprio |
 | Inserir candidatura | Rejeitado | Permitido para vaga disponível | Rejeitado | Rejeitado |
+| Criar pedido de serviço | Rejeitado | Permitido | Rejeitado | Rejeitado |
+| Iniciar conversa como cliente | Rejeitado | Permitido para destino elegível | Rejeitado | Rejeitado |
 | Aceder a acções administrativas | Permitido | Rejeitado | Rejeitado | Rejeitado |
 
 ## Reversão
