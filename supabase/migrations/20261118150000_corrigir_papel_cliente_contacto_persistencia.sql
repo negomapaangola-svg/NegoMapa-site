@@ -12,6 +12,19 @@ create policy client_only_insert_conversas on public.conversas
       where p.id = (select auth.uid())
         and p.account_type = 'cliente'
         and p.is_active is true
+    and not exists (
+      select 1 from public.profissionais pr
+      where pr.user_id = (select auth.uid())
+        and pr.estado = 'aprovado'
+        and negomapa_private.is_account_active(pr.user_id)
+    )
+    and not exists (
+      select 1 from public.companies c
+      where c.user_id = (select auth.uid())
+        and c.is_approved is true
+        and coalesce(c.estado, 'aprovado') = 'aprovado'
+        and negomapa_private.is_account_active(c.user_id)
+    )
     )
     and not (select public.is_admin())
   );
@@ -29,6 +42,19 @@ create policy active_role_conversation_access on public.conversas
           where p.id = (select auth.uid())
             and p.account_type = 'cliente'
             and p.is_active is true
+        and not exists (
+          select 1 from public.profissionais pr
+          where pr.user_id = (select auth.uid())
+            and pr.estado = 'aprovado'
+            and negomapa_private.is_account_active(pr.user_id)
+        )
+        and not exists (
+          select 1 from public.companies c
+          where c.user_id = (select auth.uid())
+            and c.is_approved is true
+            and coalesce(c.estado, 'aprovado') = 'aprovado'
+            and negomapa_private.is_account_active(c.user_id)
+        )
         )
       )
       or
@@ -74,6 +100,19 @@ create policy active_role_conversation_access on public.conversas
       where p.id = (select auth.uid())
         and p.account_type = 'cliente'
         and p.is_active is true
+    and not exists (
+      select 1 from public.profissionais pr
+      where pr.user_id = (select auth.uid())
+        and pr.estado = 'aprovado'
+        and negomapa_private.is_account_active(pr.user_id)
+    )
+    and not exists (
+      select 1 from public.companies c
+      where c.user_id = (select auth.uid())
+        and c.is_approved is true
+        and coalesce(c.estado, 'aprovado') = 'aprovado'
+        and negomapa_private.is_account_active(c.user_id)
+    )
     )
   );
 
@@ -93,6 +132,19 @@ create policy active_role_message_access on public.mensagens
               where p.id = (select auth.uid())
                 and p.account_type = 'cliente'
                 and p.is_active is true
+            and not exists (
+              select 1 from public.profissionais pr
+              where pr.user_id = (select auth.uid())
+                and pr.estado = 'aprovado'
+                and negomapa_private.is_account_active(pr.user_id)
+            )
+            and not exists (
+              select 1 from public.companies c
+              where c.user_id = (select auth.uid())
+                and c.is_approved is true
+                and coalesce(c.estado, 'aprovado') = 'aprovado'
+                and negomapa_private.is_account_active(c.user_id)
+            )
             )
           )
           or
@@ -144,6 +196,19 @@ create policy active_role_message_access on public.mensagens
               where p.id = (select auth.uid())
                 and p.account_type = 'cliente'
                 and p.is_active is true
+            and not exists (
+              select 1 from public.profissionais pr
+              where pr.user_id = (select auth.uid())
+                and pr.estado = 'aprovado'
+                and negomapa_private.is_account_active(pr.user_id)
+            )
+            and not exists (
+              select 1 from public.companies c
+              where c.user_id = (select auth.uid())
+                and c.is_approved is true
+                and coalesce(c.estado, 'aprovado') = 'aprovado'
+                and negomapa_private.is_account_active(c.user_id)
+            )
             )
           )
           or
