@@ -57,7 +57,7 @@ function EmpresasContent() {
 
   React.useEffect(() => {
     const ids = empresas.map((empresa) => empresa.id)
-    if (ids.length === 0) { setIdsContactaveis(new Set()); return }
+    if (ids.length === 0) return
     let activo = true
     verificarPodeContactarEmpresas(ids).then((resultado) => {
       if (activo) setIdsContactaveis(new Set(resultado.success ? resultado.ids : []))
