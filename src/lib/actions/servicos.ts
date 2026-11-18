@@ -121,6 +121,7 @@ export async function createProfile(formData: ProfileFormData): Promise<ActionRe
   if (authError || !user) {
     return { success: false, error: 'Utilizador não autenticado' }
   }
+  if (await isAdmin()) return { success: false, error: 'Contas administrativas não podem criar perfis profissionais.' }
 
   // Impede criação profissional por contas de empresa/profissional e por clientes
   // que já tenham escolhido uma das duas modalidades.
@@ -186,6 +187,7 @@ export async function createProfile(formData: ProfileFormData): Promise<ActionRe
 }
 
 export async function updateProfile(formData: ProfileFormData): Promise<ActionResult> {
+  if (await isAdmin()) return { success: false, error: 'Contas administrativas não podem gerir perfis profissionais.' }
   const supabase = await createSupabaseServerClient()
 
   const { data: { user }, error: authError } = await supabase.auth.getUser()
