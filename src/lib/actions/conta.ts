@@ -104,10 +104,10 @@ export async function getContaSnapshot(): Promise<ContaSnapshot | null> {
   }
   return {
     user: { id: user.id, email: user.email ?? '' },
-    profile,
-    professional: professionalResult.data ?? null,
-    company: companyResult.data ?? null,
-    details: detailsResult.data ?? {},
+    profile: profile as ContaProfile,
+    professional: (professionalResult.data as ContaProfessional | null) ?? null,
+    company: (companyResult.data as ContaCompany | null) ?? null,
+    details: (detailsResult.data as ContaDetails | null) ?? {},
     accountType,
   }
 }
