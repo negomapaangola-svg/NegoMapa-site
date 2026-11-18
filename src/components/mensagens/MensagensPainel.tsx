@@ -90,9 +90,12 @@ export function MensagensPainel({ conversas: conversasIniciais, userId, basePath
 
   React.useEffect(() => {
     if (!selecionada) return
-    carregar(selecionada)
+    const inicial = window.setTimeout(() => { void carregar(selecionada) }, 0)
     const intervalo = window.setInterval(() => carregar(selecionada), INTERVALO_ATUALIZACAO_MS)
-    return () => window.clearInterval(intervalo)
+    return () => {
+      window.clearTimeout(inicial)
+      window.clearInterval(intervalo)
+    }
   }, [selecionada, carregar])
 
   React.useEffect(() => {
