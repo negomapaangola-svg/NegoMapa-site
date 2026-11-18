@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
+import { isAdmin } from '@/lib/auth'
 
 export type EstadoCandidatura = 'enviada' | 'vista' | 'em_analise' | 'aceite' | 'rejeitada' | 'arquivada'
 
@@ -194,6 +195,7 @@ export async function criarCandidatura(vagaId: string, formData: FormData): Prom
 }
 
 export async function listarCandidaturasDaEmpresa(empresaActivaId?: string): Promise<Resultado<CandidaturaEmpresa[]>> {
+  if (await isAdmin()) return { success: false, error: 'Contas administrativas não podem utilizar a área empresarial.' }
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Sessão expirada. Inicie sessão novamente.' }
@@ -271,6 +273,7 @@ export async function atualizarEstadoCandidatura(
   estado: EstadoCandidatura,
   empresaActivaId?: string
 ): Promise<{ success: boolean; error?: string }> {
+  if (await isAdmin()) return { success: false, error: 'Contas administrativas não podem gerir candidaturas empresariais.' }
   if (!UUID_REGEX.test(candidaturaId)) return { success: false, error: 'Candidatura inválida.' }
 
   const supabase = await createSupabaseServerClient()
