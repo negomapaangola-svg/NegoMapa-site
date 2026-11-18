@@ -1,90 +1,172 @@
-# Fase 8 — Auditoria de eliminação autónoma de conta
+# Fase 8 — auditoria de dados, retenção e plano de eliminação autónoma
 
-Estado: **bloqueada para implementação destrutiva**. Esta auditoria é apenas documental; nenhuma conta, linha de negócio, ficheiro Storage ou migração foi alterada.
+Estado: **auditoria de schema actualizada; implementação e validação funcional ainda não iniciadas**. Esta revisão foi feita por leitura do código, catálogo PostgreSQL, políticas RLS/Storage e migrações. Não foram alterados dados, buckets, políticas ou migrações na base de produção. Não foram criadas contas TESTE.
 
-## Evidência consultada
+## 1. Evidência e limites da observação
 
-- Repositório: `negomapaangola-svg/NegoMapa-site`, branch criada a partir de `main`.
-- Supabase: projecto `sjelyaewgcmmtnudcgem`, PostgreSQL 17.6.1.
-- Tabelas públicas: 24 (inventário abaixo); todas as tabelas públicas consultadas têm RLS activo.
-- A função existente `public.admin_deactivate_account(uuid,text,text,boolean)` apenas desactiva um perfil, exige admin, recusa auto-desactivação e não elimina Auth nem Storage.
-- A configuração actual `/conta/configuracoes` oferece apenas um pedido de eliminação enviado a `admin_messages`; a interface avisa expressamente que não elimina dados nem Auth.
-- Não foi encontrada função de auto-eliminação existente.
-- Buckets Storage consultados: todos privados.
+- Repositório: `negomapaangola-svg/NegoMapa-site`, branch `feat/eliminacao-conta`.
+- PR: #38, aberto e em Draft.
+- Supabase consultado em modo de leitura: projecto `sjelyaewgcmmtnudcgem`, PostgreSQL 17.6.1.
+- 24 tabelas no schema `public`; RLS activa nas 24 tabelas consultadas.
+- 12 buckets Storage observados; todos com `public = false`.
+- As políticas actualmente observadas em `storage.objects` dão ownership por prefixo UID a cinco buckets de imagens e a `documentos-privados`; o bucket `produtos` usa o ID da empresa no primeiro segmento do path.
+- Não foi encontrada política de ownership por utilizador para `company-files`, `empresas`, `profissionais`, `servicos` e `vagas`. Não inferir propriedade pelo nome do ficheiro ou por URL.
+- O código actual em `src/lib/actions/conta.ts` apenas insere um pedido em `admin_messages`, depois de o utilizador escrever ELIMINAR. Não confirma a senha, não apaga Auth, SQL ou Storage.
+- A função `admin_deactivate_account` é administrativa e desactiva estado; não é um fluxo de auto-eliminação.
+- As migrações administrativas existentes `20261114190000` e `20261115080000` não constituem a implementação de auto-eliminação.
+- A migração histórica `20261009_create_storage_buckets.sql` declara expressamente que as suas políticas e buckets não reflectem o estado actual de produção; não deve ser reutilizada para inferir propriedade nem reaplicada.
 
-## Inventário de relações e tratamento proposto
+Esta auditoria descreve metadados e estruturas, não consulta conteúdo pessoal de utilizadores. As regras de retenção abaixo são propostas de tratamento, não parecer jurídico.
 
-| Área/tabela | Relações observadas | Tratamento proposto (não executado) |
+## 2. Percurso de cada categoria de dados
+
+| Tabela / fonte | Dados e percurso | Referências de terceiros / dependências | Tratamento proposto |
+|---|---|---|---|
+| `auth.users` | Email, telefone, credenciais geridas por Auth, metadados e sessões; identidade central de autenticação | Referenciada por perfis, candidaturas, mensagens, pedidos, denúncias, avaliações e comunicações | Revogar sessões e bloquear operações no início; eliminar Auth apenas no fim, depois de SQL e Storage concluídos. Sem hard delete de Auth enquanto existirem FKs não tratadas. |
+| `profiles` | Nome, telefone, WhatsApp, avatar, localização, coordenadas aproximadas e consentimento | PK `id` ligada a Auth; `preferencias_cliente` depende do perfil | Apagar PII e perfil na fase SQL final; preservar apenas identificador aleatório da operação na auditoria. Não manter motivo livre com PII. |
+| `conta_detalhes` | Formação, preferências, disponibilidade e dados de empresa | `user_id` ligado a Auth | Eliminar imediatamente após confirmação; não é histórico partilhado. |
+| `preferencias_cliente`, `preferencias_notificacao` | Preferências de categorias, canais e notificações | Referências ao utilizador/perfil e categorias globais | Eliminar preferências do titular; nunca apagar categorias. |
+| `notificacoes` | Título, corpo, canal, referência e estado de leitura | `user_id` do titular; referência pode apontar para conteúdo de terceiros | Eliminar notificações recebidas pelo titular. Rever notificações emitidas a terceiros que incluam PII do titular; limpar apenas os campos pessoais necessários. |
+| `profissionais` | Nome, contactos, bio, localização, BI, número de BI, avatar, portfólio, disponibilidade, categoria | Serviços, pedidos, conversas, avaliações e denúncias apontam para o profissional; categoria é referência global | Retirar perfil público e apagar campos pessoais/conteúdo próprio. Se pedidos ou litígios dependerem do ID, preservar registo mínimo anonimizado até decisão de retenção. Não apagar categoria. |
+| `companies` | Nome, email, contactos, NIF, localização, website, descrição, logótipo, documentos e dados de legalização | Serviços, produtos, vagas, conversas, avaliações e denúncias apontam para empresa | Despublicar já; apagar perfil comercial e imagens próprias elegíveis. NIF, documentos fiscais/legais e transacções dependem de prazo legal por aprovar; não eliminar até decisão. |
+| `servicos` | Título, descrição, preço, WhatsApp, localização e imagens/links próprios | Pedidos de serviço têm FK RESTRICT; avaliações/denúncias podem referenciar o serviço; empresa tem FK RESTRICT; categoria tem RESTRICT | Despublicar imediatamente. Apagar dados publicitários próprios apenas quando não houver pedido, disputa ou obrigação de retenção; senão anonimizar/desvincular com regra explícita. |
+| `produtos`, `produto_imagens` | Anúncios, preço, descrição, imagens, URLs e metadados | Produto aponta para empresa e categoria; imagens fazem CASCADE pelo produto | Despublicar imediatamente; remover imagens/ficheiros próprios após confirmar path e ausência de retenção; manter categoria. Dados de transacção/garantia, se existirem noutros sistemas, exigem prazo aprovado. |
+| `vagas` | Anúncio, requisitos, contactos e localização | Candidaturas referenciam vaga com CASCADE | Despublicar imediatamente. Não apagar vaga se isso apagar candidaturas de candidatos; preservar registo mínimo ou anonimizar a entidade empregadora após política de recrutamento aprovada. |
+| `candidaturas` | Nome do candidato, mensagem, CV, contacto, estado e data | Candidato é titular em `user_id`; empresa e outros candidatos são terceiros via vaga | Se a conta eliminada é candidata: remover CV/contactos/nome e anonimizar o candidato, salvo prazo legal/contencioso aprovado. Se a conta eliminada é empresa: preservar candidaturas e dados dos candidatos; anonimizar apenas referências à empresa quando permitido. |
+| `pedidos_servico` | Cliente, profissional, serviço, descrição, contacto, orçamento e data pretendida | Cliente é terceiro do profissional; FKs para profissional e serviço usam RESTRICT | Preservar o pedido do outro participante. Remover contacto e identificadores directos do titular; manter apenas dados mínimos necessários durante prazo aprovado. Não eliminar automaticamente pedido nem serviço referenciado. |
+| `conversas` | Relação entre cliente, profissional e empresa | Conversa é partilhada por vários participantes; mensagens dependem dela por CASCADE | Preservar conversa para participantes restantes. Anonimizar a participação do titular; não apagar a conversa por inteiro. |
+| `mensagens` | Texto, remetente, timestamps e leitura | Conversa partilhada e remetentes distintos | Preservar mensagens de terceiros. Para mensagens do titular, anonimizar remetente e remover PII directa do conteúdo apenas com regra de retenção/necessidade; mensagens não devem desaparecer por CASCADE ao apagar uma conversa. |
+| `avaliacoes` | Autor, nota, comentário e alvo (profissional, empresa, serviço ou vaga) | Autor e entidade avaliada podem ser pessoas/empresas diferentes; FKs de alvo usam CASCADE | Se o titular é autor: remover autoria identificável e dados pessoais do comentário, preservando nota/conteúdo não identificável apenas se legítimo. Se o titular é avaliado: não apagar avaliação de terceiro; preservar registo ou desassociar alvo com política aprovada. |
+| `denuncias` | Denunciante, motivo, detalhes, alvo, estado e resolução | Denunciante, denunciado e moderador são partes diferentes | Preservar evidência de terceiros e de moderação; pseudonimizar denunciante/titular. Conteúdo, anexos e prazo dependem de obrigação de investigação/defesa e decisão jurídica. |
+| `admin_messages` | Remetente, destinatário, assunto, corpo e encadeamento | Conversa com administração pode conter dados do titular e de terceiros; `parent_id` usa SET NULL | Preservar a cadeia necessária para suporte/defesa; anonimizar remetente e remover PII não necessária. Prazo de retenção por decidir. Não apagar mensagens de terceiros. |
+| `admin_account_deletion_audit`, `admin_users`, `admin_acessos_bi` | Auditoria administrativa e acesso a documentos de identificação | Dados administrativos e trilhos de acesso | Não eliminar por auto-serviço. A auditoria actual contém IDs e motivo; não a reutilizar para auto-eliminação sem revisão de minimização. Contas administrativas ficam fora do fluxo. |
+| `contact_submissions` | Nome, email, telefone e mensagem de formulários de contacto | Não há FK de propriedade para Auth; não se pode associar com segurança por email | Não apagar por heurística. Política própria de retenção e processo de pedido separado. |
+| `categorias`, `modelos_mensagem` | Dados de referência e templates globais | Partilhados por toda a plataforma | Nunca apagar na eliminação individual. |
+
+## 3. Foreign keys observadas e impacto
+
+As regras efectivas observadas no catálogo PostgreSQL incluem:
+
+- **CASCADE:** `companies → produtos`, `companies → vagas`, `companies/profissionais → conversas`, `conversas → mensagens`, `profissionais → servicos`, alvos de `avaliacoes` e `denuncias`, `vagas → candidaturas`, `produtos → produto_imagens`, `profiles → preferencias_cliente`.
+- **RESTRICT:** `pedidos_servico → profissionais`, `pedidos_servico → servicos`, `servicos → companies`, `servicos → categorias`.
+- **NO ACTION:** `produtos → categorias`.
+- **SET NULL:** `profissionais → categorias`, `admin_messages.parent_id → admin_messages.id`.
+
+A regra CASCADE é apenas comportamento de integridade referencial e não autorização para apagar histórico de terceiros. O fluxo deve tratar explicitamente as relações antes de eliminar os registos-pai. Não alterar as FKs para CASCADE nem executar DELETE em cadeia.
+
+## 4. Storage — buckets, ownership e percurso
+
+Todos os 12 buckets observados são privados:
+
+| Bucket | Ownership demonstrado pelas políticas actuais | Dados / decisão |
 |---|---|---|
-| `profiles` | PK `id` também identifica Auth; `preferencias_cliente.user_id` CASCADE | Remover dados pessoais no final da operação; manter registo mínimo de auditoria sem PII. |
-| `profissionais` | `user_id` Auth; serviços, conversas e avaliações referenciam perfil; categoria SET NULL | Remover perfil público e conteúdo próprio; preservar categorias globais. |
-| `companies` | `user_id` Auth; serviços, produtos, vagas, conversas, avaliações e denúncias dependem da empresa | Retirar conteúdo público e tratar cada relação antes da empresa; não apagar conteúdo com dependências comerciais/legais sem política definida. |
-| `servicos` | Profissional CASCADE; empresa RESTRICT; categoria RESTRICT; pedidos e avaliações dependem do serviço | Retirar publicação; preservar registos de pedidos sujeitos a retenção e desvincular/anonymizar com integridade. |
-| `produtos`, `produto_imagens` | Produto → empresa CASCADE; imagens → produto CASCADE; categoria NO ACTION | Remover imagens e anúncios próprios; não apagar categorias globais. |
-| `vagas`, `candidaturas` | Vaga → empresa CASCADE; candidatura → vaga CASCADE; candidatura contém user_id, nome, mensagem, CV e contacto | Eliminar/anonymizar candidatura do titular; conservar candidatura de terceiro quando a conta eliminada for a empresa, conforme política de recrutamento e retenção. |
-| `pedidos_servico` | cliente_id, profissional_id e servico_id; profissional/serviço RESTRICT | Não apagar automaticamente. Manter histórico mínimo ou anonimizar campos pessoais após definir prazo e obrigações. |
-| `conversas`, `mensagens` | Conversa liga cliente, profissional e empresa; mensagens ligam conversa e remetente; mensagens CASCADE pela conversa | Não apagar a conversa partilhada inteira por causa de um participante. Anonimizar o remetente e preservar conteúdo necessário/legítimo ou apagar apenas após regra de retenção aprovada. |
-| `avaliacoes` | Autor `user_id`; referências a profissional/empresa/serviço/vaga com CASCADE | Preservar avaliação útil de terceiros, removendo identificadores do autor quando permitido; eliminar avaliações que só existam devido a entidade removida se não houver retenção aplicável. |
-| `denuncias` | Autor `user_id`; alvos profissional/empresa/serviço/vaga com CASCADE | Preservar evidência de moderação e auditoria pelo prazo aprovado; pseudonimizar autor, não apagar denúncias de terceiros. |
-| `notificacoes`, `preferencias_notificacao` | `user_id` directo; notificações contêm corpo e referência | Eliminar preferências e notificações do titular; limpar referências pessoais em notificações de terceiros se necessário. |
-| `admin_messages` | remetente, destinatário e parent; comunicação com administração | Preservar trilho de suporte/auditoria pelo prazo aprovado; pseudonimizar autor, sem apagar mensagens recebidas por terceiros. |
-| `admin_account_deletion_audit`, `admin_users`, `admin_acessos_bi` | auditoria administrativa e dados de acesso sensível | Não apagar por auto-serviço. Contas administrativas protegidas; reter trilho mínimo e remover segredos/PII desnecessários segundo política. |
-| `categorias`, `modelos_mensagem` | Dados de referência e templates globais | Não são propriedade do utilizador; nunca apagar durante a eliminação individual. |
-| `contact_submissions` | Formulário geral, sem FK de proprietário observada | Não associar nem apagar por heurística; requer regra própria de retenção. |
-| `conta_detalhes` | `user_id` → Auth CASCADE | Eliminar dados privados do titular. |
+| `clientes-avatars` | Primeiro segmento do path = UID autenticado | Avatar próprio; elegível para remoção depois de confirmar path exacto. |
+| `empresas-logos` | Primeiro segmento do path = UID autenticado | Logótipo próprio; elegível depois de despublicar e confirmar propriedade. |
+| `profissionais-avatars` | Primeiro segmento do path = UID autenticado | Avatar próprio; elegível depois de despublicar e confirmar propriedade. |
+| `profissionais-portfolio` | Primeiro segmento do path = UID autenticado | Portfólio próprio; verificar conteúdo de terceiros antes de remover. |
+| `empresas-portfolio` | Primeiro segmento do path = UID autenticado | Portfólio próprio; verificar conteúdo de terceiros antes de remover. |
+| `documentos-privados` | Primeiro segmento do path = UID autenticado; existe política de leitura administrativa específica | Inclui BI e documentos pessoais/legais. Não apagar documentos sujeitos a retenção ainda não definida. |
+| `produtos` | Primeiro segmento do path = ID da empresa, com propriedade validada por `companies.user_id = auth.uid()` | Imagens de produto; confirmar relação produto/empresa e retenção antes da remoção. |
+| `company-files` | Não foi encontrada política de ownership por utilizador na consulta actual | Bloquear remoção automática até mapear uploads, paths e referências de DB. |
+| `empresas` | Não foi encontrada política de ownership por utilizador na consulta actual | Bloquear remoção automática até mapear uploads, paths e referências de DB. |
+| `profissionais` | Não foi encontrada política de ownership por utilizador na consulta actual | Bloquear remoção automática até mapear uploads, paths e referências de DB. |
+| `servicos` | Não foi encontrada política de ownership por utilizador na consulta actual | Bloquear remoção automática até mapear uploads, paths e referências de DB. |
+| `vagas` | Não foi encontrada política de ownership por utilizador na consulta actual | Bloquear remoção automática até mapear uploads, paths e referências de DB. |
 
-## Foreign keys com regras que impedem CASCADE indiscriminado
+A política antiga em `20261009_create_storage_buckets.sql` descreve buckets públicos e políticas que não correspondem à produção. Não usar esse ficheiro como fonte de verdade. A eliminação Storage futura deve gerar um manifesto exacto `(bucket_id, name, owner_id, referência de DB)`, validar cada objecto contra o titular/entidade própria e remover apenas esses paths. Nunca usar `remove('')`, limpeza recursiva de bucket, prefixo aproximado ou URL pública como prova de propriedade. Os buckets permanecem privados.
 
-- `pedidos_servico.profissional_id → profissionais.id`: RESTRICT.
-- `pedidos_servico.servico_id → servicos.id`: RESTRICT.
-- `servicos.company_id → companies.id`: RESTRICT.
-- `servicos.categoria_id → categorias.id`: RESTRICT.
-- `produtos.categoria_id → categorias.id`: NO ACTION.
-- `admin_messages.parent_id → admin_messages.id`: SET NULL.
-- Existem ainda relações CASCADE em avaliações, candidaturas, conversas, mensagens, denúncias, imagens de produtos e preferências; a regra de FK não determina, por si só, se apagar é juridicamente ou funcionalmente correcto.
+## 5. Separação de tratamento
 
-## Storage — buckets privados observados
+### A. Elegível para eliminação imediata após confirmação/reautenticação
 
-- `company-files`
-- `documentos-privados`
-- `empresas-logos`
-- `profissionais-avatars`
-- `profissionais-portfolio`
-- `profissionais`
-- `empresas`
-- `servicos`
-- `vagas`
-- `produtos`
+- Sessões e refresh tokens do titular; bloquear novas operações e revogar sessões.
+- `conta_detalhes`, `preferencias_cliente`, `preferencias_notificacao` e notificações próprias.
+- Campos de perfil e dados de contacto directos, avatar e dados privados de perfil.
+- Perfil público de profissional/empresa e conteúdo próprio que não tenha dependências, obrigações de retenção ou conteúdo de terceiros.
+- Ficheiros nos buckets com ownership inequivocamente comprovado pelo UID/path e sem referência de retenção.
+- CV, anexos e imagens exclusivamente próprios, apenas após confirmar titularidade e ausência de prazo/contencioso aplicável.
 
-As políticas consultadas usam convenções diferentes: prefixo do UID para alguns ficheiros, ID da empresa para produtos e paths ligados a entidades para outros. Não é seguro remover todos os objectos cujo nome apenas pareça conter um UID. O bucket `documentos-privados` contém documentos de identificação e deve ter tratamento de retenção separado. Nenhum bucket foi tornado público.
+A remoção pública/despublicação deve ocorrer no início do processo; a eliminação física ocorre depois do inventário e dos controlos de integridade.
 
-## Plano de implementação seguro
+### B. Anonimizar, preservando a relação e o histórico de terceiros
 
-1. Aprovar uma matriz de retenção para pedidos, candidaturas, conversas, mensagens, avaliações, denúncias, comunicações administrativas e documentos legais/fiscais.
-2. Criar pedido de eliminação autenticado, com reautenticação recente (palavra-passe ou OTP), confirmação forte e idempotência; a identidade alvo deve vir exclusivamente do JWT validado.
-3. Recusar auto-eliminação de contas administrativas e garantir autorização separada para a operação administrativa.
-4. Fazer inventário transaccional de dependências e marcar a conta como em eliminação, impedindo novas publicações e escritas.
-5. Apagar apenas conteúdo privado elegível e despublicar imediatamente conteúdo público próprio; preservar relações partilhadas e registos sujeitos a retenção mediante pseudonimização.
-6. Remover objectos Storage por lista exacta de paths obtida a partir das tabelas e prefixos de propriedade validados. Não usar remoção recursiva de buckets.
-7. Executar a limpeza SQL em transacção; guardar estado da operação sem PII para retoma idempotente.
-8. Só depois da confirmação de Storage e SQL, eliminar Auth pelo Admin API. Revogar sessões antes e tratar falhas entre etapas com uma fila de retoma e estado observável.
-9. Guardar auditoria mínima (ID aleatório de operação, timestamps, contagens e resultado), sem cópia de dados pessoais eliminados.
-10. Testar com utilizadores, relações e ficheiros sintéticos num projecto/branch isolado; validar que um segundo utilizador e todos os dados partilhados permanecem intactos.
+- Participante em `conversas` e autor em `mensagens`.
+- Autor em `avaliacoes`, mantendo apenas nota/comentário não identificável se permitido.
+- Autor/denunciante em `denuncias`, sem apagar evidência de terceiros ou moderação.
+- Candidato em `candidaturas`, quando a retenção e defesa de terceiros o justifiquem.
+- Participante/autor em `pedidos_servico` e `admin_messages`.
+- Referências a uma empresa/profissional eliminados em registos históricos de terceiros, sem remover candidaturas, pedidos ou mensagens dos restantes participantes.
 
-## Reversão e falhas parciais
+A anonimização deve remover identificadores directos e indirectos, conteúdo pessoal em texto livre e caminhos de ficheiros. Substituir um nome por hash determinístico não é anonimização; no máximo é pseudonimização.
 
-- Antes da eliminação Auth: a operação deve poder ser retomada; não reactivar automaticamente a conta depois de apagar ficheiros.
-- Após limpeza SQL mas antes de Auth: manter estado de eliminação pendente e repetir apenas a fase Auth.
-- Após Auth mas com Storage pendente: executar limpeza Storage idempotente por lista persistida de paths sem restaurar a conta.
-- A eliminação Auth é irreversível pelo fluxo normal; a recuperação depende de backup/restauro administrativo e não deve ser prometida ao utilizador.
-- A migração futura deve ter rollback aditivo (revogar nova função/endpoint e remover objectos de configuração), sem recriar os dados eliminados.
+### C. Dependente de prazo legal/operacional ainda por decidir
 
-## Bloqueios concretos antes de uma eliminação real
+Não executar eliminação física nem fixar prazos até decisão documentada, idealmente validada por assessoria jurídica em Angola:
 
-- Não existe política aprovada de retenção legal/operacional para pedidos, recrutamento, comunicações, avaliações, denúncias e documentos.
-- O schema apresenta referências RESTRICT/NO ACTION e dados partilhados; a regra de negócio para os preservar/anonymizar ainda não existe.
-- Os buckets e paths têm vários modelos de propriedade; a enumeração de todos os caminhos e metadados de cada bucket ainda precisa de validação por tabela e amostras controladas.
-- Não há ambiente local/CLI disponível nesta execução para criar migração com `supabase migration new`, correr testes da aplicação, lint e build.
-- Nenhuma conta sintética foi criada e nenhum dado real foi alterado.
+- NIF, documentos de legalização, facturação, registos contabilísticos/fiscais e comprovativos de empresa.
+- BI, número de BI e imagens de identificação profissional.
+- Candidaturas, CV, decisões de recrutamento e histórico laboral.
+- Pedidos de serviço, orçamentos, pagamentos/garantias e disputas.
+- Conversas e mensagens necessárias para prova contratual, suporte ou defesa.
+- Avaliações contestadas, denúncias, moderação, fraude e litígios.
+- Comunicações administrativas e trilhos de auditoria.
+- Backups, logs e cópias de segurança: definir janela de expiração e impedir recuperação para uso corrente após eliminação.
 
-**Resultado:** auditoria de schema e plano preliminar concluídos; implementação, testes de ponta a ponta, migração e eliminação Auth/Storage não concluídos. Não considerar esta fase aceite.
+Até haver política aprovada, o comportamento seguro é despublicar, bloquear acesso do titular e colocar os dados sujeitos a retenção numa lista de pendências controlada, com acesso mínimo — não apagar nem conservar indefinidamente sem prazo.
+
+## 6. Plano de implementação
+
+1. Criar endpoint/Server Action autenticado; obter o alvo exclusivamente de `auth.getUser()`, nunca de ID enviado pelo cliente.
+2. Exigir reautenticação recente (senha confirmada server-side ou fluxo OTP adequado), confirmação inequívoca e idempotency key. Não guardar senha nem motivo livre.
+3. Recusar contas presentes em `admin_users`; exigir que o titular tenha sessão válida e que a reautenticação seja recente.
+4. Criar registo de operação com UUID aleatório, estado, timestamps, contagens e etapa; sem email, telefone, nome, motivo livre ou account_id em auditoria de retenção longa.
+5. Marcar a operação como `pending`, bloquear novas escritas/publicações e revogar sessões; despublicar conteúdos elegíveis.
+6. Construir um plano de execução explícito por conta (cliente/profissional/empresa), com dependências e manifesto de Storage; se existir dependência sem regra aprovada, interromper sem apagar.
+7. Em transacção SQL, remover preferências/dados privados elegíveis e anonimizar apenas campos acordados, preservando linhas e relações de terceiros. Não executar chamadas Storage dentro da transacção SQL.
+8. Remover objectos Storage pelo manifesto validado, com retry idempotente e registo de resultado por bucket/path sem persistir URL sensível em auditoria.
+9. Só após confirmação de SQL e Storage, usar Admin API server-side para eliminar Auth; nunca expor service-role no browser.
+10. Revogar cookies/sessões locais e terminar a sessão no cliente; mostrar estados `a processar`, `concluído` ou `falhou — contactar suporte`.
+11. Se qualquer etapa externa falhar, manter estado pendente e permitir retry seguro; não restaurar automaticamente dados apagados nem declarar sucesso parcial.
+
+## 7. Migração versionada e reversibilidade
+
+A migração futura deve ser **aditiva** e não aplicar qualquer eliminação de utilizadores:
+
+- Criar tabela privada de pedidos/estado de eliminação e tabela de itens/manifesto de Storage com RLS activa, sem acesso directo de `anon` ou `authenticated`.
+- Criar funções de leitura/actualização apenas no schema privado, com `search_path = ''`, permissões EXECUTE mínimas e validação de `auth.uid()`; privilegiar `SECURITY INVOKER`. Se alguma etapa exigir `SECURITY DEFINER`, documentar necessidade, restringir EXECUTE, validar identidade dentro da função e executar advisors.
+- Não alterar buckets, não tornar Storage público, não enfraquecer políticas RLS existentes e não mudar FKs para CASCADE.
+- Índices por estado e timestamps; sem índices ou logs contendo PII desnecessária.
+- Rollback estrutural: revogar EXECUTE, desactivar endpoint/feature flag e remover apenas funções/tabelas novas vazias. Nunca prometer que rollback da migração recupera Auth, ficheiros ou linhas apagadas.
+- Recuperação antes da eliminação Auth: retomar a operação idempotente ou cancelar mediante revisão administrativa. Depois de Auth/Storage eliminados, recuperação apenas por backup/restauro controlado, com aprovação e registo; backups têm prazo de retenção próprio.
+- Criar o ficheiro pelo Supabase CLI `supabase migration new <nome>` no ambiente de desenvolvimento, validar com `supabase migration list` e testar em DB local/branch isolada antes de considerar produção.
+
+## 8. Testes necessários (apenas dados sintéticos, prefixo TESTE)
+
+A matriz de teste deve cobrir cliente, profissional e empresa, cada um com registos e objectos Storage próprios e pelo menos um segundo utilizador TESTE como contraparte:
+
+1. Reautenticação válida, senha errada, sessão expirada e confirmação ausente.
+2. Conta administrativa recusada; utilizador não autenticado recusado.
+3. Repetição da mesma solicitação/idempotency key sem duplicar operação.
+4. Conta imediatamente impedida de publicar, escrever ou aceder após início.
+5. Campos pessoais e preferências próprias eliminados.
+6. Serviços/produtos/vagas despublicados sem apagar candidaturas/pedidos de terceiros.
+7. Mensagens e conversas partilhadas preservadas; remetente anonimizado sem alterar os outros participantes.
+8. Avaliações e denúncias de terceiros preservadas.
+9. Ficheiros só removidos quando UID/company ownership e referência DB coincidem; objecto sem prova de ownership permanece.
+10. Falha simulada Storage, falha Auth e retry idempotente; sem falso estado de sucesso.
+11. RLS activa em todas as tabelas novas e antigas; nenhum acesso anon/auth directo à fila/manifesto.
+12. Todos os buckets continuam privados.
+13. Migração aplica numa base limpa e numa cópia de schema; rollback estrutural não restaura nem elimina dados existentes.
+14. Build, TypeScript, ESLint nos ficheiros alterados e testes automatizados passam no commit final.
+
+Nenhuma destas operações destrutivas deve ser testada na base de produção.
+
+## 9. Bloqueios que continuam abertos
+
+- Aprovação de prazos legais/operacionais de retenção para documentos, candidaturas, pedidos, mensagens, denúncias, avaliações e auditoria.
+- Mapeamento de uploads e paths nos cinco buckets sem política de ownership por UID; os paths precisam de confirmação a partir de código e referências DB.
+- Ambiente de execução: a criação de sandbox Vercel foi rejeitada pela API com HTTP 400; o checkout directo falhou por resolução DNS de `github.com`. A alternativa proposta é desenvolver por commits na branch via GitHub Contents API e executar CI no GitHub Actions; para testes de integração Supabase, adicionar job com Supabase CLI e stack local isolada. Não foi executado ainda.
+- Não foi criado projecto/branch de desenvolvimento Supabase; qualquer branch remota pode implicar custo e exige confirmação do mecanismo de custos antes de criar.
+- A migração de auto-eliminação e os testes ainda não existem.
+
+**Conclusão:** inventário de schema, FKs, buckets e políticas observado actualizado; a política de retenção está separada em eliminação, anonimização e pendência legal. Não considerar a Fase 8 concluída nem pronta para revisão final até implementação, migração, CI e testes de integração sintéticos estarem aprovados.
