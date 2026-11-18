@@ -1,0 +1,77 @@
+name: Supabase local isolated validation
+
+on:
+  push:
+    branches:
+      - feat/eliminacao-conta
+    paths:
+      - "supabase/**"
+      - ".github/workflows/supabase-local.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "supabase/**"
+      - ".github/workflows/supabase-local.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supabase-local-\${{ github.workflow }}-\${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  local-stack:
+    name: Local Supabase migrations, Auth, RLS and Storage invariants
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: 3.2.0
+
+      - name: Validate local configuration
+        run: |
+          supabase --version
+          supabase config validate
+
+      - name: Start disposable local Supabase stack
+        run: |
+          # No supabase link, remote credentials, or hosted project reference.
+          # The GitHub runner creates a fresh local Docker stack for this job.
+          supabase start
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes postgresql-client
+
+      - name: Validate Auth endpoint and database invariants
+        shell: bash
+        run: |
+          set -euo pipefail
+          STATUS="$(supabase status -o env)"
+          API_URL="$(echo "$STATUS" | sed -n 's/^API_URL=//p' | tr -d '"')"
+          ANON_KEY="$(echo "$STATUS" | sed -n 's/^ANON_KEY=//p' | tr -d '"')"
+          DB_URL="$(echo "$STATUS" | sed -n 's/^DB_URL=//p' | tr -d '"')"
+
+          test -n "$API_URL"
+          test -n "$ANON_KEY"
+          test -n "$DB_URL"
+
+          curl --fail --silent --show-error \
+            --header "apikey: $ANON_KEY" \
+            "$API_URL/auth/v1/settings" >/dev/null
+
+          psql "$DB_URL" --set ON_ERROR_STOP=1 \
+            --file supabase/tests/fase8_local_invariants.sql
+
+      - name: Stop local stack
+        if: always()
+        run: supabase stop
