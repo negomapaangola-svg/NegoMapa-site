@@ -16,4 +16,6 @@ drop policy if exists client_only_insert_profissionais on public.profissionais;
 drop policy if exists approved_owner_insert_servicos on public.servicos;
 drop policy if exists approved_company_insert_produtos on public.produtos;
 drop policy if exists approved_company_insert_vagas on public.vagas;
+drop policy if exists client_only_insert_pedidos_servico on public.pedidos_servico;
+drop policy if exists client_only_update_pedidos_servico on public.pedidos_servico;
 commit;
