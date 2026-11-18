@@ -141,19 +141,38 @@ export function MensagensPainel({ conversas: conversasIniciais, userId, basePath
     setErro(null)
     setAnexoPendente(true)
     startTransition(async () => {
-      const dados = new FormData()
-      dados.set('ficheiro', ficheiro)
-      const resultado = await enviarAnexo(selecionada, dados)
-      setAnexoPendente(false)
-      if (resultado.success) await carregar(selecionada)
-      else setErro(resultado.error ?? 'Não foi possível enviar o ficheiro.')
+      try {
+        const dados = new FormData()
+        dados.set('ficheiro', ficheiro)
+        const resultado = await enviarAnexo(selecionada, dados)
+        if (resultado.success) await carregar(selecionada)
+        else setErro(resultado.error ?? 'Não foi possível enviar o ficheiro.')
+      } catch {
+        setErro('Não foi possível enviar o ficheiro. Tente novamente.')
+      } finally {
+        setAnexoPendente(false)
+      }
     })
   }
 
   async function abrirAnexo(id: string) {
-    const resultado = await obterUrlAnexo(id)
-    if (resultado.success) window.open(resultado.url, '_blank', 'noopener,noreferrer')
-    else setErro(resultado.error)
+    const janela = window.open('about:blank', '_blank')
+    if (!janela) {
+      setErro('Permita a abertura de separadores para consultar o ficheiro.')
+      return
+    }
+    janela.opener = null
+    try {
+      const resultado = await obterUrlAnexo(id)
+      if (resultado.success) janela.location.href = resultado.url
+      else {
+        janela.close()
+        setErro(resultado.error)
+      }
+    } catch {
+      janela.close()
+      setErro('Ficheiro indisponível ou removido.')
+    }
   }
 
   /** Enter envia; Shift+Enter quebra linha. */

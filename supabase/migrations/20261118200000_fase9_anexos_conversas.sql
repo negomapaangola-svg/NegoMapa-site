@@ -56,7 +56,12 @@ create policy conversas_anexos_select_participante on storage.objects
   for select to authenticated using (
     bucket_id = 'conversas-anexos'
     and exists (select 1 from public.conversas c
-      where c.id::text = (storage.foldername(name))[1] and public.conversa_participante(c.id))
+      where c.id::text = (storage.foldername(name))[1]
+        and public.conversa_participante(c.id)
+        and exists (
+          select 1 from public.mensagem_anexos ma
+          where ma.conversa_id = c.id and ma.storage_path = storage.objects.name
+        ))
   );
 drop policy if exists conversas_anexos_insert_participante on storage.objects;
 create policy conversas_anexos_insert_participante on storage.objects
