@@ -154,4 +154,8 @@ create policy active_role_message_access on public.mensagens
     )
   );
 
+-- Os SELECTs usados pelo contexto e pelo perfil precisam de privilégio SQL;
+-- as policies RLS existentes continuam a limitar linhas públicas aprovadas e registos próprios.
+grant select on public.companies, public.profissionais to authenticated;
+
 commit;
