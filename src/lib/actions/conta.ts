@@ -11,7 +11,7 @@ export interface ProfileRow {
   nome?: string
   telefone?: string
   whatsapp?: string
-  avatar_url?: string
+  avatar_url?: string | null
   account_type?: 'profissional' | 'empresa' | 'cliente'
   localizacao_provincia?: string
   localizacao_municipio?: string
@@ -29,7 +29,7 @@ export interface ProfessionalRow {
   municipio?: string
   bairro?: string
   estado?: string
-  avatar_url?: string
+  avatar_url?: string | null
   categoria_id?: string
   especialidades?: string[]
   disponibilidade?: string
@@ -51,7 +51,7 @@ export interface CompanyRow {
   description?: string
   whatsapp?: string
   phone?: string
-  logo_url?: string
+  logo_url?: string | null
   is_approved?: boolean
   estado?: string
   horario_atendimento?: string

@@ -13,6 +13,7 @@ import { MainLayout } from "@/components/layout/MainLayout"
 import { ReviewForm } from "@/components/avaliacoes/ReviewForm"
 import { ReportForm } from "@/components/denuncias/ReportForm"
 import { getMediaAvaliacoes, getAvaliacoesPorAlvo } from "@/lib/actions/avaliacoes"
+import type { PortfolioItem } from "@/lib/actions/profissionais-publicos"
 import { AlvoDenuncia } from "@/lib/actions/denuncias"
 import { createBrowserSupabaseClient } from "@/lib/supabase-browser"
 import { BotaoContactarEmpresa } from "@/components/empresas/BotaoContactarEmpresa"
@@ -37,7 +38,7 @@ interface EmpresaPublica {
   is_approved: boolean
   whatsapp?: string
   logo_url?: string
-  portfolio?: unknown[]
+  portfolio: PortfolioItem[] | null
 }
 
 function EmpresaContent() {
@@ -84,13 +85,14 @@ function EmpresaContent() {
 
   React.useEffect(() => {
     if (!empresa) return
+    const empresaId = empresa.id
 
     async function carregarAvaliacoes() {
       setAvaliacoesCarregando(true)
       try {
         const [mediaResult, avaliacoesResult] = await Promise.all([
-          getMediaAvaliacoes({ tipo: 'empresa', id: empresa.id }),
-          getAvaliacoesPorAlvo({ tipo: 'empresa', id: empresa.id }),
+          getMediaAvaliacoes({ tipo: 'empresa', id: empresaId }),
+          getAvaliacoesPorAlvo({ tipo: 'empresa', id: empresaId }),
         ])
         setMedia(mediaResult)
         setAvaliacoes(avaliacoesResult)
