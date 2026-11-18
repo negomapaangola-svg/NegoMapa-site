@@ -126,12 +126,12 @@ export async function createProfile(formData: ProfileFormData): Promise<ActionRe
   // Impede criação profissional por contas de empresa/profissional e por clientes
   // que já tenham escolhido uma das duas modalidades.
   const { data: perfilConta, error: contaError } = await supabase
-    .from('profiles').select('account_type').eq('id', user.id).maybeSingle()
+    .from('profiles').select('account_type,is_active').eq('id', user.id).maybeSingle()
   if (contaError) {
     console.error('Erro ao validar tipo de conta. Código:', contaError.code)
     return { success: false, error: 'Não foi possível validar a sua conta. Tente novamente.' }
   }
-  if (perfilConta?.account_type !== 'cliente') {
+  if (perfilConta?.account_type !== 'cliente' || perfilConta.is_active !== true) {
     return { success: false, error: 'Apenas contas de cliente sem perfil associado podem criar um perfil profissional.' }
   }
   const [empresaExistente, profissionalExistente] = await Promise.all([
