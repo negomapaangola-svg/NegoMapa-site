@@ -32,4 +32,8 @@ drop policy if exists admin_cannot_update_own_servicos on public.servicos;
 drop policy if exists admin_cannot_delete_own_servicos on public.servicos;
 drop policy if exists admin_cannot_use_user_conversations on public.conversas;
 drop policy if exists admin_cannot_use_user_messages on public.mensagens;
+drop policy if exists role_scoped_candidaturas_select on public.candidaturas;
+drop policy if exists approved_company_update_candidaturas on public.candidaturas;
+drop policy if exists active_role_conversation_access on public.conversas;
+drop policy if exists active_role_message_access on public.mensagens;
 commit;
