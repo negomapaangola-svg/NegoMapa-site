@@ -60,17 +60,19 @@ export async function listarConversas(): Promise<Resultado<ConversaResumo[]>> {
   }
 
   // Perfis e empresas do próprio utilizador (a RLS devolve só os seus registos).
-  const [{ data: perfil }, { data: empresas }] = await Promise.all([
-    supabase.from('profissionais').select('id').eq('user_id', user.id).maybeSingle(),
-    supabase.from('companies').select('id').eq('user_id', user.id),
+  const [{ data: perfilConta }, { data: perfil }, { data: empresas }] = await Promise.all([
+    supabase.from('profiles').select('account_type,is_active').eq('id', user.id).maybeSingle(),
+    supabase.from('profissionais').select('id,estado').eq('user_id', user.id).maybeSingle(),
+    supabase.from('companies').select('id,is_approved,estado').eq('user_id', user.id),
   ])
-  const idsProfissional = new Set(perfil?.id ? [perfil.id] : [])
-  const idsEmpresa = new Set((empresas ?? []).map((e) => e.id))
+  const idsProfissional = new Set(perfilConta?.is_active === true && perfil?.estado === 'aprovado' && perfil?.id ? [perfil.id] : [])
+  const idsEmpresa = new Set(perfilConta?.is_active === true ? (empresas ?? []).filter((e) => e.is_approved === true && e.estado === 'aprovado').map((e) => e.id) : [])
+  const clienteActivo = perfilConta?.account_type === 'cliente' && perfilConta.is_active === true && !perfil?.id && !(empresas ?? []).length
 
   // A política RLS também permite leitura administrativa. A interface de mensagens,
   // porém, só deve devolver conversas em que a sessão actual é participante efectivo.
   const minhasConversas = (data ?? []).filter((conversa) =>
-    conversa.cliente_id === user.id ||
+    (clienteActivo && conversa.cliente_id === user.id) ||
     Boolean(conversa.profissional_id && idsProfissional.has(conversa.profissional_id)) ||
     Boolean(conversa.empresa_id && idsEmpresa.has(conversa.empresa_id))
   )
@@ -154,15 +156,16 @@ async function utilizadorParticipaNaConversa(
     .maybeSingle()
 
   if (error || !conversa) return false
-  if (conversa.cliente_id === userId) return true
+  if (conversa.cliente_id === userId && await contaClienteActiva(supabase, userId)) return true
 
-  const [{ data: perfil }, { data: empresas }] = await Promise.all([
-    supabase.from('profissionais').select('id').eq('user_id', userId).maybeSingle(),
-    supabase.from('companies').select('id').eq('user_id', userId),
+  const [perfilConta, perfil, empresas] = await Promise.all([
+    supabase.from('profiles').select('is_active').eq('id', userId).maybeSingle(),
+    supabase.from('profissionais').select('id,estado').eq('user_id', userId).maybeSingle(),
+    supabase.from('companies').select('id,is_approved,estado').eq('user_id', userId),
   ])
-
-  if (conversa.profissional_id && perfil?.id === conversa.profissional_id) return true
-  return Boolean(conversa.empresa_id && (empresas ?? []).some((empresa) => empresa.id === conversa.empresa_id))
+  if (perfilConta.data?.is_active !== true) return false
+  if (conversa.profissional_id && perfil?.data?.id === conversa.profissional_id && perfil.data.estado === 'aprovado') return true
+  return Boolean(conversa.empresa_id && (empresas.data ?? []).some((empresa) => empresa.id === conversa.empresa_id && empresa.is_approved === true && empresa.estado === 'aprovado'))
 }
 
 export async function listarMensagens(conversaId: string): Promise<Resultado<MensagemConversa[]>> {
@@ -221,6 +224,17 @@ export async function enviarMensagem(conversaId: string, conteudo: string): Prom
   }
 
   return { success: true }
+}
+
+async function contaClienteActiva(supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>, userId: string): Promise<boolean> {
+  if (await isAdmin()) return false
+  const [perfil, profissional, empresa] = await Promise.all([
+    supabase.from('profiles').select('account_type,is_active').eq('id', userId).maybeSingle(),
+    supabase.from('profissionais').select('id').eq('user_id', userId).limit(1).maybeSingle(),
+    supabase.from('companies').select('id').eq('user_id', userId).limit(1).maybeSingle(),
+  ])
+  return !perfil.error && perfil.data?.account_type === 'cliente' && perfil.data.is_active === true
+    && !profissional.error && !profissional.data && !empresa.error && !empresa.data
 }
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -306,6 +320,7 @@ export async function verificarPodeContactar(
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { pode: false, motivo: 'Sessão expirada. Inicie sessão novamente.' }
+  if (!(await contaClienteActiva(supabase, user.id))) return { pode: false, motivo: 'Apenas clientes activos podem iniciar conversas.' }
 
   // Confirmação do dono no servidor, independente da sessão do browser e da RLS: só corre com chave de serviço.
   const admin = criarClienteServico()
@@ -373,6 +388,7 @@ export async function verificarPodeContactarEmpresas(
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: true, ids: [] }
+  if (!(await contaClienteActiva(supabase, user.id))) return { success: false, error: 'Apenas clientes activos podem iniciar conversas.' }
 
   const { data: minhas, error: erroMinhas } = await supabase
     .from('companies')
@@ -425,6 +441,7 @@ export async function iniciarConversaComEmpresa(
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Sessão expirada. Inicie sessão novamente.' }
+  if (!(await contaClienteActiva(supabase, user.id))) return { success: false, error: 'Apenas clientes activos podem iniciar conversas.' }
 
   const { data: existente, error: erroLeitura } = await supabase
     .from('conversas')
