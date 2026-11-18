@@ -180,6 +180,8 @@ export async function guardarPerfilConta(form: FormData): Promise<void> {
     }).eq('user_id', user.id).select('id').maybeSingle()
     if (error || !actualizado) redirect('/conta/perfil?erro=guardar')
   } else {
+    // Não enviar updated_at: authenticated não tem UPDATE nessa coluna.
+    // O trigger trg_profiles_updated_at_b2 actualiza-a automaticamente.
     const { data: actualizado, error } = await supabase.from('profiles').update({
       nome, telefone: telefone || null, whatsapp: whatsapp || null,
       localizacao_provincia: field(form, 'provincia') || null,
