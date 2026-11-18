@@ -261,3 +261,13 @@ Não foram encontrados usos concretos de `servicos-imagens` ou `vagas-capas` nos
 - Não é seguro fabricar uma tabela `companies` mínima só para fazer o teste avançar: migrações posteriores dependem de colunas, constraints, funções e políticas do schema real. Também não é seguro usar `db pull` ou `db push` contra produção para corrigir o estado.
 - Resultado: o runner está configurado e prova que a cadeia versionada actual não é reproduzível numa base vazia. A validação de RLS/Auth/Storage ainda não foi alcançada; os passos foram ignorados depois da falha de arranque. Não declarar a migração nem o ambiente validados.
 - Para desbloquear: obter e versionar um baseline de schema aprovado (sem dados) que corresponda ao schema de produção, ou criar uma suite isolada que teste apenas a migração da Fase 8 contra fixtures explicitamente documentadas e completas. Até existir esse baseline, a implementação de eliminação autónoma permanece suspensa.
+
+
+### 10.10 Comparação com o histórico de migrações remoto (consulta read-only)
+
+- O histórico remoto consultado através da API de migrações do Supabase começa em `20261027201608` (`protect_profiles_is_admin`) e inclui 61 versões até `20261118193717`.
+- O repositório contém migrações antigas de 2026-10-03 a 2026-10-21 que não aparecem no histórico remoto actual, e as versões/nomeações posteriores também não correspondem exactamente às versões remotas (o CLI local vê os nomes de ficheiro como versões).
+- A tabela `public.companies` já existe em produção, mas não há no conjunto de migrações versionadas da branch uma migração inicial que a crie. A primeira cadeia local falha quando `20261011_create_vagas_module.sql` tenta criar uma FK para `public.companies`.
+- A renumeração em cópia temporária resolve apenas duplicados/versões com formato antigo; não cria o baseline ausente e não deve ser confundida com reconciliação do histórico remoto.
+- Não se deve marcar migrações antigas como aplicadas, inventar uma tabela mínima, ou copiar dados de produção para a suite. A solução correcta é obter um dump **apenas de schema**, revisto e aprovado, e versioná-lo como baseline sem dados, ou reconstruir uma baseline a partir de migrations autoritativas antes de retomar a suite.
+- Até esse baseline existir, não há evidência local de migrações completas, RLS, Auth e Storage. O workflow mantém falha explícita para impedir falso positivo.
