@@ -1,6 +1,6 @@
 import { Metadata } from 'next'
 import { redirect } from 'next/navigation'
-import { getUser } from '@/lib/auth'
+import { getUser, isAdmin } from '@/lib/auth'
 import { MainLayout } from '@/components/layout/MainLayout'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import {
@@ -18,6 +18,7 @@ type PageProps = {
 }
 
 export default async function PreferenciasNotificacoesPage({ searchParams }: PageProps) {
+  if (await isAdmin()) redirect('/admin')
   const user = await getUser()
 
   if (!user) {
