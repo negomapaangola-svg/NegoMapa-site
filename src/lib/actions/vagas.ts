@@ -89,6 +89,9 @@ export async function createVaga(formData: VagaFormData, companyId: string): Pro
     return { success: false, error: 'Utilizador não autenticado' }
   }
 
+  const { data: perfilConta } = await supabase.from('profiles').select('is_active').eq('id', user.id).maybeSingle()
+  if (perfilConta?.is_active !== true) return { success: false, error: 'A conta não está activa.' }
+
   if (!podePublicarVaga(await obterContextoUtilizador())) {
     return { success: false, error: 'Apenas empresas aprovadas podem publicar vagas.' }
   }
