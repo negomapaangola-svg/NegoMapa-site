@@ -251,3 +251,13 @@ Não foi executado rollback nem qualquer comando que altere o Supabase de produ�
 A inspecção do formulário confirmou que `src/app/cadastrar-servico/_components/ProfileForm.tsx` é o único import de `FileUpload` encontrado nos formulários/páginas inspeccionados. O componente envia para `profissionais-avatars/<uid>/avatars/<uuid>.<ext>`, mas o callback `handleAvatarUpload` guarda exclusivamente `result.url!`. O contrato privado deve passar a guardar `bucket + path`, com URL assinada obtida no servidor apenas para renderização. O `FileUpload` também só cria preview local quando `isPublic=true`; o preview deve passar a usar object URL local independentemente da privacidade do bucket.
 
 Não foram encontrados usos concretos de `servicos-imagens` ou `vagas-capas` nos formulários de criação de serviços/vagas inspeccionados. `vagas-capas` não está sequer no tipo `AllowedBucket` de `FileUpload`; `servicos-imagens` está no tipo, mas sem consumidor de página identificado. Não criar esses buckets como solução de compatibilidade.
+
+
+### 10.9 Segunda execução do runner — baseline ausente
+
+- Actions #44384933082 executou o script de renumeração temporária e passou novamente `supabase config validate`.
+- O CLI aplicou as primeiras seis migrações na cópia temporária com versões únicas de 14 dígitos; depois falhou em `20261011_create_vagas_module.sql` com `relation "public.companies" does not exist`.
+- A branch contém migrações que alteram `companies`, mas não contém uma migração de criação dessa tabela nem um baseline completo do schema de produção. A produção tem `companies` e 24 tabelas públicas; o histórico remoto lista migrações posteriores, não a origem do baseline.
+- Não é seguro fabricar uma tabela `companies` mínima só para fazer o teste avançar: migrações posteriores dependem de colunas, constraints, funções e políticas do schema real. Também não é seguro usar `db pull` ou `db push` contra produção para corrigir o estado.
+- Resultado: o runner está configurado e prova que a cadeia versionada actual não é reproduzível numa base vazia. A validação de RLS/Auth/Storage ainda não foi alcançada; os passos foram ignorados depois da falha de arranque. Não declarar a migração nem o ambiente validados.
+- Para desbloquear: obter e versionar um baseline de schema aprovado (sem dados) que corresponda ao schema de produção, ou criar uma suite isolada que teste apenas a migração da Fase 8 contra fixtures explicitamente documentadas e completas. Até existir esse baseline, a implementação de eliminação autónoma permanece suspensa.
