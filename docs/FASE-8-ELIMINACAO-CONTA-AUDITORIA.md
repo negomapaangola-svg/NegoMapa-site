@@ -182,6 +182,7 @@ Nenhuma destas operações destrutivas deve ser testada na base de produção.
 |---|---|---|---|
 | `src/lib/actions/upload.ts` | helper `uploadFile` | `empresas-logos`, `profissionais-avatars`, `servicos-imagens`, `vagas-capas`, `documentos-privados` | Gera `<auth.uid>/<folder>/<uuid>.<ext>`; para quatro buckets de imagem chama `getPublicUrl`; para documentos devolve apenas o path. |
 | `src/components/ui/FileUpload.tsx` | consumidor de `uploadFile` | `empresas-logos`, `profissionais-avatars`, `servicos-imagens`, `documentos-privados` | Declara os três primeiros como públicos; `vagas-capas` nem sequer está no tipo/config deste componente. O preview só usa URL quando `isPublic`; paths privados não são apresentados. |
+| `src/app/cadastrar-servico/_components/ProfileForm.tsx` | uso encontrado de `FileUpload` | `profissionais-avatars` | Usa `folder="avatars"`; `handleAvatarUpload` grava apenas `result.url!` em `avatar_url`, não aceita `result.path`. Ao tornar o bucket privado, este handler e o modelo de dados têm de ser alterados em conjunto. |
 | `src/app/cadastrar-empresa/page.tsx` | upload directo pelo cliente Supabase | `empresas-logos`, `documentos-privados` | Logótipo: `<uid>/logotipo-<timestamp>.<ext>`; comprovativo: `<uid>/legalizacao-<timestamp>.<ext>`. |
 | `src/lib/actions/conversao-conta.ts` | persistência dos campos | — | Guarda `logoPath` em `companies.logo_url` e `documentoPath` em `companies.documento_legalizacao_path`. |
 | `src/lib/actions/empresas.ts` | leitura administrativa | `empresas-logos`, `documentos-privados` | Usa `createSignedUrl` no servidor para abrir logótipo e comprovativo. |
@@ -243,3 +244,10 @@ Nenhuma conta, ficheiro ou dado foi criado ou eliminado. Nenhuma migração foi 
 - A configuração Auth local foi actualizada de `enable_signup` para `enabled`, para evitar a opção obsoleta indicada pelo CLI 3.2.0.
 
 Não foi executado rollback nem qualquer comando que altere o Supabase de produção.
+
+
+### 10.8 Caller concreto do avatar e efeito da privacidade
+
+A inspecção do formulário confirmou que `src/app/cadastrar-servico/_components/ProfileForm.tsx` é o único import de `FileUpload` encontrado nos formulários/páginas inspeccionados. O componente envia para `profissionais-avatars/<uid>/avatars/<uuid>.<ext>`, mas o callback `handleAvatarUpload` guarda exclusivamente `result.url!`. O contrato privado deve passar a guardar `bucket + path`, com URL assinada obtida no servidor apenas para renderização. O `FileUpload` também só cria preview local quando `isPublic=true`; o preview deve passar a usar object URL local independentemente da privacidade do bucket.
+
+Não foram encontrados usos concretos de `servicos-imagens` ou `vagas-capas` nos formulários de criação de serviços/vagas inspeccionados. `vagas-capas` não está sequer no tipo `AllowedBucket` de `FileUpload`; `servicos-imagens` está no tipo, mas sem consumidor de página identificado. Não criar esses buckets como solução de compatibilidade.
