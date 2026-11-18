@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@supabase/supabase-js'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
+import { isAdmin } from '@/lib/auth'
 
 /** Função que o utilizador desempenha numa conversa. Um utilizador pode ter várias. */
 export type PapelConversa = 'cliente' | 'profissional' | 'empresa'
@@ -42,6 +43,7 @@ export type MensagemConversa = {
 type Resultado<T> = { success: true; data: T } | { success: false; error: string }
 
 export async function listarConversas(): Promise<Resultado<ConversaResumo[]>> {
+  if (await isAdmin()) return { success: false, error: 'As conversas de utilizadores não estão disponíveis para contas administrativas.' }
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Sessão expirada. Inicie sessão novamente.' }
@@ -142,6 +144,7 @@ async function utilizadorParticipaNaConversa(
   conversaId: string,
   userId: string
 ): Promise<boolean> {
+  if (await isAdmin()) return false
   if (!UUID_REGEX.test(conversaId)) return false
 
   const { data: conversa, error } = await supabase
@@ -297,6 +300,7 @@ async function notificarNovaMensagem(conversaId: string, remetenteId: string): P
 export async function verificarPodeContactar(
   alvo: { tipo: 'profissional' | 'empresa'; id: string }
 ): Promise<{ pode: boolean; motivo?: string }> {
+  if (await isAdmin()) return { pode: false, motivo: 'Contas administrativas não podem utilizar conversas de cliente, profissional ou empresa.' }
   if (!UUID_REGEX.test(alvo.id)) return { pode: false, motivo: 'Destino inválido.' }
 
   const supabase = await createSupabaseServerClient()
@@ -362,6 +366,7 @@ export async function verificarPodeContactar(
 export async function verificarPodeContactarEmpresas(
   ids: string[]
 ): Promise<{ success: true; ids: string[] } | { success: false; error: string }> {
+  if (await isAdmin()) return { success: false, error: 'Contas administrativas não podem iniciar conversas de utilizador.' }
   const idsValidos = Array.from(new Set(ids)).filter((id) => UUID_REGEX.test(id)).slice(0, 100)
   if (idsValidos.length === 0) return { success: true, ids: [] }
 
@@ -414,6 +419,7 @@ export async function verificarPodeContactarEmpresas(
 export async function iniciarConversaComEmpresa(
   empresaId: string
 ): Promise<{ success: true; conversaId: string } | { success: false; error: string }> {
+  if (await isAdmin()) return { success: false, error: 'Contas administrativas não podem iniciar conversas de utilizador.' }
   if (!UUID_REGEX.test(empresaId)) return { success: false, error: 'Empresa inválida.' }
 
   const supabase = await createSupabaseServerClient()
@@ -474,6 +480,7 @@ export async function iniciarConversaComEmpresa(
 export async function iniciarConversaComProfissional(
   profissionalId: string
 ): Promise<{ success: true; conversaId: string } | { success: false; error: string }> {
+  if (await isAdmin()) return { success: false, error: 'Contas administrativas não podem iniciar conversas de utilizador.' }
   if (!UUID_REGEX.test(profissionalId)) return { success: false, error: 'Profissional inválido.' }
 
   const supabase = await createSupabaseServerClient()
