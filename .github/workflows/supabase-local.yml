@@ -7,12 +7,14 @@ on:
     paths:
       - "supabase/**"
       - ".github/workflows/supabase-local.yml"
+      - ".github/scripts/prepare-supabase-local.sh"
   pull_request:
     branches:
       - main
     paths:
       - "supabase/**"
       - ".github/workflows/supabase-local.yml"
+      - ".github/scripts/prepare-supabase-local.sh"
   workflow_dispatch:
 
 permissions:
@@ -41,10 +43,15 @@ jobs:
           supabase --version
           supabase config validate
 
+      - name: Prepare disposable migration workdir
+        run: bash .github/scripts/prepare-supabase-local.sh
+
       - name: Start disposable local Supabase stack
+        working-directory: ${{ runner.temp }}/negomapa-supabase-local
         run: |
           # No supabase link, remote credentials, or hosted project reference.
-          # The GitHub runner creates a fresh local Docker stack for this job.
+          # Historical duplicate/8-digit migration versions are renumbered only
+          # in this temporary copy; repository files and production are untouched.
           supabase start
 
       - name: Install PostgreSQL client
@@ -53,6 +60,7 @@ jobs:
           sudo apt-get install --yes postgresql-client
 
       - name: Validate Auth endpoint and database invariants
+        working-directory: ${{ runner.temp }}/negomapa-supabase-local
         shell: bash
         run: |
           set -euo pipefail
@@ -74,4 +82,5 @@ jobs:
 
       - name: Stop local stack
         if: always()
+        working-directory: ${{ runner.temp }}/negomapa-supabase-local
         run: supabase stop
