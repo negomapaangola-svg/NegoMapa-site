@@ -51,7 +51,7 @@ export default async function ProfissionaisPage({ searchParams }: { searchParams
   return <MainLayout>
     <section className="bg-cream py-12 dark:bg-navy-dark lg:py-16">
       <div className="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">
-        <EditorialPageImage src="/images/home/profissionais.webp" alt="Profissional angolano no seu espaço de trabalho" />
+        <EditorialPageImage src="/images/home/profissionais.webp" alt="Profissional de costura no seu espaço de trabalho" />
         <PageHeader title="Profissionais" description="Encontre profissionais qualificados por área e localização em Angola." />
         <SearchBar action="/profissionais" defaultValue={filtros.q} placeholder="Nome, serviço ou província" />
         <FilterChips value={filtros.categoria} items={[
