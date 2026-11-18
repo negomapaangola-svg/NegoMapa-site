@@ -287,7 +287,7 @@ export async function atualizarEstadoCandidatura(
   const { data: perfil, error: perfilError } = await supabase.from('profiles').select('account_type,is_active').eq('id', user.id).maybeSingle()
   if (perfilError || perfil?.account_type !== 'empresa' || perfil.is_active !== true) return { success: false, error: 'Apenas contas de empresa activas podem gerir candidaturas.' }
 
-  const { data: empresas, error: erroEmpresa } = await supabase.from('companies').select('id').eq('user_id', user.id)
+  const { data: empresas, error: erroEmpresa } = await supabase.from('companies').select('id').eq('user_id', user.id).eq('is_approved', true).eq('estado', 'aprovado')
   if (erroEmpresa || !empresas || empresas.length === 0) return { success: false, error: 'Acesso não autorizado.' }
   const idsEmpresas = empresas.map((empresa) => empresa.id)
   if (empresaActivaId && !idsEmpresas.includes(empresaActivaId)) return { success: false, error: 'Acesso não autorizado.' }
