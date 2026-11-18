@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { IMAGENS } from '@/lib/imagens';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { MainLayout } from '@/components/layout/MainLayout';
+import { SettingsSheet } from '@/components/ui/CatalogComponents';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card';
 import { formatCurrency } from '@/lib/utils';
 import {
@@ -273,6 +274,7 @@ export default async function ServicosPage({
             <Image src={IMAGENS.fundoPadrao} alt="" fill sizes="100vw" className="object-cover" />
             <div className="absolute inset-0 bg-cream/85 dark:bg-navy-dark/90" aria-hidden="true" />
             <div className="relative">
+            <SettingsSheet activeCount={[searchParams.q, searchParams.categoria, searchParams.provincia, searchParams.municipio].filter(Boolean).length}>
             <FiltersForm
               initialSearchParams={{
                 q: searchParams.q,
@@ -284,6 +286,7 @@ export default async function ServicosPage({
               provincias={provincias}
               municipios={municipios}
             />
+            </SettingsSheet>
             </div>
           </div>
 

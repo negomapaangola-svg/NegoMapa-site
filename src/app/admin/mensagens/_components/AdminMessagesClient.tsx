@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { SettingsSheet } from '@/components/ui/CatalogComponents';
 import {
   archiveAdminMessage,
   getAdminMessages,
@@ -54,6 +55,7 @@ export function AdminMessagesClient({ initialMessages }: Props) {
 
   return (
     <section className="space-y-5">
+      <SettingsSheet activeCount={filter === "all" ? 0 : 1}>
       <div className="flex flex-wrap items-center gap-2" aria-label="Filtrar mensagens">
         {FILTERS.map((item) => (
           <button
@@ -66,7 +68,9 @@ export function AdminMessagesClient({ initialMessages }: Props) {
             {item.label}
           </button>
         ))}
+        {filter !== "all" && <button type="button" onClick={() => refresh("all")} className="min-h-11 px-3 text-sm font-semibold text-orange-700 underline underline-offset-4 dark:text-orange-300">Limpar filtros</button>}
       </div>
+      </SettingsSheet>
 
       {feedback ? <p className="text-sm text-neutral-600 dark:text-neutral-300" role="status">{feedback}</p> : null}
 

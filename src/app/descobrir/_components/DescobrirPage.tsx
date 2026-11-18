@@ -44,7 +44,7 @@ export function DescobrirPage({ params, categorias, municipios, totalPaginas, se
         <SeparadoresTipo params={params} />
         <div className="mt-5 space-y-4">
           <FilterChips items={categoriasRapidas} value={params.categoria} />
-          <SettingsSheet title="Filtros e definições">
+          <SettingsSheet activeCount={[params.q, params.categoria, params.provincia, params.municipio, params.preco, ehProdutos ? params.estado_produto : params.avaliacao, ehProdutos ? params.entrega : ""].filter(Boolean).length}>
             <FiltrosDescobrir params={params} categorias={categorias} municipios={municipios} />
           </SettingsSheet>
         </div>

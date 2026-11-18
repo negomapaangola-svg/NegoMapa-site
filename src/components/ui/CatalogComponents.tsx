@@ -55,12 +55,13 @@ export function FilterChips({ items, value, onChange, className }: {
   </div>;
 }
 
-export function SettingsSheet({ title = 'Filtros e definições', children, className }: {
-  title?: string; children: ReactNode; className?: string;
+export function SettingsSheet({ title = 'Filtros', activeCount = 0, children, className }: {
+  title?: string; activeCount?: number; children: ReactNode; className?: string;
 }) {
-  return <details className={cn('group rounded-2xl border border-card-border bg-white dark:bg-neutral-900', className)}>
-    <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-ink marker:hidden dark:text-cream">
-      {title}<span aria-hidden="true" className="text-orange-600 transition-transform group-open:rotate-180">⌄</span>
+  return <details className={cn('group rounded-xl border border-card-border bg-white dark:bg-neutral-900', className)}>
+    <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-ink marker:hidden hover:bg-cream/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:text-cream dark:hover:bg-neutral-800">
+      <span>{title}{activeCount > 0 && <span className="ml-2 rounded-full bg-orange-100 px-2 py-0.5 text-xs font-semibold text-orange-800 dark:bg-orange-900/40 dark:text-orange-200">({activeCount})</span>}</span>
+      <span aria-hidden="true" className="text-orange-600 transition-transform group-open:rotate-180">⌄</span>
     </summary>
     <div className="border-t border-card-border p-4">{children}</div>
   </details>;

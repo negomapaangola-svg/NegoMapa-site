@@ -54,7 +54,6 @@ function CampoSelect({
 export function FiltrosDescobrir({ params, categorias, municipios }: FiltrosDescobrirProps) {
   const router = useRouter();
   const [pendente, startTransition] = useTransition();
-  const [painelAberto, setPainelAberto] = useState(false);
   const [maisAberto, setMaisAberto] = useState(Boolean(params.municipio || params.entrega));
   const ehProdutos = params.tipo === 'produtos';
 
@@ -94,20 +93,7 @@ export function FiltrosDescobrir({ params, categorias, municipios }: FiltrosDesc
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 md:hidden">
-        <button
-          type="button"
-          onClick={() => setPainelAberto((v) => !v)}
-          aria-expanded={painelAberto}
-          aria-controls="painel-filtros-descobrir"
-          className="inline-flex min-h-[44px] items-center gap-2 rounded-[4px] border border-card-border bg-white px-4 font-semibold text-ink dark:bg-neutral-700 dark:text-cream"
-        >
-          Filtros{ativos.length > 0 ? ` (${ativos.length})` : ''}
-          <span aria-hidden="true">{painelAberto ? '▲' : '▼'}</span>
-        </button>
-      </div>
-
-      <div id="painel-filtros-descobrir" className={`${painelAberto ? 'grid' : 'hidden'} gap-3 md:grid md:grid-cols-4`}>
+      <div id="painel-filtros-descobrir" className="grid gap-3 sm:grid-cols-2 md:grid-cols-4" gap-3 md:grid md:grid-cols-4`}>
         <CampoSelect id="filtro-categoria" rotulo="Categoria" value={params.categoria} onChange={(v) => aplicar({ categoria: v })}>
           <option value="">Todas as categorias</option>
           {categorias.map((c) => (
@@ -188,7 +174,7 @@ export function FiltrosDescobrir({ params, categorias, municipios }: FiltrosDesc
         ))}
         {ativos.length > 0 && (
           <button type="button" onClick={() => aplicar(limparTudo)} className="inline-flex min-h-[44px] items-center px-2 text-sm font-semibold text-neutral-700 underline underline-offset-4 dark:text-cream-text">
-            Limpar tudo
+            Limpar filtros
           </button>
         )}
       </div>

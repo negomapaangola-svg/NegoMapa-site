@@ -3,6 +3,7 @@ import { MainLayout } from "@/components/layout/MainLayout"
 import { getVagasPublicas, VagaPublic, VagasPublicasResult } from "@/lib/actions/vagas-public"
 import { VagasContent } from "./_components/VagasContent"
 import { FiltrosVagas } from "./_components/FiltrosVagas"
+import { SettingsSheet } from "@/components/ui/CatalogComponents"
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -84,6 +85,7 @@ export default async function VagasPage({ searchParams }: { searchParams: Search
           </div>
 
           {vagas.length > 0 && (
+            <SettingsSheet activeCount={[filtros.q, filtros.categoria, filtros.provincia].filter(Boolean).length}>
             <FiltrosVagas
               q={filtros.q}
               categoria={filtros.categoria}
@@ -91,6 +93,7 @@ export default async function VagasPage({ searchParams }: { searchParams: Search
               categorias={listaUnica(vagas.map((v: VagaPublic) => v.categoria))}
               provincias={listaUnica(vagas.map((v: VagaPublic) => v.provincia))}
             />
+            </SettingsSheet>
           )}
 
           <VagasContent

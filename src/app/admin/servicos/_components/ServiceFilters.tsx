@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
+import { SettingsSheet } from '@/components/ui/CatalogComponents';
 
 interface ServiceFiltersProps {
   initialSearchParams: {
@@ -33,8 +34,10 @@ export function ServiceFilters({ initialSearchParams, estados }: ServiceFiltersP
   };
 
   const hasActiveFilters = initialSearchParams.q || initialSearchParams.estado;
+  const activeFilterCount = Number(Boolean(initialSearchParams.q)) + Number(Boolean(initialSearchParams.estado));
 
   return (
+    <SettingsSheet activeCount={activeFilterCount}>
     <form onSubmit={handleSubmit} className="space-y-4 md:space-y-0 md:flex md:items-end md:gap-4 flex-wrap" role="search" aria-label="Filtros de serviços">
       <div className="md:flex-1 min-w-[200px]">
         <label htmlFor="q" className="sr-only">Buscar serviços</label>
@@ -79,5 +82,6 @@ export function ServiceFilters({ initialSearchParams, estados }: ServiceFiltersP
         )}
       </div>
     </form>
+    </SettingsSheet>
   );
 }

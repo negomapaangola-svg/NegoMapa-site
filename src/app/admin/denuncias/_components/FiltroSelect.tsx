@@ -34,7 +34,7 @@ export function FiltroSelect({ id, label, param, value, options }: Props) {
         id={id}
         value={value}
         onChange={(e) => handleChange(e.target.value)}
-        className="px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-[4px] bg-white dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
+        className="min-h-[44px] px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-[4px] bg-white dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>
