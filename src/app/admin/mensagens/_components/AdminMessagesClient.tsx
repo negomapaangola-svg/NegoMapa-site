@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { SettingsSheet } from '@/components/ui/CatalogComponents';
+import { SettingsSheet } from '@/components/ui/CatalogComponents'
 import {
   archiveAdminMessage,
   getAdminMessages,

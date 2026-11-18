@@ -160,6 +160,7 @@ export default async function AdminDenunciasPage({
               <div className="ml-auto text-sm text-neutral-500 dark:text-neutral-400">
                 {denuncias.length} denúncia{denuncias.length !== 1 ? 's' : ''} encontrada{denuncias.length !== 1 ? 's' : ''}
               </div>
+              </div>
               {(filtros.estado || filtros.tipo_alvo) && <Link href="/admin/denuncias" className="mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-orange-700 underline underline-offset-4 dark:text-orange-300">Limpar filtros</Link>}
               </div>
             </details>
