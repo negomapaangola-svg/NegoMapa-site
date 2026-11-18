@@ -79,6 +79,7 @@ async function criarNotificacao(
 }
 
 export async function listarMinhasCandidaturas(): Promise<Resultado<CandidaturaCandidato[]>> {
+  if (await isAdmin()) return { success: false, error: 'Contas administrativas não podem utilizar candidaturas de cliente.' }
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Sessão expirada. Inicie sessão novamente.' }
@@ -101,6 +102,7 @@ export async function listarMinhasCandidaturas(): Promise<Resultado<CandidaturaC
 }
 
 export async function criarCandidatura(vagaId: string, formData: FormData): Promise<ResultadoCandidatura> {
+  if (await isAdmin()) return { success: false, error: 'Contas administrativas não podem candidatar-se a vagas.' }
   if (!UUID_REGEX.test(vagaId)) return { success: false, error: 'Vaga inválida.' }
 
   const supabase = await createSupabaseServerClient()
