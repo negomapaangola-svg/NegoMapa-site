@@ -60,8 +60,7 @@ function formatarDataLista(valor: string): string {
 
 export function MensagensPainel({ conversas: conversasIniciais, userId, basePath, conversaInicial }: Props) {
   const router = useRouter()
-  const [conversasLocais, setConversasLocais] = React.useState<ConversaResumo[] | null>(null)
-  const conversas = conversasLocais ?? conversasIniciais
+  const [conversas, setConversas] = React.useState<ConversaResumo[]>(() => conversasIniciais)
   const [selecionada, setSelecionada] = React.useState<string | null>(
     conversaInicial && conversasIniciais.some((c) => c.id === conversaInicial) ? conversaInicial : null
   )
@@ -84,7 +83,7 @@ export function MensagensPainel({ conversas: conversasIniciais, userId, basePath
     } else {
       setErro(resultado.error)
     }
-    setConversasLocais((anteriores) =>
+    setConversas((anteriores) =>
       anteriores.map((c) => (c.id === conversaId ? { ...c, nao_lidas: 0 } : c))
     )
   }, [])
