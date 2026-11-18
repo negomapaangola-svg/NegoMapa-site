@@ -54,9 +54,9 @@ export const Header = forwardRef<HTMLElement, { className?: string; hideGlobalSe
 
     const estaActivo = (href: string) => pathname === href || pathname.startsWith(`${href}/`)
     const linksCabecalho = ['inicio','descobrir','servicos','profissionais','empresas','produtos','vagas'].map((id) => ITENS_NAVEGACAO.find((item) => item.id === id)!).filter(Boolean)
-    const publicar = contexto?.administrador ? null : contexto && contexto.profissional && contexto.estadoProfissional === 'aprovado'
+    const publicar = contexto?.administrador || contexto?.accountType === 'cliente' ? null : contexto && contexto.accountType === 'profissional' && contexto.profissional && contexto.estadoProfissional === 'aprovado'
       ? { href:'/cadastrar-servico', label:'Publicar serviço' }
-      : contexto?.empresa && contexto.empresaAprovada ? { href:'/empresa/painel/vagas/nova', label:'Publicar vaga' } : null
+      : contexto?.accountType === 'empresa' && contexto.empresa && contexto.empresaAprovada ? { href:'/empresa/painel/vagas/nova', label:'Publicar vaga' } : null
 
     return <>
       <a href="#main-content" className="skip-link">Ir para o conteúdo principal</a>
