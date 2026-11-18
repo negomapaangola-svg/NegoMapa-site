@@ -164,7 +164,7 @@ async function utilizadorParticipaNaConversa(
     supabase.from('companies').select('id,is_approved,estado').eq('user_id', userId),
   ])
   if (perfilConta.data?.is_active !== true) return false
-  if (conversa.profissional_id && perfil?.data?.id === conversa.profissional_id && perfil.data.estado === 'aprovado') return true
+  if (conversa.profissional_id && perfil?.data?.id === conversa.profissional_id && perfil?.data?.estado === 'aprovado') return true
   return Boolean(conversa.empresa_id && (empresas.data ?? []).some((empresa) => empresa.id === conversa.empresa_id && empresa.is_approved === true && empresa.estado === 'aprovado'))
 }
 
