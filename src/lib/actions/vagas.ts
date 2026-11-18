@@ -81,6 +81,7 @@ async function criarNotificacao(
 }
 
 export async function createVaga(formData: VagaFormData, companyId: string): Promise<ActionResult> {
+  if (await isAdmin()) return { success: false, error: 'Contas administrativas não podem publicar vagas.' }
   const supabase = await createSupabaseServerClient()
 
   const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -103,7 +104,7 @@ export async function createVaga(formData: VagaFormData, companyId: string): Pro
 
   const { data: company, error: companyError } = await supabase
     .from('companies')
-    .select('id, is_approved')
+    .select('id, is_approved, estado')
     .eq('id', companyId)
     .eq('user_id', user.id)
     .maybeSingle()
@@ -112,7 +113,7 @@ export async function createVaga(formData: VagaFormData, companyId: string): Pro
     return { success: false, error: 'Empresa não encontrada. Cadastre a sua empresa primeiro.' }
   }
 
-  if (!company.is_approved) {
+  if (!company.is_approved || company.estado !== 'aprovado') {
     return { success: false, error: 'A sua empresa ainda não foi aprovada. Não é possível publicar vagas.' }
   }
 
