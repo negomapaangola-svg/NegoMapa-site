@@ -271,3 +271,21 @@ Não foram encontrados usos concretos de `servicos-imagens` ou `vagas-capas` nos
 - A renumeração em cópia temporária resolve apenas duplicados/versões com formato antigo; não cria o baseline ausente e não deve ser confundida com reconciliação do histórico remoto.
 - Não se deve marcar migrações antigas como aplicadas, inventar uma tabela mínima, ou copiar dados de produção para a suite. A solução correcta é obter um dump **apenas de schema**, revisto e aprovado, e versioná-lo como baseline sem dados, ou reconstruir uma baseline a partir de migrations autoritativas antes de retomar a suite.
 - Até esse baseline existir, não há evidência local de migrações completas, RLS, Auth e Storage. O workflow mantém falha explícita para impedir falso positivo.
+
+
+## 11. Resultado do runner local — 2026-11-18 20:03 UTC
+
+- Run Supabase local #44386678756, commit `51f6506b31c7138b0faf489a46fa600f7100a4cd`: **FAILED**.
+- `supabase config validate`: passou.
+- CLI instalada e Docker conseguiu descarregar as imagens do stack.
+- A renumeração de versões duplicadas apenas na cópia temporária funcionou; o stack aplicou sequencialmente as seis primeiras migrações.
+- A sexta migração, `20261011_create_vagas_module.sql`, falhou porque referencia `public.companies(id)`, mas a tabela `public.companies` não existe no schema reconstruído pelas migrações versionadas no repositório.
+- Consequentemente, Auth endpoint, invariantes RLS/Storage e testes subsequentes foram ignorados. Não se declaram aprovados.
+- O inventário remoto de migrações do Supabase contém histórico aplicado com versões e nomes diferentes do conjunto versionado no repositório (ex.: versões remotas `20261027201608` e posteriores). A cópia local do repositório não contém o baseline completo que originou o schema actual de produção.
+- Não é seguro inventar uma tabela `companies` mínima: as migrações seguintes dependem de colunas, constraints, triggers e policies que não estão descritas como baseline no conjunto actual.
+- Correcção necessária para o runner: obter um snapshot **schema-only** revisto e sem dados de produção, ou reconstruir e versionar explicitamente o baseline completo; depois marcar as versões históricas remotas como aplicadas na base local e testar apenas as migrações ainda pendentes. Não usar service-role nem dados de utilizadores reais no runner.
+- O workflow de validação geral no mesmo HEAD concluiu **success**: lint alterados, build e TypeScript passaram. Isto não substitui a validação Supabase.
+
+### Decisão de segurança
+
+A ordem do pedido não permite implementar o fluxo de eliminação antes da validação de migração, Auth, RLS e Storage. Assim, a implementação funcional, a migração de eliminação e os testes com contas/ficheiros TESTE continuam suspensos. Nenhuma alteração foi aplicada em produção; nenhum rollback ou limpeza foi executado.
