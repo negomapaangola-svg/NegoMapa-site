@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
+import { isAdmin } from '@/lib/auth'
 import { PROVINCIAS_ANGOLA } from '@/lib/listas-selecao'
 import { MENSAGEM_BLOQUEIO_PROFISSIONAL } from '@/lib/mensagens-bloqueio'
 
@@ -64,6 +65,7 @@ export async function obterServicoParaPedido(
 }
 
 async function contaClienteActiva(supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>, userId: string): Promise<boolean> {
+  if (await isAdmin()) return false
   const [perfil, profissional, empresa] = await Promise.all([
     supabase.from('profiles').select('account_type,is_active').eq('id', userId).maybeSingle(),
     supabase.from('profissionais').select('id').eq('user_id', userId).limit(1).maybeSingle(),
