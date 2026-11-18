@@ -6,79 +6,154 @@ Pull request: #39 (Draft)
 
 ## Âmbito
 
-Auditoria das páginas, componentes, acções de servidor, esquema, vistas, políticas RLS, estados e notificações do percurso de vagas. A regra geral de aprovação automática não foi alterada.
+Auditoria das páginas, componentes, acções de servidor, esquema, vistas, políticas RLS, estados e notificações do percurso de vagas. A regra geral de aprovação automática da Fase 7 não foi alterada.
 
 ## Comportamento esperado vs. observado
 
 | Percurso | Esperado no MVP | Observado antes da Fase 2 | Resultado nesta fase |
 |---|---|---|---|
-| Criar vaga | Empresa autorizada cria vaga própria | Formulário e acção existentes; validam sessão, empresa proprietária e aprovação da empresa | Mantido; não foi alterada a regra de aprovação |
-| Editar vaga | Empresa altera apenas vaga própria | Não existia percurso de edição no painel | Implementado com verificação de sessão, propriedade e vaga não encerrada |
-| Publicar vaga | Vaga aprovada fica disponível ao público | Descoberta/detalhe usam vistas públicas e estado aprovado; triggers de aprovação existentes permanecem intactos | Mantido; nenhuma regra de aprovação foi alterada |
-| Encerrar vaga | Empresa retira a própria vaga da descoberta e impede novas candidaturas | Não existia acção nem estado/campo de encerramento | Implementado com `encerrada_em`, sem reutilizar o estado de moderação |
+| Criar vaga | Empresa autorizada cria vaga própria | Formulário e acção existentes; validam sessão, empresa proprietária e aprovação da empresa | Mantido; criação autenticada confirmada em teste SQL |
+| Editar vaga | Empresa altera apenas vaga própria | Não existia percurso de edição no painel | Implementado; edição própria passou e edição de vaga alheia afectou 0 linhas |
+| Publicar vaga | Vaga aprovada fica disponível ao público | Triggers e vistas públicas existentes | Criação autenticada com estado pedido `pendente` foi transformada pelo trigger existente em `aprovado`; nenhuma regra de aprovação foi alterada |
+| Encerrar vaga | Empresa retira a própria vaga da descoberta e impede novas candidaturas | Não existia acção nem estado/campo de encerramento | Implementado com `encerrada_em`; proprietário consegue encerrar a própria vaga; candidato e outra empresa não conseguem |
 | Listar vagas | Empresa consulta apenas as próprias vagas | `getUserVagas` filtra por empresa obtida através de `companies.user_id = auth.uid()` | Mantido e passou a mostrar vagas encerradas |
-| Descobrir/pesquisar | Candidato consulta vagas públicas e filtra por texto, categoria e província | Pesquisa normalizada, filtros GET e paginação já existiam | Mantido; vistas continuam a expor apenas vagas elegíveis |
-| Detalhe | Candidato consulta vaga publicada | Rota usa `vagas_publicas`, estado aprovado e empresa aprovada | Mantido; a política restritiva exclui vagas encerradas |
-| Candidatar-se | Candidato autenticado e elegível envia candidatura | Formulário valida nome, contacto, mensagem e URL CV; a política bloqueia candidatura à própria vaga | Mantido; validação de elegibilidade passou também a verificar conta activa da empresa e encerramento |
-| Duplicados | Uma candidatura por utilizador/vaga | Constraint UNIQUE `(vaga_id, user_id)`; acção trata erro `23505` | Mantido e verificado no esquema |
-| Consultar candidaturas | Candidato vê as suas; empresa vê as recebidas nas suas vagas | RLS separa candidato por `user_id` e empresa por `empresa_dona_da_vaga(vaga_id)` | Políticas mantidas; acções continuam a filtrar pela empresa activa |
-| Estados/notificações | Empresa acompanha e altera estados permitidos; partes recebem notificações | Acções existentes notificam empresa quando recebe candidatura e candidato quando o estado muda | Mantido; não foram introduzidos novos estados de aprovação |
+| Descobrir/pesquisar | Candidato consulta vagas públicas e filtra por texto, categoria e província | Pesquisa normalizada, filtros GET e paginação já existiam | Vista pública confirmou vaga aberta e excluiu vaga encerrada e empresa inactiva |
+| Detalhe | Candidato consulta vaga publicada | Rota usa `vagas_publicas`, estado aprovado e empresa aprovada | Revisão estática; sem sessão de navegador para teste de clique |
+| Candidatar-se | Candidato autenticado e elegível envia candidatura | Formulário valida nome, contacto, mensagem e URL CV | INSERT autenticado em vaga aprovada passou; vagas encerradas e empresa inactiva recusadas |
+| Duplicados | Uma candidatura por utilizador/vaga | Constraint UNIQUE `(vaga_id, user_id)`; acção trata erro `23505` | Tentativa duplicada recusada com SQLSTATE `23505` |
+| Consultar candidaturas | Candidato vê as suas; empresa vê as recebidas nas suas vagas | RLS separa candidato por `user_id` e empresa por `empresa_dona_da_vaga(vaga_id)` | Testes cruzados com dois candidatos e duas empresas passaram |
+| Estados/notificações | Empresa acompanha e altera estados permitidos; partes recebem notificações | Acções existentes notificam empresa quando recebe candidatura e candidato quando o estado muda | Mantido; alteração directa de estado pelo candidato recusada |
 
 ## Evidência do Supabase
 
-Consulta ao projecto `sjelyaewgcmmtnudcgem`:
+Projecto: `sjelyaewgcmmtnudcgem`.
 
 - `public.vagas` e `public.candidaturas` têm RLS activado.
-- A política `vagas_update_auth` limita UPDATE à empresa proprietária e confirma a propriedade no `WITH CHECK`.
-- A política `candidaturas_select_candidato` limita SELECT a `user_id = auth.uid()`.
-- A política `candidaturas_select_empresa` usa `empresa_dona_da_vaga(vaga_id)`.
-- A política de INSERT de candidaturas exige utilizador próprio, estado inicial `enviada`, vaga disponível e não pertencente à própria empresa.
+- `vagas_update_auth` limita UPDATE à empresa proprietária e confirma a propriedade no `WITH CHECK`.
+- `candidaturas_select_candidato` limita SELECT a `user_id = auth.uid()`.
+- `candidaturas_select_empresa` usa `empresa_dona_da_vaga(vaga_id)`.
+- INSERT de candidaturas exige utilizador próprio, estado inicial `enviada`, vaga disponível e não pertencente à própria empresa.
 - A constraint `candidaturas_vaga_user_unica` existe.
-- A política restritiva `active_account_required` mantém-se nas duas tabelas.
-- A nova política restritiva `vagas_public_open_only` filtra vagas encerradas na role proprietária da vista pública.
-- A função `vaga_disponivel_para_candidatura(uuid)` exige vaga aprovada, não encerrada, empresa aprovada e conta da empresa activa.
+- `active_account_required` mantém-se nas tabelas relevantes.
+- `vagas_public_open_only` filtra vagas encerradas na role proprietária da vista pública.
+- `vaga_disponivel_para_candidatura(uuid)` exige vaga aprovada, não encerrada, empresa aprovada e conta da empresa activa.
 
-Antes da migração: 3 vagas (todas rejeitadas), 0 candidaturas e 0 vagas aprovadas.  
-Depois da migração: 3 vagas, 0 candidaturas e 0 vagas encerradas. Não houve alteração de registos existentes.
+Antes da migração: 3 vagas rejeitadas, 0 candidaturas e 0 vagas aprovadas.  
+Depois da migração: 3 vagas, 0 candidaturas e 0 vagas encerradas. Nenhum registo existente foi alterado.
+
+## Testes funcionais SQL com papéis distintos
+
+Foi criada uma fixture sintética numa única transacção SQL e terminada com `ROLLBACK`. Não ficaram contas, empresas, vagas ou candidaturas de demonstração persistidas na base de dados de produção. Os endereços usam o domínio reservado `.invalid`; não foram usados contactos reais.
+
+### IDs usados na fixture (efémeros; transacção revertida)
+
+**Identidades**
+- Empresa A: `10000000-0000-4000-8000-000000000001`
+- Empresa B: `10000000-0000-4000-8000-000000000002`
+- Profissional A: `10000000-0000-4000-8000-000000000003`
+- Profissional B: `10000000-0000-4000-8000-000000000004`
+- Empresa inactiva: `10000000-0000-4000-8000-000000000005`
+
+**Empresas**
+- TESTE Empresa Alfa: `20000000-0000-4000-8000-000000000001`
+- TESTE Empresa Beta: `20000000-0000-4000-8000-000000000002`
+- TESTE Empresa Inactiva: `20000000-0000-4000-8000-000000000003`
+
+**Vagas**
+- TESTE — Assistente Alfa: `30000000-0000-4000-8000-000000000001`
+- TESTE — Vaga Encerrada: `30000000-0000-4000-8000-000000000002`
+- TESTE — Vaga Empresa Beta: `30000000-0000-4000-8000-000000000003`
+- TESTE — Vaga Empresa Inactiva: `30000000-0000-4000-8000-000000000004`
+- TESTE — Criada por Empresa A via INSERT autenticado: `30000000-0000-4000-8000-000000000005`
+
+**Candidaturas**
+- Profissional A → vaga Alfa: `40000000-0000-4000-8000-000000000001`
+- Profissional B → vaga Beta: `40000000-0000-4000-8000-000000000002`
+- Foi também executado um INSERT válido de Profissional A para a vaga criada pela Empresa A; o registo foi revertido com a transacção.
+
+### Resultados
+
+Todos os 23 controlos da transacção passaram:
+
+| Teste | Resultado | Evidência |
+|---|---|---|
+| Empresa A edita vaga própria | PASS | UPDATE afectou 1 linha |
+| Empresa A edita vaga B | PASS | UPDATE afectou 0 linhas |
+| Empresa A elimina vaga B | PASS | DELETE afectou 0 linhas |
+| Empresa A encerra vaga B | PASS | UPDATE afectou 0 linhas |
+| Empresa A encerra vaga própria | PASS | UPDATE afectou 1 linha |
+| Empresa A tenta alterar estado de aprovação | PASS | Trigger recusou: `P0001`, apenas administradores podem alterar estado |
+| Empresa A cria vaga | PASS | INSERT autenticado aceite; trigger existente definiu `estado=aprovado` |
+| Empresa A consulta candidatura própria | PASS | 1 linha visível |
+| Empresa A não consulta candidatura da vaga B | PASS | 0 linhas visíveis |
+| Profissional A consulta candidatura própria | PASS | 1 linha visível |
+| Profissional A não consulta candidatura B | PASS | 0 linhas visíveis |
+| Profissional B não consulta candidatura A | PASS | 0 linhas visíveis |
+| Profissional A candidata-se a vaga aberta | PASS | INSERT aceite |
+| Candidatura duplicada | PASS | Recusada por UNIQUE, SQLSTATE `23505` |
+| Candidatura a vaga encerrada | PASS | RLS recusou, SQLSTATE `42501` |
+| Candidatura a empresa inactiva | PASS | RLS recusou, SQLSTATE `42501` |
+| Candidato tenta inserir candidatura já aceite | PASS | RLS recusou, SQLSTATE `42501` |
+| Candidato tenta alterar estado da candidatura | PASS | UPDATE afectou 0 linhas |
+| Candidato tenta encerrar vaga | PASS | UPDATE afectou 0 linhas |
+| Descoberta inclui vaga aberta | PASS | 1 linha visível |
+| Descoberta exclui vaga encerrada | PASS | 0 linhas visíveis |
+| Descoberta exclui empresa inactiva | PASS | 0 linhas visíveis |
+| Setup da fixture sintética | PASS | 5 identidades, 3 empresas, 4 vagas iniciais, 1 vaga criada via API/RLS e 2 candidaturas iniciais |
+
+Depois do `ROLLBACK`, consulta de confirmação devolveu 0 utilizadores, 0 empresas, 0 vagas e 0 candidaturas com os identificadores/prefixos de teste. Nenhum dado de produção foi apagado.
+
+### Limite do teste funcional no preview
+
+- Preview Vercel READY e associado ao commit indicado na secção de entrega.
+- O ambiente desta sessão não disponibiliza um navegador interactivo autenticado para clicar nos formulários, iniciar sessão e capturar screenshots.
+- A tentativa de abrir a URL pelo leitor web devolveu erro interno de acesso; não foi possível fazer teste visual/end-to-end do formulário, notificações, mensagens de loading ou estados vazios.
+- Os controlos acima são testes SQL/RLS com identidades autenticadas simuladas na transacção, não devem ser confundidos com teste de interface no browser.
+- Mensagens e estados vazios foram revistos estaticamente no código e validados por lint/build/TypeScript, mas não por screenshots ou interacção real.
+
+## Eliminação de vagas — decisão recomendada
+
+**Recomendação: opção A — não permitir eliminação pelo proprietário; usar apenas encerramento.**
+
+Evidência real das chaves estrangeiras:
+- `candidaturas.vaga_id → vagas.id ON DELETE CASCADE`
+- `avaliacoes.vaga_id → vagas.id ON DELETE CASCADE`
+- `denuncias.vaga_id → vagas.id ON DELETE CASCADE`
+
+A tabela `notificacoes` guarda `referencia_id` sem FK para vagas: as notificações não são apagadas em cascata e podem ficar com referências órfãs. A única tabela encontrada com nome de auditoria é `admin_account_deletion_audit`; não foi encontrada tabela de auditoria específica das alterações de vagas.
+
+**Risco confirmado:** a política actual `vagas_delete_auth` permite ao proprietário eliminar a própria vaga por API directa. O teste confirmou que Empresa A não consegue eliminar a vaga B; não foi executada eliminação da vaga própria. A política não foi alterada nesta fase, por falta de decisão explícita de implementação. A recomendação A exige uma alteração posterior autorizada para retirar essa permissão ao proprietário.
 
 ## Migração e reversão
 
 - Migração aditiva: `20261117231159_vagas_encerramento_seguro.sql`.
 - Reversão: `supabase/rollback/20261117231159_vagas_encerramento_seguro_reversao.sql`.
-- A simulação da migração correu dentro de uma transacção terminada com ROLLBACK; confirmou que as instruções e pós-condições executam sem persistir alterações.
-- A migração foi depois aplicada e a coluna, política e função foram verificadas.
-- A reversão aborta se existir qualquer vaga com `encerrada_em IS NOT NULL`; não foi executada.
-- Nenhuma política RLS de candidaturas foi removida ou alargada. Nenhuma migração destrutiva foi executada.
+- Simulação SQL com ROLLBACK e aplicação posterior verificada.
+- A reversão aborta se existirem vagas com `encerrada_em IS NOT NULL`; não foi executada.
+- Nenhuma migração destrutiva foi executada.
 
-## Testes e limites
+## CI, preview e vulnerabilidades
 
-| Teste | Resultado |
-|---|---|
-| Simulação SQL da migração | PASSOU; transacção revertida e esquema permaneceu inalterado |
-| Aplicação da migração e verificação pós-condição | PASSOU |
-| RLS activado em vagas/candidaturas | PASSOU por introspecção |
-| Isolamento de UPDATE por empresa | PASSOU em transacção com identidade activa `authenticated`: tentativa de actualizar vagas não pertencentes à empresa afectou 0 linhas; transacção revertida |
-| Políticas de isolamento candidato/empresa | Confirmadas por introspecção; não houve teste funcional com dois candidatos |
-| Restrição contra duplicados | PASSOU por introspecção da constraint UNIQUE; tentativa real não executada |
-| Validação de candidatura a vaga encerrada/empresa inactiva | PASSOU por definição instalada da função; sem vaga aprovada para teste funcional |
-| Pesquisa, filtros e detalhe | Revisão estática do código; sem sessão de navegador disponível |
-| Erros de carregamento vs. listas vazias | Implementado com estados de erro distintos nas listagens pública e da empresa; lint/build/TypeScript executados no CI |
-| Criação, edição, publicação, encerramento e candidatura com papéis distintos | NÃO EXECUTADO: o projecto tem 0 candidatos activos, 0 vagas aprovadas e 0 candidaturas. Não foram criadas contas nem dados de demonstração |
-| Lint, build e TypeScript | PASSOU no GitHub Actions (run #126, commit `e3fc4b33`): lint de todos os ficheiros alterados, `npm run build` e `npx tsc --noEmit` concluídos com sucesso em Node 24 |
-| Preview Vercel | BLOQUEADO pelo limite da equipa: `api-deployments-free-per-day`, mais de 100 deployments; API devolveu HTTP 402 e retry em 24 horas |
+- GitHub Actions run #127: lint dos ficheiros alterados, `npm run build` e `npx tsc --noEmit` passaram em Node 24.
+- A Vercel aceitou novo deployment após o limite diário ter sido restabelecido; deployment READY associado ao commit documentado abaixo.
+- `npm ci` identificou 20 vulnerabilidades no conjunto de dependências: 6 moderadas, 13 altas e 1 crítica. Não foi executado `npm audit fix`, por estar fora do âmbito.
+- Build Vercel reportou aviso de ESLint 9.39.5 deprecated, aviso de configuração npm `cache-dir` desconhecida e install script pendente de aprovação para `unrs-resolver@1.12.2`. Não foram alteradas dependências.
 
-## Riscos restantes
+## Riscos e pendências
 
-1. Testes funcionais completos com duas empresas activas e um candidato activo exigem contas de teste autorizadas ou um ambiente isolado. Não foram criados utilizadores ou registos de demonstração em produção.
-2. O preview Vercel correspondente ao commit não pôde ser criado devido ao limite de deployments. Não existe URL de preview válida para entregar nesta execução.
-3. A política existente `vagas_delete_auth` permite ao proprietário eliminar uma vaga; a FK `candidaturas.vaga_id ON DELETE CASCADE` faria desaparecer as candidaturas associadas. A UI desta fase não oferece eliminação. A política não foi alterada por não fazer parte da lista de acções solicitadas.
-4. `npm ci` reportou 20 vulnerabilidades no conjunto de dependências (6 moderadas, 13 altas e 1 crítica). Não foi executado `npm audit fix`, por estar fora do âmbito e poder introduzir alterações incompatíveis.
-5. O estado de aprovação/moderação permanece sob as triggers e políticas existentes; a Fase 7 continua responsável por qualquer alteração à regra geral.
+1. Os dados sintéticos foram transaccionais e revertidos; não existem contas persistentes com credenciais para login no preview.
+2. O teste end-to-end de browser, formulários, notificações, estados de loading e mensagens não pôde ser executado nesta sessão.
+3. A política `vagas_delete_auth` continua a permitir ao proprietário eliminar a própria vaga, com perda em cascata de candidaturas, avaliações e denúncias. Recomendação A aguarda decisão explícita para alteração.
+4. A regra de aprovação automática permanece inalterada. O trigger existente define `aprovado` na inserção de vagas; alterações posteriores de estado são recusadas para não-administradores.
+5. As vulnerabilidades npm acima permanecem pendentes de tratamento numa fase autorizada.
 
-## Critérios de aceitação
+## Critérios de aceitação — estado
 
-- Fluxo de vaga e candidatura com papéis distintos: PARCIAL — políticas e limites de acesso confirmados; teste end-to-end bloqueado pela ausência de contas/dados elegíveis.
-- Empresa não gere vaga alheia: PARCIAL — acções e RLS limitam por propriedade; teste funcional entre duas empresas não executado.
-- Candidato não vê candidaturas de outros: PARCIAL — política RLS limita ao próprio utilizador; teste funcional com dois candidatos não executado.
-- Erros e estados vazios claros: IMPLEMENTADO — as listagens pública e da empresa distinguem falhas de carregamento de listas vazias; páginas de candidaturas já apresentam erros explícitos.
-- PR e preview entregues: PR #39 entregue em Draft; preview BLOQUEADO pelo limite Vercel.
+- Fluxo com papéis distintos: PARCIAL — 23 testes SQL/RLS passaram; teste de browser ainda pendente.
+- Empresa não gere vaga alheia: CUMPRIDO ao nível de RLS (editar, encerrar e eliminar vaga B recusados).
+- Candidato não vê candidaturas de outros: CUMPRIDO ao nível de RLS (testes A↔B passaram).
+- Empresa não vê candidaturas de vagas alheias: CUMPRIDO ao nível de RLS.
+- Candidatura duplicada, vaga encerrada e empresa inactiva: CUMPRIDO ao nível de RLS/constraint.
+- Erros e estados vazios: PARCIAL — revisão estática; falta validação interactiva no browser.
+- PR e preview: PR #39 aberto em Draft; preview READY e associado ao commit indicado na entrega.
+- Fase 2 pronta para revisão final: SIM, com as limitações e a decisão de eliminação explicitamente assinaladas; não equivale a aprovação para merge.
