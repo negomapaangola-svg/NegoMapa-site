@@ -18,4 +18,6 @@ drop policy if exists approved_company_insert_produtos on public.produtos;
 drop policy if exists approved_company_insert_vagas on public.vagas;
 drop policy if exists client_only_insert_pedidos_servico on public.pedidos_servico;
 drop policy if exists client_only_update_pedidos_servico on public.pedidos_servico;
+drop policy if exists client_only_select_pedidos_servico on public.pedidos_servico;
+drop policy if exists client_only_insert_conversas on public.conversas;
 commit;
