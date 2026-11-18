@@ -230,12 +230,16 @@ export async function updateProfile(formData: ProfileFormData): Promise<ActionRe
 }
 
 export async function createService(formData: ServiceFormData): Promise<ActionResult> {
+  if (await isAdmin()) return { success: false, error: 'Contas administrativas não podem publicar serviços.' }
   const supabase = await createSupabaseServerClient()
 
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) {
     return { success: false, error: 'Utilizador não autenticado' }
   }
+
+  const { data: conta } = await supabase.from('profiles').select('is_active').eq('id', user.id).maybeSingle()
+  if (conta?.is_active !== true) return { success: false, error: 'A conta não está activa.' }
 
   if (!podePublicarServico(await obterContextoUtilizador())) {
     return { success: false, error: 'Apenas profissionais aprovados podem publicar serviços.' }
