@@ -24,6 +24,7 @@ export type PerfilProfissionalProprio = {
  * A RLS de profissionais permite ao próprio dono ler a sua linha, em qualquer estado.
  */
 export async function obterPerfilProfissionalDoUtilizador(): Promise<PerfilProfissionalProprio | null> {
+  if (await isAdmin()) return null
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
