@@ -82,31 +82,54 @@ async function authenticated(allowAdmin = false) {
 
 export async function getContaSnapshot(): Promise<ContaSnapshot | null> {
   const { supabase, user } = await authenticated()
-  const [profileResult, professionalResult, companyResult, detailsResult] = await Promise.all([
+  const [profileResult, detailsResult] = await Promise.all([
     supabase.from('profiles').select('id,nome,telefone,whatsapp,avatar_url,account_type,localizacao_provincia,localizacao_municipio,localizacao_bairro,is_active').eq('id', user.id).maybeSingle(),
-    supabase.from('profissionais').select('id,nome,telefone,whatsapp,bio,provincia,municipio,bairro,estado,avatar_url,categoria_id,especialidades,disponibilidade,disponibilidade_dias,disponibilidade_horarios,portfolio').eq('user_id', user.id).maybeSingle(),
-    supabase.from('companies').select('id,name,sector,province,city,bairro,rua,referencia_localizacao,website,description,whatsapp,phone,logo_url,is_approved,estado,horario_atendimento,portfolio').eq('user_id', user.id).maybeSingle(),
     supabase.from('conta_detalhes').select('formacao,preferencias,disponibilidade,tipo_empresa,tamanho_empresa').eq('user_id', user.id).maybeSingle(),
   ])
-  if (profileResult.error || professionalResult.error || companyResult.error || detailsResult.error) {
+
+  if (profileResult.error || detailsResult.error) {
     console.error('Erro ao carregar dados da conta.', {
       profile: profileResult.error?.code,
-      professional: professionalResult.error?.code,
-      company: companyResult.error?.code,
       details: detailsResult.error?.code,
     })
-    throw new Error('Não foi possível carregar todos os dados da conta. Actualize a página ou tente novamente.')
+    throw new Error('Não foi possível carregar os dados da conta. Actualize a página ou tente novamente.')
   }
+
   const profile = profileResult.data
   const accountType = profile?.account_type
   if (!profile || (accountType !== 'profissional' && accountType !== 'empresa' && accountType !== 'cliente')) {
     redirect('/escolher-tipo')
   }
+  if (profile.is_active !== true) redirect('/conta?erro=conta-inactiva')
+
+  // A conta cliente não consulta tabelas de negócio: registos legados não
+  // alteram o papel nem podem impedir a leitura do perfil pessoal.
+  let professional: ContaProfessional | null = null
+  let company: ContaCompany | null = null
+
+  if (accountType === 'profissional') {
+    const { data, error } = await supabase.rpc('get_my_professional_account')
+    if (error) {
+      console.error('Erro ao carregar perfil profissional próprio. Código:', error.code)
+      throw new Error('Não foi possível carregar o perfil profissional.')
+    }
+    const row = Array.isArray(data) ? data[0] : data
+    professional = (row as ContaProfessional | null) ?? null
+  } else if (accountType === 'empresa') {
+    const { data, error } = await supabase.rpc('get_my_company_profile')
+    if (error) {
+      console.error('Erro ao carregar perfil empresarial próprio. Código:', error.code)
+      throw new Error('Não foi possível carregar o perfil empresarial.')
+    }
+    const row = Array.isArray(data) ? data[0] : data
+    company = (row as ContaCompany | null) ?? null
+  }
+
   return {
     user: { id: user.id, email: user.email ?? '' },
     profile: profile as ContaProfile,
-    professional: (professionalResult.data as ContaProfessional | null) ?? null,
-    company: (companyResult.data as ContaCompany | null) ?? null,
+    professional,
+    company,
     details: (detailsResult.data as ContaDetails | null) ?? {},
     accountType,
   }
