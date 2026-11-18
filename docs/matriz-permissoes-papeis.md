@@ -21,7 +21,7 @@ Esta matriz define as capacidades de conta autenticada. As políticas RLS e as S
 - Um utilizador em admin_users não pode receber account_type de cliente, profissional ou empresa.
 - Políticas RLS restritivas impedem INSERT administrativo em empresas, profissionais, serviços, produtos e vagas.
 - A candidatura exige papel cliente activo e rejeita explicitamente administradores, profissionais e empresas.
-- Pedidos de serviço e início de conversas como cliente exigem cliente activo sem perfil empresarial/profissional associado.
+- Pedidos de serviço e início de conversas como cliente exigem `profiles.account_type = 'cliente'` e conta activa. Registos empresariais/profissionais legados pendentes ou suspensos não mudam o papel; uma identidade empresarial/profissional efectivamente aprovada continua separada.
 - Profissionais e empresas pendentes/suspensos não publicam nem gerem candidaturas/conversas; a publicação exige estado aprovado e conta activa.
 - Administradores não podem operar registos empresariais/profissionais legados próprios; continuam a poder moderar registos de terceiros.
 - O menu autenticado oculta perfil, candidaturas, pedidos e conversas para admin; as rotas e Server Actions repetem as verificações.
@@ -38,4 +38,4 @@ Esta matriz define as capacidades de conta autenticada. As políticas RLS e as S
 
 ## Reversão
 
-Executar o script versionado em supabase/rollback/20261118060000_permissoes_papeis_conta_reversao.sql: remove as duas funções e triggers e todas as políticas aditivas desta fase. Não elimina nem actualiza linhas existentes. A migração não elimina linhas existentes. Ainda não foi aplicada à base de dados de produção.
+Para reverter a fundação da Fase 6, executar `supabase/rollback/20261118060000_permissoes_papeis_conta_reversao.sql` (40 políticas, 2 triggers e 2 funções). Para reverter apenas a correcção de contacto do cliente, executar `supabase/rollback/20261118150000_corrigir_papel_cliente_contacto_persistencia_reversao.sql` (3 políticas de conversas/mensagens). Ambos os scripts não alteram linhas existentes. A migração base `20261118060000_permissoes_papeis_conta` está aplicada em produção; a correcção `20261118150000_corrigir_papel_cliente_contacto_persistencia` está versionada e pendente de testes funcionais antes de qualquer aplicação em produção.
