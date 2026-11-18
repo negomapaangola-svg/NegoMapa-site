@@ -19,7 +19,15 @@ function IconePerfil() {
 export function AuthUserMenu({ variante = 'cabecalho', onNavigate }: { variante?: 'cabecalho' | 'lista'; onNavigate?: () => void }) {
   const [contexto, setContexto] = useState<Contexto | null>(null)
   const [aberto, setAberto] = useState(false)
-  const [tema, setTema] = useState<Tema>('sistema')
+  const [tema, setTema] = useState<Tema>(() => {
+    if (typeof window === 'undefined') return 'sistema'
+    try {
+      const escolha = window.localStorage.getItem('negomapa-tema')
+      return escolha === 'claro' || escolha === 'escuro' ? escolha : 'sistema'
+    } catch {
+      return 'sistema'
+    }
+  })
   const pathname = usePathname()
   useEffect(() => {
     let activo = true
@@ -39,10 +47,6 @@ export function AuthUserMenu({ variante = 'cabecalho', onNavigate }: { variante?
         })
       }
     })
-    try {
-      const escolha = localStorage.getItem('negomapa-tema')
-      setTema(escolha === 'claro' || escolha === 'escuro' ? escolha : 'sistema')
-    } catch { setTema('sistema') }
     const pararAcompanharSistema = acompanharSistema()
     return () => { activo = false; subscription.unsubscribe(); window.removeEventListener('negomapa:auth-logout-started', aoSair); pararAcompanharSistema() }
   }, [])
