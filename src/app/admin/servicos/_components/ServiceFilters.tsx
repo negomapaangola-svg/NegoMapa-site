@@ -77,7 +77,7 @@ export function ServiceFilters({ initialSearchParams, estados }: ServiceFiltersP
         </Button>
         {hasActiveFilters && (
           <Button type="button" variant="outline" size="sm" onClick={handleClear}>
-            Limpar
+            Limpar filtros
           </Button>
         )}
       </div>

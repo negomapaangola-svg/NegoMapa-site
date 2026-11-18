@@ -114,6 +114,7 @@ export default async function AdminVagasPage({
                 </Link>
               ))}
             </div>
+            {estado && <Link href="/admin/vagas" className="mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-orange-700 underline underline-offset-4 dark:text-orange-300">Limpar filtros</Link>}
           </div>
           </SettingsSheet>
 
