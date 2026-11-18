@@ -4,6 +4,8 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 
+type ServerSupabase = Awaited<ReturnType<typeof createSupabaseServerClient>>
+
 export type ContaSnapshot = {
   user: { id: string; email: string }
   profile: any
@@ -113,7 +115,7 @@ function imageRefs(value: unknown, bucket: string, userId: string): string[] {
   ))]
 }
 
-async function cleanupUnreferencedImages(supabase: any, bucket: string, oldRefs: string[], newRefs: string[]) {
+async function cleanupUnreferencedImages(supabase: ServerSupabase, bucket: string, oldRefs: string[], newRefs: string[]) {
   const stillUsed = new Set(newRefs)
   for (const path of [...new Set(oldRefs)]) {
     if (stillUsed.has(path)) continue
@@ -154,7 +156,7 @@ function portfolioWithImageRefs(existing: unknown, refs: string[], bucket: strin
   return [...preserved, ...images]
 }
 
-async function ownedCompany(supabase: any, userId: string) {
+async function ownedCompany(supabase: ServerSupabase, userId: string) {
   const { data, error } = await supabase.from('companies')
     .select('id,name,logo_url,portfolio,is_approved,created_at')
     .eq('user_id', userId)
@@ -205,7 +207,7 @@ export async function guardarReferenciasImagem(input: {
   }
 
   const oldRefs: string[] = []
-  let updateError: any = null
+  let updateError: { message: string } | null = null
   if (input.folder === 'avatar') {
     const value = refs[0] ?? null
     if (profile.account_type === 'profissional') {
