@@ -30,7 +30,15 @@ export async function getContaSnapshot(): Promise<ContaSnapshot | null> {
     supabase.from('companies').select('id,name,sector,province,city,bairro,rua,referencia_localizacao,website,description,whatsapp,phone,logo_url,is_approved,estado,horario_atendimento,portfolio').eq('user_id', user.id).maybeSingle(),
     supabase.from('conta_detalhes').select('formacao,preferencias,disponibilidade,tipo_empresa,tamanho_empresa').eq('user_id', user.id).maybeSingle(),
   ])
-  if (profileResult.error) throw new Error('Não foi possível carregar o perfil da conta.')
+  if (profileResult.error || professionalResult.error || companyResult.error || detailsResult.error) {
+    console.error('Erro ao carregar dados da conta.', {
+      profile: profileResult.error?.code,
+      professional: professionalResult.error?.code,
+      company: companyResult.error?.code,
+      details: detailsResult.error?.code,
+    })
+    throw new Error('Não foi possível carregar todos os dados da conta. Actualize a página ou tente novamente.')
+  }
   const profile = profileResult.data
   const accountType = profile?.account_type
   if (accountType !== 'profissional' && accountType !== 'empresa' && accountType !== 'cliente') {
@@ -64,9 +72,10 @@ function validImageUrl(value: string) {
 
 export async function guardarPerfilConta(form: FormData): Promise<void> {
   const { supabase, user } = await authenticated()
-  const { data: profile } = await supabase.from('profiles').select('account_type').eq('id', user.id).maybeSingle()
+  const { data: profile, error: profileError } = await supabase.from('profiles').select('account_type,is_active').eq('id', user.id).maybeSingle()
   const tipo = profile?.account_type
-  if (!['profissional', 'empresa', 'cliente'].includes(tipo)) redirect('/escolher-tipo')
+  if (profileError || !['profissional', 'empresa', 'cliente'].includes(tipo)) redirect('/escolher-tipo')
+  if (profile?.is_active !== true) redirect('/conta/perfil?erro=conta-inactiva')
 
   const nome = field(form, 'nome')
   const telefone = field(form, 'telefone')
@@ -86,13 +95,13 @@ export async function guardarPerfilConta(form: FormData): Promise<void> {
     }
     const { data: owned } = await supabase.from('profissionais').select('id').eq('user_id', user.id).maybeSingle()
     if (!owned) redirect('/conta/perfil?erro=sem-perfil')
-    const { error } = await supabase.from('profissionais').update({
+    const { data: actualizado, error } = await supabase.from('profissionais').update({
       nome, telefone: telefone || null, whatsapp: whatsapp || null, bio: field(form, 'bio') || null,
       provincia: field(form, 'provincia') || null, municipio: field(form, 'municipio') || null, bairro: field(form, 'bairro') || null,
       categoria_id: field(form, 'categoria_id') || null, especialidades,
       disponibilidade: field(form, 'disponibilidade') || null, avatar_url: avatar, portfolio,
-    }).eq('user_id', user.id)
-    if (error) redirect('/conta/perfil?erro=guardar')
+    }).eq('user_id', user.id).select('id').maybeSingle()
+    if (error || !actualizado) redirect('/conta/perfil?erro=guardar')
   } else if (tipo === 'empresa') {
     const logo = field(form, 'logo_url')
     if (!validImageUrl(logo)) redirect('/conta/perfil?erro=avatar')
@@ -104,23 +113,23 @@ export async function guardarPerfilConta(form: FormData): Promise<void> {
     }
     const { data: owned } = await supabase.from('companies').select('id').eq('user_id', user.id).maybeSingle()
     if (!owned) redirect('/conta/perfil?erro=sem-perfil')
-    const { error } = await supabase.from('companies').update({
+    const { data: actualizado, error } = await supabase.from('companies').update({
       name: nome, sector: field(form, 'sector') || 'Geral', phone: telefone || null,
       whatsapp: whatsapp || null, province: field(form, 'province') || '', city: field(form, 'city') || null,
       bairro: field(form, 'bairro') || null, rua: field(form, 'rua') || null, referencia_localizacao: field(form, 'referencia_localizacao') || null, website: field(form, 'website') || null,
       description: field(form, 'description') || null, horario_atendimento: field(form, 'disponibilidade') || null,
       logo_url: logo, portfolio,
-    }).eq('user_id', user.id)
-    if (error) redirect('/conta/perfil?erro=guardar')
+    }).eq('user_id', user.id).select('id').maybeSingle()
+    if (error || !actualizado) redirect('/conta/perfil?erro=guardar')
   } else {
-    const { error } = await supabase.from('profiles').update({
+    const { data: actualizado, error } = await supabase.from('profiles').update({
       nome, telefone: telefone || null, whatsapp: whatsapp || null,
       localizacao_provincia: field(form, 'provincia') || null,
       localizacao_municipio: field(form, 'municipio') || null,
       localizacao_bairro: field(form, 'bairro') || null,
       updated_at: new Date().toISOString(),
-    }).eq('id', user.id)
-    if (error) redirect('/conta/perfil?erro=guardar')
+    }).eq('id', user.id).select('id').maybeSingle()
+    if (error || !actualizado) redirect('/conta/perfil?erro=guardar')
   }
 
   const details = {
@@ -132,8 +141,15 @@ export async function guardarPerfilConta(form: FormData): Promise<void> {
     tamanho_empresa: field(form, 'tamanho_empresa') || null,
     updated_at: new Date().toISOString(),
   }
-  const { error: detailsError } = await supabase.from('conta_detalhes').upsert(details, { onConflict: 'user_id' })
-  if (detailsError) redirect('/conta/perfil?erro=detalhes')
+  const { data: detalhesGuardados, error: detailsError } = await supabase
+    .from('conta_detalhes')
+    .upsert(details, { onConflict: 'user_id' })
+    .select('user_id')
+    .maybeSingle()
+  if (detailsError || detalhesGuardados?.user_id !== user.id) {
+    if (detailsError) console.error('Erro ao guardar dados complementares da conta. Código:', detailsError.code)
+    redirect('/conta/perfil?erro=detalhes')
+  }
 
   revalidatePath('/conta')
   revalidatePath('/conta/perfil')
