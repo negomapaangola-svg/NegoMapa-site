@@ -2,7 +2,7 @@
 
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { revalidatePath } from 'next/cache'
-import { getUser } from '@/lib/auth'
+import { getUser, isAdmin } from '@/lib/auth'
 
 export type AlvoAvaliacao = {
   tipo: 'profissional' | 'empresa' | 'servico' | 'vaga'
@@ -144,6 +144,7 @@ function getAlvoColumns(alvo: AlvoAvaliacao): Record<string, string | null> {
 }
 
 export async function criarAvaliacao(input: AvaliacaoInput): Promise<ActionResult> {
+  if (await isAdmin()) return { success: false, error: 'Contas administrativas não podem publicar avaliações como utilizadores.' }
   if (!input || typeof input !== 'object') {
     return { success: false, error: 'Dados da avaliação inválidos.' }
   }
@@ -210,6 +211,7 @@ export async function criarAvaliacao(input: AvaliacaoInput): Promise<ActionResul
 }
 
 export async function atualizarAvaliacao(input: AvaliacaoUpdateInput): Promise<ActionResult> {
+  if (await isAdmin()) return { success: false, error: 'Contas administrativas não podem gerir avaliações como utilizadores.' }
   const supabase = await createSupabaseServerClient()
 
   const user = await getUser()
@@ -267,6 +269,7 @@ export async function atualizarAvaliacao(input: AvaliacaoUpdateInput): Promise<A
 }
 
 export async function removerAvaliacao(avaliacaoId: string): Promise<ActionResult> {
+  if (await isAdmin()) return { success: false, error: 'Contas administrativas não podem gerir avaliações como utilizadores.' }
   const supabase = await createSupabaseServerClient()
 
   const user = await getUser()
