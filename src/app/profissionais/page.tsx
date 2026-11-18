@@ -56,7 +56,7 @@ export default async function ProfissionaisPage({ searchParams }: { searchParams
           {label:"Todas",value:"",href:`/profissionais?${new URLSearchParams({q:filtros.q,provincia:filtros.provincia})}`},
           ...categorias.map(c=>({label:c,value:c,href:`/profissionais?${new URLSearchParams({q:filtros.q,categoria:c,provincia:filtros.provincia})}`}))
         ]} />
-        <SettingsSheet title="Filtros e definições">
+        <SettingsSheet activeCount={[filtros.q, filtros.categoria, filtros.provincia].filter(Boolean).length}>
           <FiltrosProfissionais q={filtros.q} categoria={filtros.categoria} provincia={filtros.provincia} categorias={categorias} provincias={provincias} />
         </SettingsSheet>
         <ResultsHeader count={profissionais.length} label={profissionais.length===1?"profissional":"profissionais"} />

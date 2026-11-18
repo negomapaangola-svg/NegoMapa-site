@@ -77,7 +77,7 @@ function EmpresasContent() {
         <PageHeader title="Empresas" description="Encontre empresas perto de si." />
         <SearchBar action="/empresas" defaultValue={nome} placeholder="Pesquisar empresa" onSearch={setNome} />
         <FilterChips value={setor} onChange={setSetor} items={[{label:"Todas",value:""}, ...setores.map((s)=>({label:s,value:s}))]} />
-        <SettingsSheet title="Filtros e definições">
+        <SettingsSheet activeCount={[nome, setor, provincia].filter(Boolean).length}>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <label className="block text-sm font-medium text-ink dark:text-cream">Província
               <select value={provincia} onChange={(e)=>setProvincia(e.target.value)} className="mt-1.5 min-h-11 w-full rounded-xl border border-card-border bg-white px-3 text-sm dark:bg-neutral-900">

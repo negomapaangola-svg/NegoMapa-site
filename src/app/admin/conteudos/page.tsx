@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { MainLayout } from '@/components/layout/MainLayout'
+import { SettingsSheet } from '@/components/ui/CatalogComponents'
 import { isAdmin } from '@/lib/auth'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 
@@ -99,14 +100,19 @@ export default async function AdminContentPage({
             <Link href="/admin/vagas" className="rounded-md px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:text-neutral-200 dark:hover:bg-neutral-800">Vagas</Link>
           </nav>
 
-          <form className="mb-6 grid gap-3 sm:grid-cols-[minmax(0,1fr)_200px_auto]" action="/admin/conteudos">
+          <SettingsSheet activeCount={[search, status].filter(Boolean).length} className="mb-6">
+          <form className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_200px_auto]" action="/admin/conteudos">
             <input type="hidden" name="tipo" value={type} />
             <label className="sr-only" htmlFor="content-search">Pesquisar</label>
             <input id="content-search" name="q" defaultValue={search} placeholder="Pesquisar registos..." className="min-w-0 rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100" />
             <label className="sr-only" htmlFor="content-status">Estado</label>
             <input id="content-status" name="estado" defaultValue={status} placeholder="Filtrar por estado" className="min-w-0 rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100" />
-            <button type="submit" className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-white">Pesquisar</button>
+            <div className="flex flex-wrap items-center gap-3">
+              <button type="submit" className="min-h-11 rounded-md bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-white">Pesquisar</button>
+              {(search || status) && <Link href={"/admin/conteudos?tipo=" + type} className="inline-flex min-h-11 items-center text-sm font-semibold text-orange-700 underline underline-offset-4 dark:text-orange-300">Limpar filtros</Link>}
+            </div>
           </form>
+          </SettingsSheet>
 
           {error ? (
             <p role="alert" className="rounded-lg bg-red-50 p-4 text-sm text-red-800 dark:bg-red-950/40 dark:text-red-200">Não foi possível consultar estes registos. Confirme as permissões RLS e a migração correspondente.</p>
