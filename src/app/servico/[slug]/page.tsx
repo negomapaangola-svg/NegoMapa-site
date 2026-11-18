@@ -370,7 +370,7 @@ export default async function ServicoPage({ params }: { params: Promise<{ slug: 
                           Entrar ou criar conta
                         </Link>
                       </div>
-                    )}
+                    ) : null}
                   </div>
                 )}
                 {ehProprio && <p className="mt-4 text-sm text-neutral-600 dark:text-cream-text">Este é o seu próprio serviço.</p>}
