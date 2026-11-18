@@ -131,4 +131,37 @@ create policy approved_company_insert_vagas on public.vagas
 revoke all on function negomapa_private.block_admin_email_reuse() from public, anon, authenticated;
 revoke all on function negomapa_private.block_admin_account_type() from public, anon, authenticated;
 
+-- Customer service requests are a client capability, not a second persona for
+-- professional/company/admin identities.
+drop policy if exists client_only_insert_pedidos_servico on public.pedidos_servico;
+create policy client_only_insert_pedidos_servico on public.pedidos_servico
+  as restrictive for insert to authenticated
+  with check (
+    cliente_id = (select auth.uid())
+    and exists (select 1 from public.profiles p where p.id=(select auth.uid()) and p.account_type='cliente' and p.is_active is true)
+    and not (select public.is_admin())
+    and not exists (select 1 from public.profissionais pr where pr.user_id=(select auth.uid()))
+    and not exists (select 1 from public.companies c where c.user_id=(select auth.uid()))
+  );
+
+drop policy if exists client_only_update_pedidos_servico on public.pedidos_servico;
+create policy client_only_update_pedidos_servico on public.pedidos_servico
+  as restrictive for update to authenticated
+  using (
+    cliente_id = (select auth.uid())
+    and exists (select 1 from public.profiles p where p.id=(select auth.uid()) and p.account_type='cliente' and p.is_active is true)
+    and not (select public.is_admin())
+    and not exists (select 1 from public.profissionais pr where pr.user_id=(select auth.uid()))
+    and not exists (select 1 from public.companies c where c.user_id=(select auth.uid()))
+    or profissional_id = (select negomapa_private.profissional_aprovado_id())
+  )
+  with check (
+    (cliente_id = (select auth.uid())
+      and exists (select 1 from public.profiles p where p.id=(select auth.uid()) and p.account_type='cliente' and p.is_active is true)
+      and not (select public.is_admin())
+      and not exists (select 1 from public.profissionais pr where pr.user_id=(select auth.uid()))
+      and not exists (select 1 from public.companies c where c.user_id=(select auth.uid())))
+    or profissional_id = (select negomapa_private.profissional_aprovado_id())
+  );
+
 commit;
