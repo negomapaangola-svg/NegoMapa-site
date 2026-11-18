@@ -6,12 +6,80 @@ import { createSupabaseServerClient } from '@/lib/supabase-server'
 
 type ServerSupabase = Awaited<ReturnType<typeof createSupabaseServerClient>>
 
+export interface ProfileRow {
+  id?: string
+  nome?: string
+  telefone?: string
+  whatsapp?: string
+  avatar_url?: string
+  account_type?: 'profissional' | 'empresa' | 'cliente'
+  localizacao_provincia?: string
+  localizacao_municipio?: string
+  localizacao_bairro?: string
+  is_active?: boolean
+}
+
+export interface ProfessionalRow {
+  id?: string
+  nome?: string
+  telefone?: string
+  whatsapp?: string
+  bio?: string
+  provincia?: string
+  municipio?: string
+  bairro?: string
+  estado?: string
+  avatar_url?: string
+  categoria_id?: string
+  especialidades?: string[]
+  disponibilidade?: string
+  disponibilidade_dias?: string[]
+  disponibilidade_horarios?: unknown
+  portfolio?: unknown[]
+}
+
+export interface CompanyRow {
+  id?: string
+  name?: string
+  sector?: string
+  province?: string
+  city?: string
+  bairro?: string
+  rua?: string
+  referencia_localizacao?: string
+  website?: string
+  description?: string
+  whatsapp?: string
+  phone?: string
+  logo_url?: string
+  is_approved?: boolean
+  estado?: string
+  horario_atendimento?: string
+  portfolio?: unknown[]
+  created_at?: string
+}
+
+export interface DetailsRow {
+  formacao?: string
+  preferencias?: string
+  disponibilidade?: string
+  tipo_empresa?: string
+  tamanho_empresa?: string
+}
+
+export interface AvaliacaoResumo {
+  id?: string
+  nota?: number
+  comentario?: string | null
+  created_at?: string
+}
+
 export type ContaSnapshot = {
   user: { id: string; email: string }
-  profile: any
-  professional: any
-  company: any
-  details: any
+  profile: ProfileRow
+  professional: ProfessionalRow | null
+  company: CompanyRow | null
+  details: DetailsRow
   accountType: 'profissional' | 'empresa' | 'cliente'
 }
 
@@ -438,7 +506,7 @@ export async function getContaAvaliacoes() {
     supabase.from('companies').select('id').eq('user_id', user.id).maybeSingle(),
     supabase.from('avaliacoes').select('id,nota,comentario,created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(50),
   ])
-  let received: any[] = []
+  let received: AvaliacaoResumo[] = []
   if (profile?.account_type === 'profissional' && professional.data) {
     const { data } = await supabase.from('avaliacoes').select('id,nota,comentario,created_at').eq('profissional_id', professional.data.id).order('created_at', { ascending: false }).limit(50)
     received = data ?? []
@@ -446,7 +514,7 @@ export async function getContaAvaliacoes() {
     const { data } = await supabase.from('avaliacoes').select('id,nota,comentario,created_at').eq('company_id', company.data.id).order('created_at', { ascending: false }).limit(50)
     received = data ?? []
   }
-  return { type: profile?.account_type, received, given: given.data ?? [] }
+  return { type: profile?.account_type, received, given: (given.data ?? []) as AvaliacaoResumo[] }
 }
 
 export async function guardarNotificacoesConta(form: FormData): Promise<void> {

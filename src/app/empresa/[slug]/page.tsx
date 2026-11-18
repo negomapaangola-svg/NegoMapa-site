@@ -22,14 +22,33 @@ import { AvaliacoesProfissional } from "@/app/profissional/[slug]/_components/Av
 import { PortfolioProfissional } from "@/app/profissional/[slug]/_components/PortfolioProfissional"
 import { ProfissionalWhatsApp } from "@/app/profissional/[slug]/_components/ProfissionalWhatsApp"
 
+interface EmpresaPublica {
+  id: string
+  name: string
+  sector?: string
+  province?: string
+  city?: string
+  bairro?: string
+  rua?: string
+  referencia_localizacao?: string
+  description?: string
+  horario_atendimento?: string
+  slug: string
+  is_approved: boolean
+  whatsapp?: string
+  logo_url?: string
+  portfolio?: unknown[]
+}
+
 function EmpresaContent() {
   const { slug } = useParams<{ slug: string }>()
-  const [empresa, setEmpresa] = React.useState<any>(null)
+  const [empresa, setEmpresa] = React.useState<EmpresaPublica | null>(null)
   const [carregando, setCarregando] = React.useState(true)
   const [media, setMedia] = React.useState({ media: 0, total: 0 })
-  const [avaliacoes, setAvaliacoes] = React.useState<any[]>([])
+  const [avaliacoes, setAvaliacoes] = React.useState<Awaited<ReturnType<typeof getAvaliacoesPorAlvo>>>([])
   const [userId, setUserId] = React.useState<string | null>(null)
-  const [podeContactar, setPodeContactar] = React.useState(false)
+  const [contacto, setContacto] = React.useState<{ empresaId: string; pode: boolean } | null>(null)
+  const podeContactar = Boolean(empresa && userId && contacto?.empresaId === empresa.id && contacto.pode)
   const [avaliacoesCarregando, setAvaliacoesCarregando] = React.useState(true)
   const [erroCarregamento, setErroCarregamento] = React.useState(false)
 
@@ -55,7 +74,7 @@ function EmpresaContent() {
         setEmpresa(null)
       } else {
         setErroCarregamento(false)
-        setEmpresa(data)
+        setEmpresa(data as EmpresaPublica | null)
       }
       setCarregando(false)
     }
@@ -95,17 +114,15 @@ function EmpresaContent() {
   }, [])
 
   React.useEffect(() => {
-    if (!empresa || !userId) {
-      setPodeContactar(false)
-      return
-    }
+    if (!empresa || !userId) return
+    const empresaId = empresa.id
     let activo = true
-    verificarPodeContactar({ tipo: 'empresa', id: empresa.id })
+    verificarPodeContactar({ tipo: 'empresa', id: empresaId })
       .then((resultado) => {
-        if (activo) setPodeContactar(resultado.pode)
+        if (activo) setContacto({ empresaId, pode: resultado.pode })
       })
       .catch(() => {
-        if (activo) setPodeContactar(false)
+        if (activo) setContacto({ empresaId, pode: false })
       })
     return () => {
       activo = false
@@ -216,7 +233,7 @@ function EmpresaContent() {
                     {localizacao && <p>{localizacao}</p>}
                   </>
                 ) : (
-                  <p>{empresa.address || localizacao || "Não informado"}</p>
+                  <p>{localizacao || "Não informado"}</p>
                 )}
               </div>
             </div>
