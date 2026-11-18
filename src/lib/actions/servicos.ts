@@ -310,6 +310,7 @@ export async function createService(formData: ServiceFormData): Promise<ActionRe
 }
 
 export async function getUserProfile() {
+  if (await isAdmin()) return null
   const supabase = await createSupabaseServerClient()
 
   const { data: { user } } = await supabase.auth.getUser()
