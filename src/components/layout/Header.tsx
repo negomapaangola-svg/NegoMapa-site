@@ -39,7 +39,6 @@ export const Header = forwardRef<HTMLElement, { className?: string; hideGlobalSe
       : contexto?.empresa && contexto.empresaAprovada ? { href:'/empresa/painel/vagas/nova', label:'Publicar vaga' } : null
 
     return <>
-      <a href="#main-content" className="skip-link">Ir para o conteúdo principal</a>
       <header ref={ref} className={cn('liquid-glass-navbar sticky top-0 z-200 w-full min-w-0 overflow-x-clip', className)} role="banner">
         <div className="mx-auto w-full min-w-0 max-w-7xl px-3 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between gap-2 sm:gap-4">
@@ -55,7 +54,7 @@ export const Header = forwardRef<HTMLElement, { className?: string; hideGlobalSe
               {publicar && <Link href={publicar.href} className="hidden min-h-11 shrink-0 items-center rounded-full bg-orange-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-orange-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 xl:inline-flex">{publicar.label}</Link>}
               <AuthUserMenu />
               {contexto?.autenticado && <NotificacoesBotao />}
-              <button type="button" onClick={() => setMenuAberto(true)} aria-expanded={menuAberto} aria-controls="mobile-menu" aria-label="Abrir menu" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-card-border bg-white/70 text-navy transition-colors hover:border-orange-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:bg-navy-dark/70 dark:text-cream xl:hidden"><IconeMenu /></button>
+              <button type="button" onClick={() => setMenuAberto((aberto) => !aberto)} aria-expanded={menuAberto} aria-controls="mobile-menu" aria-label={menuAberto ? "Fechar menu" : "Abrir menu"} className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-card-border bg-white/70 text-navy transition-colors hover:border-orange-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:bg-navy-dark/70 dark:text-cream xl:hidden"><IconeMenu /></button>
             </div>
           </div>
           {!hideGlobalSearch && <div className="pb-3 md:hidden"><PesquisaGlobal /></div>}

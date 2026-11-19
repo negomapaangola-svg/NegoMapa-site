@@ -1,8 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import { logoutAction } from '@/lib/actions/logout';
 import { obterContextoNavegacao } from '@/lib/actions/permissoes';
 import { GRUPOS_MENU_MOBILE, ITENS_NAVEGACAO, podeVerItem, type ItemNavegacao } from '@/lib/navegacao';
@@ -48,16 +47,25 @@ function IconeMenu({ id }: { id: string }) {
   </span>;
 }
 
+function subscreverPesquisa(callback: () => void) {
+  window.addEventListener('popstate', callback);
+  return () => window.removeEventListener('popstate', callback);
+}
+
+function obterPesquisaActual() {
+  return window.location.search;
+}
+
+function obterPesquisaServidor() {
+  return '';
+}
+
 interface MobileMenuProps { aberto: boolean; onFechar: () => void; pathname: string }
 
 export function MobileMenu({ aberto, onFechar, pathname }: MobileMenuProps) {
   const painelRef = useRef<HTMLDivElement>(null);
-  const [queryActual, setQueryActual] = useState('');
+  const queryActual = useSyncExternalStore(subscreverPesquisa, obterPesquisaActual, obterPesquisaServidor);
   const [contexto, setContexto] = useState<Contexto | null>(null);
-
-  useEffect(() => {
-    if (aberto) setQueryActual(window.location.search);
-  }, [aberto, pathname]);
 
   useEffect(() => {
     if (!aberto) return;
@@ -109,7 +117,7 @@ export function MobileMenu({ aberto, onFechar, pathname }: MobileMenuProps) {
     </Link>;
   };
 
-  return <div className="fixed inset-0 z-300 lg:hidden" role="dialog" aria-modal="true" aria-label="Menu principal">
+  return <div className="fixed inset-0 z-300 xl:hidden" role="dialog" aria-modal="true" aria-label="Menu principal">
     <button type="button" aria-label="Fechar menu" onClick={onFechar} className="absolute inset-0 h-full w-full bg-navy/45 backdrop-blur-[2px] dark:bg-black/60" />
     <div id="mobile-menu" ref={painelRef} className="absolute right-0 top-0 flex h-full w-[85%] max-w-sm flex-col overflow-hidden rounded-l-3xl border-l border-white/60 bg-white/90 shadow-2xl shadow-navy/20 backdrop-blur-xl dark:border-white/10 dark:bg-navy-dark/95 dark:shadow-black/40">
       <div className="flex min-h-16 shrink-0 items-center justify-between border-b border-card-border/80 bg-white/55 px-5 py-3 dark:bg-white/[0.04]">
@@ -117,7 +125,7 @@ export function MobileMenu({ aberto, onFechar, pathname }: MobileMenuProps) {
           <p className="text-base font-semibold tracking-tight text-navy dark:text-cream">Menu</p>
           <p className="text-xs text-neutral-500 dark:text-cream-text/65">Explore a NegóMapa</p>
         </div>
-        <button type="button" onClick={onFechar} aria-label="Fechar menu" className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-card-border bg-white/70 text-navy transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:border-white/10 dark:bg-white/10 dark:text-cream dark:hover:bg-white/15">✕</button>
+        <button type="button" onClick={onFechar} aria-label="Fechar menu" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-card-border bg-white/70 text-navy transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:border-white/10 dark:bg-white/10 dark:text-cream dark:hover:bg-white/15"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="m6 6 12 12M18 6 6 18" /></svg></button>
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5">
