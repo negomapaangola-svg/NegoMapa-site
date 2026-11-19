@@ -18,7 +18,15 @@ function IconePerfil() {
 export function AuthUserMenu({ variante = 'cabecalho', onNavigate }: { variante?: 'cabecalho' | 'lista'; onNavigate?: () => void }) {
   const [contexto, setContexto] = useState<Contexto | null>(null)
   const [aberto, setAberto] = useState(false)
-  const [tema, setTema] = useState<Tema>('sistema')
+  const [tema, setTema] = useState<Tema>(() => {
+    if (typeof window === 'undefined') return 'sistema'
+    try {
+      const escolha = window.localStorage.getItem('negomapa-tema')
+      return escolha === 'claro' || escolha === 'escuro' ? escolha : 'sistema'
+    } catch {
+      return 'sistema'
+    }
+  })
   const pathname = usePathname()
   useEffect(() => {
     let activo = true
@@ -26,10 +34,6 @@ export function AuthUserMenu({ variante = 'cabecalho', onNavigate }: { variante?
     carregar()
     const aoSair = () => { setContexto({ autenticado:false, profissional:false, estadoProfissional:null, empresa:false, empresaAprovada:false, administrador:false, accountType:null, contaAtiva:false }); setAberto(false) }
     window.addEventListener('negomapa:auth-logout-started', aoSair)
-    try {
-      const escolha = localStorage.getItem('negomapa-tema')
-      setTema(escolha === 'claro' || escolha === 'escuro' ? escolha : 'sistema')
-    } catch { setTema('sistema') }
     const pararAcompanharSistema = acompanharSistema()
     return () => { activo = false; window.removeEventListener('negomapa:auth-logout-started', aoSair); pararAcompanharSistema() }
   }, [])
@@ -64,7 +68,7 @@ export function AuthUserMenu({ variante = 'cabecalho', onNavigate }: { variante?
         </div>
         <div className="my-2 border-t border-card-border" />
         <form action={logoutAction}><button type="submit" onClick={() => setAberto(false)} className="w-full rounded-lg px-3 py-2.5 text-left text-sm font-medium text-red-700 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 dark:text-red-300 dark:hover:bg-red-950/30">Terminar sessão</button></form>
-      </div>}
+      </div}
     </div>
   }
 
