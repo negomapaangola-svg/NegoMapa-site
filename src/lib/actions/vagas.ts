@@ -211,24 +211,34 @@ export type VagaListItem = {
   categoria: string
   provincia: string
   created_at: string
+  encerrada_em: string | null
 }
 
-export async function getUserVagas(companyId?: string): Promise<VagaListItem[]> {
+export type VagasEmpresaResult =
+  | { success: true; data: VagaListItem[] }
+  | { success: false; error: string }
+
+export async function getUserVagasResult(companyId?: string): Promise<VagasEmpresaResult> {
   const company = await getUserCompany(companyId)
-  if (!company) return []
+  if (!company) return { success: false, error: 'Não foi possível identificar a empresa desta sessão.' }
 
   const supabase = await createSupabaseServerClient()
   const { data, error } = await supabase
     .from('vagas')
-    .select('id, titulo, slug, estado, categoria, provincia, created_at')
+    .select('id, titulo, slug, estado, categoria, provincia, created_at, encerrada_em')
     .eq('company_id', company.id)
     .order('created_at', { ascending: false })
 
   if (error) {
     console.error('Erro ao buscar vagas da empresa. Código:', error.code)
-    return []
+    return { success: false, error: 'Não foi possível carregar as vagas da empresa. Tente novamente.' }
   }
-  return (data ?? []) as VagaListItem[]
+  return { success: true, data: (data ?? []) as VagaListItem[] }
+}
+
+export async function getUserVagas(companyId?: string): Promise<VagaListItem[]> {
+  const result = await getUserVagasResult(companyId)
+  return result.success ? result.data : []
 }
 
 export type VagaAdminItem = {
@@ -380,5 +390,166 @@ export async function rejeitarVaga(vagaId: string): Promise<ActionResult> {
 
   revalidatePath('/admin/vagas')
   revalidatePath('/vagas')
+  return { success: true }
+}
+
+
+export type VagaDetalheEmpresa = {
+  id: string
+  slug: string
+  estado: string
+  encerrada_em: string | null
+  titulo: string
+  descricao: string
+  requisitos: string | null
+  categoria: string
+  provincia: string
+  municipio: string | null
+  tipo_contrato: string | null
+  salario: string | null
+  whatsapp: string | null
+}
+
+export async function getUserVaga(companyId: string, vagaId: string): Promise<VagaDetalheEmpresa | null> {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(vagaId)) return null
+  const company = await getUserCompany(companyId)
+  if (!company) return null
+
+  const supabase = await createSupabaseServerClient()
+  const { data, error } = await supabase
+    .from('vagas')
+    .select('id, slug, estado, encerrada_em, titulo, descricao, requisitos, categoria, provincia, municipio, tipo_contrato, salario, whatsapp')
+    .eq('id', vagaId)
+    .eq('company_id', company.id)
+    .maybeSingle()
+
+  if (error) {
+    console.error('Erro ao carregar vaga para edição. Código:', error.code)
+    return null
+  }
+  return data as VagaDetalheEmpresa | null
+}
+
+export async function updateVaga(vagaId: string, companyId: string, formData: FormData): Promise<ActionResult> {
+  const supabase = await createSupabaseServerClient()
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError || !user) return { success: false, error: 'Sessão expirada. Inicie sessão novamente.' }
+
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(vagaId)
+    || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(companyId)) {
+    return { success: false, error: 'Vaga ou empresa inválida.' }
+  }
+
+  const { data: company, error: companyError } = await supabase
+    .from('companies')
+    .select('id, is_approved')
+    .eq('id', companyId)
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  if (companyError || !company) return { success: false, error: 'Empresa não encontrada ou sem permissão.' }
+  if (!company.is_approved) return { success: false, error: 'A empresa precisa de estar aprovada para editar vagas.' }
+
+  const data: VagaFormData = {
+    titulo: String(formData.get('titulo') ?? '').trim(),
+    descricao: String(formData.get('descricao') ?? '').trim(),
+    requisitos: String(formData.get('requisitos') ?? '').trim(),
+    categoria: String(formData.get('categoria') ?? '').trim(),
+    provincia: String(formData.get('provincia') ?? '').trim(),
+    municipio: String(formData.get('municipio') ?? '').trim(),
+    tipo_contrato: String(formData.get('tipo_contrato') ?? '').trim(),
+    salario: String(formData.get('salario') ?? '').trim(),
+    whatsapp: String(formData.get('whatsapp') ?? '').trim(),
+  }
+  const fieldErrors = validateVaga(data)
+  if (Object.keys(fieldErrors).length > 0) return { success: false, error: 'Verifique os campos assinalados.', fieldErrors }
+
+  const { data: vaga, error: vagaError } = await supabase
+    .from('vagas')
+    .select('slug')
+    .eq('id', vagaId)
+    .eq('company_id', company.id)
+    .is('encerrada_em', null)
+    .maybeSingle()
+
+  if (vagaError || !vaga) return { success: false, error: 'Vaga não encontrada, encerrada ou sem permissão.' }
+
+  const { data: updated, error } = await supabase
+    .from('vagas')
+    .update({
+      titulo: data.titulo,
+      descricao: data.descricao,
+      requisitos: data.requisitos || null,
+      categoria: data.categoria,
+      provincia: data.provincia,
+      municipio: data.municipio || null,
+      tipo_contrato: data.tipo_contrato || null,
+      salario: data.salario || null,
+      whatsapp: data.whatsapp,
+    })
+    .eq('id', vagaId)
+    .eq('company_id', company.id)
+    .is('encerrada_em', null)
+    .select('slug')
+    .maybeSingle()
+
+  if (error || !updated) {
+    console.error('Erro ao atualizar vaga. Código:', error?.code)
+    return { success: false, error: 'Não foi possível guardar as alterações. Confirme se a vaga continua aberta.' }
+  }
+
+  revalidatePath('/empresa/painel/vagas')
+  revalidatePath('/vagas')
+  revalidatePath(`/vaga/${updated.slug}`)
+  return { success: true }
+}
+
+export async function encerrarVaga(vagaId: string, companyId: string): Promise<ActionResult> {
+  const supabase = await createSupabaseServerClient()
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError || !user) return { success: false, error: 'Sessão expirada. Inicie sessão novamente.' }
+
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(vagaId)
+    || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(companyId)) {
+    return { success: false, error: 'Vaga ou empresa inválida.' }
+  }
+
+  const { data: company, error: companyError } = await supabase
+    .from('companies')
+    .select('id')
+    .eq('id', companyId)
+    .eq('user_id', user.id)
+    .maybeSingle()
+  if (companyError || !company) return { success: false, error: 'Empresa não encontrada ou sem permissão.' }
+
+  const { data: vaga, error: vagaError } = await supabase
+    .from('vagas')
+    .select('id, slug, estado, encerrada_em')
+    .eq('id', vagaId)
+    .eq('company_id', company.id)
+    .maybeSingle()
+
+  if (vagaError || !vaga) return { success: false, error: 'Vaga não encontrada ou sem permissão.' }
+  if (vaga.encerrada_em) return { success: false, error: 'Esta vaga já se encontra encerrada.' }
+  if (vaga.estado !== 'aprovado') return { success: false, error: 'Só é possível encerrar vagas aprovadas e publicadas.' }
+
+  const { data: updated, error } = await supabase
+    .from('vagas')
+    .update({ encerrada_em: new Date().toISOString() })
+    .eq('id', vagaId)
+    .eq('company_id', company.id)
+    .is('encerrada_em', null)
+    .select('id')
+    .maybeSingle()
+
+  if (error || !updated) {
+    console.error('Erro ao encerrar vaga. Código:', error?.code)
+    return { success: false, error: 'Não foi possível encerrar a vaga. Atualize a página e tente novamente.' }
+  }
+
+  revalidatePath('/empresa/painel/vagas')
+  revalidatePath('/vagas')
+  revalidatePath(`/vaga/${vaga.slug}`)
+  revalidatePath('/empresa/painel/candidaturas')
   return { success: true }
 }
