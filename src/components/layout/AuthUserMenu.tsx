@@ -68,7 +68,7 @@ export function AuthUserMenu({ variante = 'cabecalho', onNavigate }: { variante?
         </div>
         <div className="my-2 border-t border-card-border" />
         <form action={logoutAction}><button type="submit" onClick={() => setAberto(false)} className="w-full rounded-lg px-3 py-2.5 text-left text-sm font-medium text-red-700 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 dark:text-red-300 dark:hover:bg-red-950/30">Terminar sessão</button></form>
-      </div}
+      </div>}
     </div>
   }
 
