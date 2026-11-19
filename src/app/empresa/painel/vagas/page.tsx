@@ -1,11 +1,12 @@
 import { Metadata } from "next"
 import { redirect } from "next/navigation"
 import Link from "next/link"
-import { getUserCompany, getUserVagas } from "@/lib/actions/vagas"
+import { getUserCompany, getUserVagasResult } from "@/lib/actions/vagas"
 import { MainLayout } from "@/components/layout/MainLayout"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/Card"
 import { Button } from "@/components/ui/Button"
 import { formatDate } from "@/lib/utils"
+import { VagaActions } from "./_components/VagaActions"
 
 export const metadata: Metadata = {
   title: "As Minhas Vagas | Painel da Empresa | NegóMapa",
@@ -29,7 +30,8 @@ export default async function EmpresaVagasPage({ searchParams }: { searchParams:
     redirect('/login?redirectTo=/empresa/painel/vagas')
   }
 
-  const vagas = await getUserVagas(company.id)
+  const vagasResult = await getUserVagasResult(company.id)
+  const vagas = vagasResult.success ? vagasResult.data : []
 
   return (
     <MainLayout>
@@ -64,7 +66,12 @@ export default async function EmpresaVagasPage({ searchParams }: { searchParams:
             </div>
           )}
 
-          {vagas.length === 0 ? (
+          {!vagasResult.success ? (
+            <div role="alert" className="rounded-[4px] border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/30 dark:text-red-200">
+              <h2 className="font-semibold">Não foi possível carregar as vagas</h2>
+              <p className="mt-1">{vagasResult.error}</p>
+            </div>
+          ) : vagas.length === 0 ? (
             <Card variant="liquid" padding="lg" className="text-center py-12">
               <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
                 <svg className="h-8 w-8 text-neutral-400 dark:text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -86,7 +93,9 @@ export default async function EmpresaVagasPage({ searchParams }: { searchParams:
           ) : (
             <div className="space-y-4">
               {vagas.map((vaga) => {
-                const estadoInfo = getEstadoBadge(vaga.estado)
+                const estadoInfo = vaga.encerrada_em
+                  ? { bg: 'bg-neutral-200 dark:bg-neutral-700', text: 'text-neutral-700 dark:text-neutral-200', label: 'Encerrada' }
+                  : getEstadoBadge(vaga.estado)
                 return (
                   <Card key={vaga.id} variant="default" padding="none" className="overflow-hidden border-card-border">
                     <CardContent className="p-6">
@@ -122,16 +131,13 @@ export default async function EmpresaVagasPage({ searchParams }: { searchParams:
                             </span>
                           </div>
                         </div>
-                        {vaga.estado === "aprovado" && (
-                          <Link
-                            href={`/vaga/${vaga.slug}`}
-                            className="flex-shrink-0"
-                          >
-                            <Button variant="outline" size="sm">
-                              Ver detalhe
-                            </Button>
-                          </Link>
-                        )}
+                        <VagaActions
+                          vagaId={vaga.id}
+                          vagaSlug={vaga.slug}
+                          empresaId={company.id}
+                          estado={vaga.estado}
+                          encerradaEm={vaga.encerrada_em}
+                        />
                       </div>
                     </CardContent>
                   </Card>
