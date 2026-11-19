@@ -56,7 +56,10 @@ function EmpresasContent() {
 
   React.useEffect(() => {
     const ids = empresas.map((empresa) => empresa.id)
-    if (ids.length === 0) { setIdsContactaveis(new Set()); return }
+    if (ids.length === 0) {
+      const limpar = window.setTimeout(() => setIdsContactaveis(new Set()), 0)
+      return () => window.clearTimeout(limpar)
+    }
     let activo = true
     verificarPodeContactarEmpresas(ids).then((resultado) => {
       if (activo) setIdsContactaveis(new Set(resultado.success ? resultado.ids : []))
@@ -72,7 +75,7 @@ function EmpresasContent() {
   const limpar = () => { setSetor(""); setProvincia(""); setNome("") }
 
   return (
-    <main className="min-h-[60vh] bg-cream px-4 py-8 dark:bg-navy-dark sm:px-6 lg:px-8">
+    <main className="min-h-[60vh] bg-cream px-4 py-8 dark:bg-navy-dark sm:px-4 lg:px-8">
       <div className="mx-auto max-w-7xl space-y-6">
         <PageHeader title="Empresas" description="Encontre empresas perto de si." />
         <SearchBar action="/empresas" defaultValue={nome} placeholder="Pesquisar empresa" onSearch={setNome} />
