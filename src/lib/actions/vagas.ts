@@ -146,7 +146,6 @@ export async function createVaga(formData: VagaFormData, companyId: string): Pro
       tipo_contrato: formData.tipo_contrato?.trim() || null,
       salario: formData.salario?.trim() || null,
       whatsapp: formData.whatsapp.trim(),
-      estado: 'pendente',
     })
 
   if (error) {
