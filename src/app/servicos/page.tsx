@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { IMAGENS } from '@/lib/imagens';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { MainLayout } from '@/components/layout/MainLayout';
+import { EditorialPageImage } from '@/components/ui/EditorialPageImage';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card';
 import { formatCurrency } from '@/lib/utils';
 import {
@@ -260,6 +261,7 @@ export default async function ServicosPage({
     <MainLayout>
       <section className="py-16 lg:py-24 bg-cream dark:bg-navy-dark" aria-labelledby="servicos-title">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <EditorialPageImage src="/images/home/servicos.webp" alt="Técnico angolano a trabalhar numa instalação eléctrica" />
           <div className="text-center max-w-3xl mx-auto mb-12">
             <h1 id="servicos-title" className="text-4xl sm:text-5xl font-bold tracking-tight text-ink dark:text-cream">
               Serviços Profissionais

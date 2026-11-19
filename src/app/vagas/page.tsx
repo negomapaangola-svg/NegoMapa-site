@@ -3,6 +3,7 @@ import { MainLayout } from "@/components/layout/MainLayout"
 import { getVagasPublicas, VagaPublic, VagasPublicasResult } from "@/lib/actions/vagas-public"
 import { VagasContent } from "./_components/VagasContent"
 import { FiltrosVagas } from "./_components/FiltrosVagas"
+import { EditorialPageImage } from "@/components/ui/EditorialPageImage"
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -77,6 +78,7 @@ export default async function VagasPage({ searchParams }: { searchParams: Search
     <MainLayout>
       <div className="p-6 md:p-8 bg-cream dark:bg-navy-dark">
         <div className="max-w-7xl mx-auto">
+          <EditorialPageImage src="/images/home/vagas.webp" alt="Candidata numa conversa de entrevista profissional" />
           <div className="mb-6">
             <h1 className="text-3xl md:text-4xl font-bold text-ink dark:text-cream">
               Vagas de Emprego
