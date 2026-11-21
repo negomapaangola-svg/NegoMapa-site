@@ -21,7 +21,7 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://nego-mapa-site-negomapaangola-svg.vercel.app';
+  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://nego-mapa-site-mu.vercel.app';
 
 const jsonLd = {
   '@context': 'https://schema.org',

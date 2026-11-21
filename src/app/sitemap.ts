@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
 
 const BASE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://nego-mapa-site-negomapaangola-svg.vercel.app';
+  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://nego-mapa-site-mu.vercel.app';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const rotas = [
