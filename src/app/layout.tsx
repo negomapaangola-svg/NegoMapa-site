@@ -20,10 +20,49 @@ const spaceGrotesk = Space_Grotesk({
   preload: true,
 });
 
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://nego-mapa-site-negomapaangola-svg.vercel.app';
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'WebSite',
+      '@id': `${SITE_URL}/#website`,
+      url: SITE_URL,
+      name: 'NegóMapa',
+      description:
+        'Plataforma em Angola que liga clientes a profissionais e empresas e apresenta oportunidades de emprego.',
+      inLanguage: 'pt-AO',
+      publisher: {
+        '@id': `${SITE_URL}/#organization`,
+      },
+      potentialAction: {
+        '@type': 'SearchAction',
+        target: {
+          '@type': 'EntryPoint',
+          urlTemplate: `${SITE_URL}/descobrir?q={search_term_string}`,
+        },
+        'query-input': 'required name=search_term_string',
+      },
+    },
+    {
+      '@type': 'Organization',
+      '@id': `${SITE_URL}/#organization`,
+      name: 'NegóMapa',
+      url: SITE_URL,
+      email: 'negomapaangola@gmail.com',
+      telephone: '+244926311857',
+      areaServed: {
+        '@type': 'Country',
+        name: 'Angola',
+      },
+    },
+  ],
+};
+
 export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? 'https://nego-mapa-site-negomapaangola-svg.vercel.app'
-  ),
+  metadataBase: new URL(SITE_URL),
   title: {
     default: 'NegóMapa - Serviços e Empregos em Angola',
     template: '%s | NegóMapa',
@@ -93,6 +132,10 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
         <script dangerouslySetInnerHTML={{ __html: TEMA_SCRIPT }} />
       </head>
       <body className="min-h-full flex flex-col antialiased">
