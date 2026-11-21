@@ -7,11 +7,23 @@ interface PortfolioProfissionalProps {
   itens: PortfolioItem[] | null;
 }
 
-/** Trabalhos do portfólio (campo jsonb). Só links https são mostrados. */
+function imagemDoPortfolio(item: PortfolioItem): string | null {
+  for (const value of [item.imagem_url, item.image_url, item.foto_url, item.url_imagem, item.url_projeto]) {
+    if (typeof value === 'string' && value.startsWith('/api/imagens/')) return value;
+  }
+  return null;
+}
+
+/** Trabalhos do portfólio, incluindo imagens privadas servidas pela rota controlada. */
 export function PortfolioProfissional({ itens }: PortfolioProfissionalProps) {
-  const validos = (itens ?? []).filter(
-    (item) => item && typeof item.titulo === 'string' && item.titulo.trim().length > 0
-  );
+  const validos = (itens ?? []).filter((item) => {
+    if (!item || typeof item !== 'object') return false;
+    return Boolean(
+      (typeof item.titulo === 'string' && item.titulo.trim()) ||
+      imagemDoPortfolio(item) ||
+      (typeof item.url_projeto === 'string' && isHttpsUrl(item.url_projeto))
+    );
+  });
 
   return (
     <section aria-labelledby="portfolio-titulo" className="mt-12">
@@ -33,26 +45,40 @@ export function PortfolioProfissional({ itens }: PortfolioProfissionalProps) {
         </div>
       ) : (
         <ul role="list" className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-          {validos.map((item, indice) => (
-            <li key={`${item.titulo}-${indice}`} className="rounded-xl border border-card-border p-5">
-              <h3 className="font-semibold text-ink dark:text-cream">{item.titulo}</h3>
-              {item.descricao && (
-                <p className="mt-2 whitespace-pre-line text-sm text-neutral-700 dark:text-cream-text leading-relaxed">
-                  {item.descricao}
-                </p>
-              )}
-              {item.url_projeto && isHttpsUrl(item.url_projeto) && (
-                <a
-                  href={item.url_projeto}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-3 inline-block text-sm font-medium text-orange-500 hover:underline"
-                >
-                  Ver projeto
-                </a>
-              )}
-            </li>
-          ))}
+          {validos.map((item, indice) => {
+            const imagem = imagemDoPortfolio(item);
+            const titulo = typeof item.titulo === 'string' ? item.titulo.trim() : '';
+            return (
+              <li key={`${titulo || imagem || 'trabalho'}-${indice}`} className="rounded-xl border border-card-border p-5">
+                {titulo && <h3 className="font-semibold text-ink dark:text-cream">{titulo}</h3>}
+                {imagem && (
+                  <Image
+                    src={imagem}
+                    alt={titulo || 'Imagem do portfólio'}
+                    width={1200}
+                    height={800}
+                    sizes="(max-width: 768px) 100vw, 448px"
+                    className="mt-3 h-auto max-h-80 w-full rounded-lg object-cover"
+                  />
+                )}
+                {item.descricao && (
+                  <p className="mt-2 whitespace-pre-line text-sm text-neutral-700 dark:text-cream-text leading-relaxed">
+                    {item.descricao}
+                  </p>
+                )}
+                {typeof item.url_projeto === 'string' && isHttpsUrl(item.url_projeto) && (
+                  <a
+                    href={item.url_projeto}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-3 inline-block text-sm font-medium text-orange-500 hover:underline"
+                  >
+                    Ver projeto
+                  </a>
+                )}
+              </li>
+            );
+          })}
         </ul>
       )}
     </section>

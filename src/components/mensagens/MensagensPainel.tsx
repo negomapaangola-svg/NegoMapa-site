@@ -10,6 +10,8 @@ import {
   enviarMensagem,
   listarMensagens,
   marcarMensagensLidas,
+  enviarAnexo,
+  obterUrlAnexo,
 } from '@/lib/actions/conversas'
 
 type Props = {
@@ -58,19 +60,16 @@ function formatarDataLista(valor: string): string {
 
 export function MensagensPainel({ conversas: conversasIniciais, userId, basePath, conversaInicial }: Props) {
   const router = useRouter()
-  const [conversas, setConversas] = React.useState<ConversaResumo[]>(conversasIniciais)
+  const [conversas, setConversas] = React.useState<ConversaResumo[]>(() => conversasIniciais)
   const [selecionada, setSelecionada] = React.useState<string | null>(
     conversaInicial && conversasIniciais.some((c) => c.id === conversaInicial) ? conversaInicial : null
   )
   const [mensagens, setMensagens] = React.useState<MensagemConversa[]>([])
   const [texto, setTexto] = React.useState('')
   const [erro, setErro] = React.useState<string | null>(null)
+  const [anexoPendente, setAnexoPendente] = React.useState(false)
   const [pending, startTransition] = React.useTransition()
   const fimRef = React.useRef<HTMLDivElement>(null)
-
-  React.useEffect(() => {
-    setConversas(conversasIniciais)
-  }, [conversasIniciais])
 
   const conversaAtual = conversas.find((c) => c.id === selecionada) ?? null
 
@@ -90,13 +89,13 @@ export function MensagensPainel({ conversas: conversasIniciais, userId, basePath
   }, [])
 
   React.useEffect(() => {
-    if (!selecionada) {
-      setMensagens([])
-      return
-    }
-    carregar(selecionada)
+    if (!selecionada) return
+    const inicial = window.setTimeout(() => { void carregar(selecionada) }, 0)
     const intervalo = window.setInterval(() => carregar(selecionada), INTERVALO_ATUALIZACAO_MS)
-    return () => window.clearInterval(intervalo)
+    return () => {
+      window.clearTimeout(inicial)
+      window.clearInterval(intervalo)
+    }
   }, [selecionada, carregar])
 
   React.useEffect(() => {
@@ -129,6 +128,47 @@ export function MensagensPainel({ conversas: conversasIniciais, userId, basePath
         setErro(resultado.error ?? 'Não foi possível enviar a mensagem.')
       }
     })
+  }
+
+  function anexar(event: React.ChangeEvent<HTMLInputElement>) {
+    const ficheiro = event.currentTarget.files?.[0]
+    event.currentTarget.value = ''
+    if (!ficheiro || !selecionada) return
+    setErro(null)
+    setAnexoPendente(true)
+    startTransition(async () => {
+      try {
+        const dados = new FormData()
+        dados.set('ficheiro', ficheiro)
+        const resultado = await enviarAnexo(selecionada, dados)
+        if (resultado.success) await carregar(selecionada)
+        else setErro(resultado.error ?? 'Não foi possível enviar o ficheiro.')
+      } catch {
+        setErro('Não foi possível enviar o ficheiro. Tente novamente.')
+      } finally {
+        setAnexoPendente(false)
+      }
+    })
+  }
+
+  async function abrirAnexo(id: string) {
+    const janela = window.open('about:blank', '_blank')
+    if (!janela) {
+      setErro('Permita a abertura de separadores para consultar o ficheiro.')
+      return
+    }
+    janela.opener = null
+    try {
+      const resultado = await obterUrlAnexo(id)
+      if (resultado.success) janela.location.href = resultado.url
+      else {
+        janela.close()
+        setErro(resultado.error)
+      }
+    } catch {
+      janela.close()
+      setErro('Ficheiro indisponível ou removido.')
+    }
   }
 
   /** Enter envia; Shift+Enter quebra linha. */
@@ -256,13 +296,19 @@ export function MensagensPainel({ conversas: conversasIniciais, userId, basePath
                   return (
                     <div key={mensagem.id} className={`flex ${minha ? 'justify-end' : 'justify-start'}`}>
                       <div
-                        className={`max-w-[80%] rounded-2xl px-4 py-2 text-sm shadow-sm ${
+                        className={`max-w-[88%] rounded-2xl px-4 py-2 text-sm shadow-sm ${
                           minha
                             ? 'rounded-br-md bg-orange-500 text-ink'
                             : 'rounded-bl-md bg-neutral-100 text-ink dark:bg-neutral-700 dark:text-cream'
                         }`}
                       >
+                        <p className={`mb-1 text-[11px] font-semibold ${minha ? 'text-ink/80' : 'text-neutral-600 dark:text-cream-text'}`}>{minha ? `${mensagem.remetente_nome} · Você` : mensagem.remetente_nome}{mensagem.remetente_tipo ? ` · ${mensagem.remetente_tipo}` : ''}</p>
                         <p className="whitespace-pre-wrap break-words">{mensagem.conteudo}</p>
+                        {mensagem.anexos.map((anexo) => (
+                          <button key={anexo.id} type="button" onClick={() => abrirAnexo(anexo.id)} className="mt-2 flex min-h-10 w-full items-center gap-2 rounded-lg border border-current/20 px-3 py-2 text-left text-xs font-semibold underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500">
+                            <span aria-hidden="true">↗</span><span className="min-w-0 flex-1 truncate">{anexo.nome_ficheiro}</span><span className="shrink-0">{(anexo.tamanho_bytes / 1024 / 1024).toFixed(1)} MB</span>
+                          </button>
+                        ))}
                         <p className={`mt-1 text-[11px] ${minha ? 'text-ink/70' : 'text-neutral-500 dark:text-cream-text/70'}`}>
                           <time dateTime={mensagem.criada_em}>{formatarHoraCurta(mensagem.criada_em)}</time>
                           {minha ? (mensagem.lida_em ? ' · Lida' : ' · Enviada') : ''}
@@ -281,7 +327,7 @@ export function MensagensPainel({ conversas: conversasIniciais, userId, basePath
               </p>
             )}
 
-            <form onSubmit={enviar} className="flex items-end gap-2 border-t border-card-border bg-white/90 p-3 dark:bg-neutral-800/90">
+            <form onSubmit={enviar} className="flex flex-wrap items-end gap-2 border-t border-card-border bg-white/90 p-3 dark:bg-neutral-800/90">
               <label htmlFor="mensagem-nova" className="sr-only">
                 Escrever mensagem
               </label>
@@ -295,8 +341,12 @@ export function MensagensPainel({ conversas: conversasIniciais, userId, basePath
                 placeholder="Escreva uma mensagem"
                 className="max-h-32 min-h-[44px] flex-1 resize-none rounded-2xl border border-card-border bg-white px-4 py-2.5 text-sm text-ink shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:bg-neutral-700 dark:text-cream"
               />
+              <label className="inline-flex min-h-[44px] cursor-pointer items-center rounded-xl border border-card-border px-3 text-sm font-semibold text-ink hover:bg-neutral-50 focus-within:ring-2 focus-within:ring-orange-500 dark:text-cream dark:hover:bg-white/5">
+                <span>{anexoPendente ? 'A anexar…' : 'Anexar'}</span>
+                <input type="file" className="sr-only" accept=".pdf,.jpg,.jpeg,.png,.webp,.txt,application/pdf,image/jpeg,image/png,image/webp,text/plain" onChange={anexar} disabled={pending || anexoPendente} aria-label="Anexar ficheiro" />
+              </label>
               <Button type="submit" disabled={pending || texto.trim().length === 0} className="min-h-[44px] shrink-0">
-                {pending ? 'A enviar…' : 'Enviar'}
+                {pending && !anexoPendente ? 'A enviar…' : 'Enviar'}
               </Button>
             </form>
           </>

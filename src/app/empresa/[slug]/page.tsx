@@ -13,6 +13,7 @@ import { MainLayout } from "@/components/layout/MainLayout"
 import { ReviewForm } from "@/components/avaliacoes/ReviewForm"
 import { ReportForm } from "@/components/denuncias/ReportForm"
 import { getMediaAvaliacoes, getAvaliacoesPorAlvo } from "@/lib/actions/avaliacoes"
+import type { PortfolioItem } from "@/lib/actions/profissionais-publicos"
 import { AlvoDenuncia } from "@/lib/actions/denuncias"
 import { createBrowserSupabaseClient } from "@/lib/supabase-browser"
 import { BotaoContactarEmpresa } from "@/components/empresas/BotaoContactarEmpresa"
@@ -22,14 +23,33 @@ import { AvaliacoesProfissional } from "@/app/profissional/[slug]/_components/Av
 import { PortfolioProfissional } from "@/app/profissional/[slug]/_components/PortfolioProfissional"
 import { ProfissionalWhatsApp } from "@/app/profissional/[slug]/_components/ProfissionalWhatsApp"
 
+interface EmpresaPublica {
+  id: string
+  name: string
+  sector?: string
+  province?: string
+  city?: string
+  bairro?: string
+  rua?: string
+  referencia_localizacao?: string
+  description?: string
+  horario_atendimento?: string
+  slug: string
+  is_approved: boolean
+  whatsapp?: string
+  logo_url?: string
+  portfolio: PortfolioItem[] | null
+}
+
 function EmpresaContent() {
   const { slug } = useParams<{ slug: string }>()
-  const [empresa, setEmpresa] = React.useState<any>(null)
+  const [empresa, setEmpresa] = React.useState<EmpresaPublica | null>(null)
   const [carregando, setCarregando] = React.useState(true)
   const [media, setMedia] = React.useState({ media: 0, total: 0 })
-  const [avaliacoes, setAvaliacoes] = React.useState<any[]>([])
+  const [avaliacoes, setAvaliacoes] = React.useState<Awaited<ReturnType<typeof getAvaliacoesPorAlvo>>>([])
   const [userId, setUserId] = React.useState<string | null>(null)
-  const [podeContactar, setPodeContactar] = React.useState(false)
+  const [contacto, setContacto] = React.useState<{ empresaId: string; pode: boolean } | null>(null)
+  const podeContactar = Boolean(empresa && userId && contacto?.empresaId === empresa.id && contacto.pode)
   const [avaliacoesCarregando, setAvaliacoesCarregando] = React.useState(true)
   const [erroCarregamento, setErroCarregamento] = React.useState(false)
 
@@ -55,7 +75,7 @@ function EmpresaContent() {
         setEmpresa(null)
       } else {
         setErroCarregamento(false)
-        setEmpresa(data)
+        setEmpresa(data as EmpresaPublica | null)
       }
       setCarregando(false)
     }
@@ -65,13 +85,14 @@ function EmpresaContent() {
 
   React.useEffect(() => {
     if (!empresa) return
+    const empresaId = empresa.id
 
     async function carregarAvaliacoes() {
       setAvaliacoesCarregando(true)
       try {
         const [mediaResult, avaliacoesResult] = await Promise.all([
-          getMediaAvaliacoes({ tipo: 'empresa', id: empresa.id }),
-          getAvaliacoesPorAlvo({ tipo: 'empresa', id: empresa.id }),
+          getMediaAvaliacoes({ tipo: 'empresa', id: empresaId }),
+          getAvaliacoesPorAlvo({ tipo: 'empresa', id: empresaId }),
         ])
         setMedia(mediaResult)
         setAvaliacoes(avaliacoesResult)
@@ -95,17 +116,15 @@ function EmpresaContent() {
   }, [])
 
   React.useEffect(() => {
-    if (!empresa || !userId) {
-      setPodeContactar(false)
-      return
-    }
+    if (!empresa || !userId) return
+    const empresaId = empresa.id
     let activo = true
-    verificarPodeContactar({ tipo: 'empresa', id: empresa.id })
+    verificarPodeContactar({ tipo: 'empresa', id: empresaId })
       .then((resultado) => {
-        if (activo) setPodeContactar(resultado.pode)
+        if (activo) setContacto({ empresaId, pode: resultado.pode })
       })
       .catch(() => {
-        if (activo) setPodeContactar(false)
+        if (activo) setContacto({ empresaId, pode: false })
       })
     return () => {
       activo = false
@@ -142,6 +161,11 @@ function EmpresaContent() {
   const temEnderecoDetalhado = empresa.rua || empresa.bairro || empresa.referencia_localizacao
   const localizacao = [empresa.city, empresa.province].filter(Boolean).join(", ")
   const temPortfolio = Array.isArray(empresa.portfolio) && empresa.portfolio.length > 0
+  // As referências privadas migradas são servidas pela rota autenticada/pública controlada.
+  const logoSrc = typeof empresa.logo_url === "string" &&
+    (empresa.logo_url.startsWith("/api/imagens/") || isHttpsUrl(empresa.logo_url))
+    ? empresa.logo_url
+    : null
 
   return (
     <MainLayout>
@@ -155,9 +179,9 @@ function EmpresaContent() {
 
         <Card variant="muted" padding="md">
           <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center">
-            {isHttpsUrl(empresa.logo_url) ? (
+            {logoSrc ? (
               <img
-                src={empresa.logo_url}
+                src={logoSrc}
                 alt={`Logótipo de ${empresa.name}`}
                 className="h-20 w-20 shrink-0 rounded-2xl border border-neutral-100 bg-white object-contain p-2 dark:border-neutral-700 dark:bg-neutral-800"
               />
@@ -211,7 +235,7 @@ function EmpresaContent() {
                     {localizacao && <p>{localizacao}</p>}
                   </>
                 ) : (
-                  <p>{empresa.address || localizacao || "Não informado"}</p>
+                  <p>{localizacao || "Não informado"}</p>
                 )}
               </div>
             </div>
