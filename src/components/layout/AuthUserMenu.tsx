@@ -18,18 +18,22 @@ function IconePerfil() {
 export function AuthUserMenu({ variante = 'cabecalho', onNavigate }: { variante?: 'cabecalho' | 'lista'; onNavigate?: () => void }) {
   const [contexto, setContexto] = useState<Contexto | null>(null)
   const [aberto, setAberto] = useState(false)
-  const [tema, setTema] = useState<Tema>('sistema')
+  const [tema, setTema] = useState<Tema>(() => {
+    if (typeof window === 'undefined') return 'sistema'
+    try {
+      const escolha = window.localStorage.getItem('negomapa-tema')
+      return escolha === 'claro' || escolha === 'escuro' ? escolha : 'sistema'
+    } catch {
+      return 'sistema'
+    }
+  })
   const pathname = usePathname()
   useEffect(() => {
     let activo = true
-    const carregar = () => obterContextoNavegacao().then((c) => { if (activo) setContexto(c) }).catch(() => { if (activo) setContexto({ autenticado:false, profissional:false, estadoProfissional:null, empresa:false, empresaAprovada:false, administrador:false, accountType:null }) })
+    const carregar = () => obterContextoNavegacao().then((c) => { if (activo) setContexto(c) }).catch(() => { if (activo) setContexto({ autenticado:false, profissional:false, estadoProfissional:null, empresa:false, empresaAprovada:false, administrador:false, accountType:null, contaAtiva:false }) })
     carregar()
-    const aoSair = () => { setContexto({ autenticado:false, profissional:false, estadoProfissional:null, empresa:false, empresaAprovada:false, administrador:false, accountType:null }); setAberto(false) }
+    const aoSair = () => { setContexto({ autenticado:false, profissional:false, estadoProfissional:null, empresa:false, empresaAprovada:false, administrador:false, accountType:null, contaAtiva:false }); setAberto(false) }
     window.addEventListener('negomapa:auth-logout-started', aoSair)
-    try {
-      const escolha = localStorage.getItem('negomapa-tema')
-      setTema(escolha === 'claro' || escolha === 'escuro' ? escolha : 'sistema')
-    } catch { setTema('sistema') }
     const pararAcompanharSistema = acompanharSistema()
     return () => { activo = false; window.removeEventListener('negomapa:auth-logout-started', aoSair); pararAcompanharSistema() }
   }, [])
