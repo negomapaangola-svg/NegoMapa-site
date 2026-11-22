@@ -1,0 +1,8 @@
+# Dumps brutos e ficheiros intermédios nunca são versionados.
+# Só o baseline revisto e aprovado (schema-only-<data>.sql) pode entrar.
+*.raw.sql
+*.dump
+*.tmp
+*.bak
+.env
+.env.*
