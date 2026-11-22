@@ -1,5 +1,7 @@
 import Link from 'next/link'
 import { MainLayout } from '@/components/layout/MainLayout'
+import { isAdmin, getUser } from '@/lib/auth'
+import { redirect } from 'next/navigation'
 
 const links = [
   { href: '/conta', label: 'Visão geral' },
@@ -10,7 +12,10 @@ const links = [
   { href: '/conta/configuracoes', label: 'Configurações' },
 ]
 
-export default function ContaLayout({ children }: { children: React.ReactNode }) {
+export default async function ContaLayout({ children }: { children: React.ReactNode }) {
+  const user = await getUser()
+  if (!user) redirect('/login?redirectTo=/conta')
+  if (await isAdmin()) redirect('/admin')
   return <MainLayout hideGlobalSearch>
     <div className="min-h-[70vh] bg-slate-50 px-4 py-6 text-slate-900 dark:bg-slate-950 dark:text-slate-100 sm:px-6 lg:py-10">
       <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
+import { isAdmin } from '@/lib/auth'
 import { PROVINCIAS_ANGOLA } from '@/lib/listas-selecao'
 import { MENSAGEM_BLOQUEIO_PROFISSIONAL } from '@/lib/mensagens-bloqueio'
 
@@ -63,10 +64,22 @@ export async function obterServicoParaPedido(
   }
 }
 
+async function contaClienteActiva(supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>, userId: string): Promise<boolean> {
+  if (await isAdmin()) return false
+  const [perfil, profissional, empresa] = await Promise.all([
+    supabase.from('profiles').select('account_type,is_active').eq('id', userId).maybeSingle(),
+    supabase.from('profissionais').select('id').eq('user_id', userId).limit(1).maybeSingle(),
+    supabase.from('companies').select('id').eq('user_id', userId).limit(1).maybeSingle(),
+  ])
+  return !perfil.error && perfil.data?.account_type === 'cliente' && perfil.data.is_active === true
+    && !profissional.error && !profissional.data && !empresa.error && !empresa.data
+}
+
 export async function listarMeusPedidos(): Promise<{ success: true; data: PedidoServico[] } | { success: false; error: string }> {
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Sessão expirada. Inicie sessão novamente.' }
+  if (!(await contaClienteActiva(supabase, user.id))) return { success: false, error: 'Esta área está disponível apenas para contas de cliente activas.' }
 
   const { data, error } = await supabase
     .from('pedidos_servico')
@@ -96,6 +109,7 @@ export async function criarPedido(formData: FormData): Promise<ResultadoPedido> 
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Sessão expirada. Inicie sessão novamente.' }
+  if (!(await contaClienteActiva(supabase, user.id))) return { success: false, error: 'Apenas clientes activos podem criar pedidos de serviço.' }
 
   const titulo = String(formData.get('titulo') ?? '').trim()
   const descricao = String(formData.get('descricao') ?? '').trim()
@@ -174,6 +188,7 @@ export async function cancelarPedido(pedidoId: string): Promise<ResultadoPedido>
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Sessão expirada. Inicie sessão novamente.' }
+  if (!(await contaClienteActiva(supabase, user.id))) return { success: false, error: 'Apenas clientes activos podem cancelar pedidos.' }
 
   // A RLS e o trigger também garantem estes limites; o filtro aqui evita um erro confuso.
   const { data, error } = await supabase

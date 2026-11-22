@@ -1,7 +1,8 @@
 import { Metadata } from 'next'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { getUser } from '@/lib/auth'
+import { getUser, isAdmin } from '@/lib/auth'
+import { obterContextoUtilizador } from '@/lib/permissoes'
 import { getUserCompanies, getUserCompany, getUserVagas } from '@/lib/actions/vagas'
 import { listarCandidaturasDaEmpresa } from '@/lib/actions/candidaturas'
 import { listarConversas } from '@/lib/actions/conversas'
@@ -20,6 +21,9 @@ function dataLegivel(valor: string) {
 }
 
 export default async function EmpresaPainelPage({ searchParams }: { searchParams: Promise<{ empresa?: string }> }) {
+  if (await isAdmin()) redirect('/admin')
+  const contexto = await obterContextoUtilizador()
+  if (contexto.profissional) redirect('/profissional/painel')
   const user = await getUser()
   if (!user) redirect('/login?redirectTo=/empresa/painel')
   const empresas = await getUserCompanies()

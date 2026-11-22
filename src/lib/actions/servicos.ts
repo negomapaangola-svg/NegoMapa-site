@@ -121,16 +121,17 @@ export async function createProfile(formData: ProfileFormData): Promise<ActionRe
   if (authError || !user) {
     return { success: false, error: 'Utilizador não autenticado' }
   }
+  if (await isAdmin()) return { success: false, error: 'Contas administrativas não podem criar perfis profissionais.' }
 
   // Impede criação profissional por contas de empresa/profissional e por clientes
   // que já tenham escolhido uma das duas modalidades.
   const { data: perfilConta, error: contaError } = await supabase
-    .from('profiles').select('account_type').eq('id', user.id).maybeSingle()
+    .from('profiles').select('account_type,is_active').eq('id', user.id).maybeSingle()
   if (contaError) {
     console.error('Erro ao validar tipo de conta. Código:', contaError.code)
     return { success: false, error: 'Não foi possível validar a sua conta. Tente novamente.' }
   }
-  if (perfilConta?.account_type !== 'cliente') {
+  if (perfilConta?.account_type !== 'cliente' || perfilConta.is_active !== true) {
     return { success: false, error: 'Apenas contas de cliente sem perfil associado podem criar um perfil profissional.' }
   }
   const [empresaExistente, profissionalExistente] = await Promise.all([
@@ -185,6 +186,7 @@ export async function createProfile(formData: ProfileFormData): Promise<ActionRe
 }
 
 export async function updateProfile(formData: ProfileFormData): Promise<ActionResult> {
+  if (await isAdmin()) return { success: false, error: 'Contas administrativas não podem gerir perfis profissionais.' }
   const supabase = await createSupabaseServerClient()
 
   const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -227,6 +229,7 @@ export async function updateProfile(formData: ProfileFormData): Promise<ActionRe
 }
 
 export async function createService(formData: ServiceFormData): Promise<ActionResult> {
+  if (await isAdmin()) return { success: false, error: 'Contas administrativas não podem publicar serviços.' }
   const supabase = await createSupabaseServerClient()
 
   const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -322,6 +325,7 @@ export async function createService(formData: ServiceFormData): Promise<ActionRe
 }
 
 export async function getUserProfile() {
+  if (await isAdmin()) return null
   const supabase = await createSupabaseServerClient()
 
   const { data: { user } } = await supabase.auth.getUser()

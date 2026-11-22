@@ -13,7 +13,7 @@ export default async function ContaPerfilPage({searchParams}:{searchParams:Promi
  const [data,params]=await Promise.all([getContaSnapshot(),searchParams]); if(!data)return null
  const supabase=await createSupabaseServerClient()
  const {data:categorias}=await supabase.from('categorias').select('id,nome').eq('ativo',true).order('nome')
- const p=data.professional??{}, c=data.company??{}, pro=data.accountType==='profissional', emp=data.accountType==='empresa'
+ const p=data.professional ?? ({} as NonNullable<typeof data.professional>), c=data.company ?? ({} as NonNullable<typeof data.company>), pro=data.accountType==='profissional', emp=data.accountType==='empresa'
  const name=pro?p.nome:emp?c.name:data.profile.nome
  let avatar=pro?p.avatar_url:emp?c.logo_url:data.profile.avatar_url
  const imageBucket=pro?'profissionais-avatars':emp?'empresas-logos':'clientes-avatars'
@@ -31,7 +31,7 @@ export default async function ContaPerfilPage({searchParams}:{searchParams:Promi
  }
  const kind=pro?'Profissional':emp?'Empresa':'Cliente'
  const status=pro?(p.estado??'Pendente'):emp?(c.is_approved?'Aprovada':c.estado??'Pendente'):(data.profile.is_active===false?'Inactiva':'Activa')
- const errorMessages:Record<string,string>={nome:'O nome deve ter entre 2 e 120 caracteres.',contacto:'Verifique os contactos.',avatar:'É obrigatória uma imagem válida no armazenamento NegóMapa.',portfolio:'O portfólio deve ser uma lista JSON válida.',guardar:'Não foi possível guardar. Verifique as permissões da conta.',detalhes:'Não foi possível guardar os campos complementares.','sem-perfil':'Não existe perfil associado a esta conta.'}
+ const errorMessages:Record<string,string>={nome:'O nome deve ter entre 2 e 120 caracteres.',contacto:'Verifique os contactos.',avatar:'É obrigatória uma imagem válida no armazenamento NegóMapa.',portfolio:'O portfólio deve ser uma lista JSON válida.',guardar:'Não foi possível guardar. Verifique as permissões da conta.',detalhes:'Não foi possível guardar os campos complementares.','sem-perfil':'Não existe perfil associado a esta conta.','conta-inactiva':'Esta conta está inactiva e não pode alterar os dados.'}
  const error=typeof params.erro==='string'?errorMessages[params.erro]:null
  return <section className="space-y-6">
   <header><h1 className="text-2xl font-semibold tracking-tight">Perfil</h1><p className="mt-1 text-sm text-slate-500">Gira os seus dados privados num único lugar.</p></header>
