@@ -24,23 +24,28 @@ export async function obterContextoUtilizador(): Promise<ContextoUtilizador> {
 
   const [profissionalResult, empresaResult, perfilResult, administrador] = await Promise.all([
     supabase.from('profissionais').select('id, estado').eq('user_id', user.id).maybeSingle(),
-    supabase.from('companies').select('id, is_approved').eq('user_id', user.id),
+    supabase.from('companies').select('id, is_approved, estado').eq('user_id', user.id),
     supabase.from('profiles').select('account_type, is_active').eq('id', user.id).maybeSingle(),
     isAdmin(),
   ])
 
-  const profissional = profissionalResult.data
-  const empresas = empresaResult.data ?? []
+  const tipo = perfilResult.error ? null : perfilResult.data?.account_type ?? null
+  const profissional = profissionalResult.error ? null : profissionalResult.data
+  const empresas = empresaResult.error ? [] : empresaResult.data ?? []
+  // profiles.account_type é a fonte de verdade. Registos empresariais/profissionais
+  // legados não convertem uma conta cliente noutro papel.
+  // O papel administrativo é mutuamente exclusivo, conforme a matriz da Fase 6.
+  const eProfissional = !administrador && tipo === 'profissional' && Boolean(profissional)
+  const eEmpresa = !administrador && tipo === 'empresa' && empresas.length > 0
   return {
     autenticado: true,
     userId: user.id,
-    // O papel administrativo é mutuamente exclusivo, conforme a matriz da Fase 6.
-    profissional: administrador ? false : Boolean(profissional),
-    estadoProfissional: administrador ? null : profissional?.estado ?? null,
-    empresa: administrador ? false : empresas.length > 0,
-    empresaAprovada: administrador ? false : empresas.some((empresa) => empresa.is_approved === true),
+    profissional: eProfissional,
+    estadoProfissional: eProfissional ? profissional?.estado ?? null : null,
+    empresa: eEmpresa,
+    empresaAprovada: eEmpresa && empresas.some((empresa) => empresa.is_approved === true && (empresa.estado === 'aprovado' || empresa.estado === null)),
     administrador,
-    accountType: administrador ? null : perfilResult.data?.account_type ?? null,
+    accountType: administrador ? null : tipo,
     contaAtiva: perfilResult.data?.is_active === true,
   }
 }

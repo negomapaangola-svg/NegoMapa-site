@@ -81,12 +81,16 @@ async function criarNotificacao(
 }
 
 export async function createVaga(formData: VagaFormData, companyId: string): Promise<ActionResult> {
+  if (await isAdmin()) return { success: false, error: 'Contas administrativas não podem publicar vagas.' }
   const supabase = await createSupabaseServerClient()
 
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) {
     return { success: false, error: 'Utilizador não autenticado' }
   }
+
+  const { data: perfilConta } = await supabase.from('profiles').select('is_active').eq('id', user.id).maybeSingle()
+  if (perfilConta?.is_active !== true) return { success: false, error: 'A conta não está activa.' }
 
   if (!podePublicarVaga(await obterContextoUtilizador())) {
     return { success: false, error: 'Apenas empresas aprovadas podem publicar vagas.' }
@@ -103,7 +107,7 @@ export async function createVaga(formData: VagaFormData, companyId: string): Pro
 
   const { data: company, error: companyError } = await supabase
     .from('companies')
-    .select('id, is_approved')
+    .select('id, is_approved, estado')
     .eq('id', companyId)
     .eq('user_id', user.id)
     .maybeSingle()
@@ -112,7 +116,7 @@ export async function createVaga(formData: VagaFormData, companyId: string): Pro
     return { success: false, error: 'Empresa não encontrada. Cadastre a sua empresa primeiro.' }
   }
 
-  if (!company.is_approved) {
+  if (!company.is_approved || company.estado !== 'aprovado') {
     return { success: false, error: 'A sua empresa ainda não foi aprovada. Não é possível publicar vagas.' }
   }
 
@@ -169,19 +173,21 @@ export type EmpresaPainel = {
   name: string
   slug: string
   is_approved: boolean
+  estado: string | null
   sector: string | null
   province: string | null
   city: string | null
 }
 
 export async function getUserCompanies(): Promise<EmpresaPainel[] | null> {
+  if (await isAdmin()) return null
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
 
   const { data, error } = await supabase
     .from('companies')
-    .select('id, name, slug, is_approved, sector, province, city')
+    .select('id, name, slug, is_approved, estado, sector, province, city')
     .eq('user_id', user.id)
     .order('name', { ascending: true })
 

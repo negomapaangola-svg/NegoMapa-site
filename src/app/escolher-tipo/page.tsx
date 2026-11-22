@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
-import { getUser } from '@/lib/auth'
+import { getUser, isAdmin } from '@/lib/auth'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { MainLayout } from '@/components/layout/MainLayout'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card'
@@ -12,6 +12,7 @@ const opcoes=[
  {tipo:'empresa' as const,sigla:'EM',titulo:'Empresa',descricao:'Dê visibilidade à empresa e encontre talento.',cor:'border-amber-200 bg-amber-50/60 dark:border-amber-900 dark:bg-amber-950/20',beneficios:['Criar perfil público da empresa','Publicar produtos e vagas','Encontrar profissionais, gerir candidaturas e receber contactos por WhatsApp']},
 ]
 export default async function EscolherTipoPage(){
+ if(await isAdmin()) redirect('/admin')
  const user=await getUser()
  if(!user) redirect('/login?redirectTo=/escolher-tipo')
  const supabase=await createSupabaseServerClient()

@@ -3,6 +3,7 @@
 import 'server-only'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { revalidatePath } from 'next/cache'
+import { isAdmin } from '@/lib/auth'
 
 export type DadosEmpresaPendente = {
   nome: string
@@ -23,13 +24,14 @@ export type DadosEmpresaPendente = {
 }
 
 async function validarClienteSemPerfil(supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>, userId: string) {
+  if (await isAdmin()) return { ok: false as const, message: 'Contas administrativas não podem criar empresas.' }
   const { data: perfil, error: perfilError } = await supabase
-    .from('profiles').select('account_type').eq('id', userId).maybeSingle()
+    .from('profiles').select('account_type,is_active').eq('id', userId).maybeSingle()
   if (perfilError) {
     console.error('Falha ao validar tipo de conta. Código:', perfilError.code)
     return { ok: false as const, message: 'Não foi possível validar a sua conta. Tente novamente.' }
   }
-  if (perfil?.account_type !== 'cliente') {
+  if (perfil?.account_type !== 'cliente' || perfil.is_active !== true) {
     return { ok: false as const, message: 'Apenas contas de cliente sem perfil associado podem criar uma empresa.' }
   }
   const [profissional, empresa] = await Promise.all([
@@ -48,9 +50,10 @@ async function validarClienteSemPerfil(supabase: Awaited<ReturnType<typeof creat
 export async function verificarPodeCriarEmpresa() {
   const supabase = await createSupabaseServerClient()
   const { data: { user }, error } = await supabase.auth.getUser()
-  if (error || !user) return { success: false, error: 'Inicie sessão para continuar.' }
+  if (error || !user) return { success: false, error: 'Inicie sessão para continuar.', isAdmin: false }
+  if (await isAdmin()) return { success: false, error: 'Contas administrativas não podem utilizar o cadastro empresarial.', isAdmin: true }
   const validacao = await validarClienteSemPerfil(supabase, user.id)
-  return validacao.ok ? { success: true } : { success: false, error: validacao.message }
+  return validacao.ok ? { success: true, isAdmin: false } : { success: false, error: validacao.message, isAdmin: false }
 }
 
 export async function criarEmpresaPendente(dados: DadosEmpresaPendente) {

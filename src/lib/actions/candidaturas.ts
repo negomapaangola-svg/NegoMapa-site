@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
+import { isAdmin } from '@/lib/auth'
 
 export type EstadoCandidatura = 'enviada' | 'vista' | 'em_analise' | 'aceite' | 'rejeitada' | 'arquivada'
 
@@ -78,9 +79,13 @@ async function criarNotificacao(
 }
 
 export async function listarMinhasCandidaturas(): Promise<Resultado<CandidaturaCandidato[]>> {
+  if (await isAdmin()) return { success: false, error: 'Contas administrativas não podem utilizar candidaturas de cliente.' }
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Sessão expirada. Inicie sessão novamente.' }
+
+  const { data: perfil, error: perfilError } = await supabase.from('profiles').select('account_type,is_active').eq('id', user.id).maybeSingle()
+  if (perfilError || perfil?.account_type !== 'cliente' || perfil.is_active !== true) return { success: false, error: 'Esta área está disponível apenas para contas de cliente activas.' }
 
   const { data, error } = await supabase
     .from('candidaturas')
@@ -97,11 +102,18 @@ export async function listarMinhasCandidaturas(): Promise<Resultado<CandidaturaC
 }
 
 export async function criarCandidatura(vagaId: string, formData: FormData): Promise<ResultadoCandidatura> {
+  if (await isAdmin()) return { success: false, error: 'Contas administrativas não podem candidatar-se a vagas.' }
   if (!UUID_REGEX.test(vagaId)) return { success: false, error: 'Vaga inválida.' }
 
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Sessão expirada. Inicie sessão novamente.' }
+
+  // Defesa em profundidade: candidaturas são exclusivas de contas de cliente.
+  const { data: perfil, error: perfilError } = await supabase.from('profiles').select('account_type,is_active').eq('id', user.id).maybeSingle()
+  if (perfilError || perfil?.account_type !== 'cliente' || perfil.is_active !== true) {
+    return { success: false, error: 'Apenas contas de cliente activas podem candidatar-se a vagas.' }
+  }
 
   const nome = String(formData.get('nome_candidato') ?? '').trim()
   const mensagem = String(formData.get('mensagem') ?? '').trim()
@@ -185,14 +197,20 @@ export async function criarCandidatura(vagaId: string, formData: FormData): Prom
 }
 
 export async function listarCandidaturasDaEmpresa(empresaActivaId?: string): Promise<Resultado<CandidaturaEmpresa[]>> {
+  if (await isAdmin()) return { success: false, error: 'Contas administrativas não podem utilizar a área empresarial.' }
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Sessão expirada. Inicie sessão novamente.' }
+
+  const { data: perfil, error: perfilError } = await supabase.from('profiles').select('account_type,is_active').eq('id', user.id).maybeSingle()
+  if (perfilError || perfil?.account_type !== 'empresa' || perfil.is_active !== true) return { success: false, error: 'Esta área está disponível apenas para contas de empresa activas.' }
 
   const { data: empresas, error: erroEmpresa } = await supabase
     .from('companies')
     .select('id')
     .eq('user_id', user.id)
+    .eq('is_approved', true)
+    .eq('estado', 'aprovado')
 
   if (erroEmpresa) {
     console.error('Erro ao verificar empresas do utilizador. Código:', erroEmpresa.code)
@@ -259,13 +277,17 @@ export async function atualizarEstadoCandidatura(
   estado: EstadoCandidatura,
   empresaActivaId?: string
 ): Promise<{ success: boolean; error?: string }> {
+  if (await isAdmin()) return { success: false, error: 'Contas administrativas não podem gerir candidaturas empresariais.' }
   if (!UUID_REGEX.test(candidaturaId)) return { success: false, error: 'Candidatura inválida.' }
 
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Sessão expirada. Inicie sessão novamente.' }
 
-  const { data: empresas, error: erroEmpresa } = await supabase.from('companies').select('id').eq('user_id', user.id)
+  const { data: perfil, error: perfilError } = await supabase.from('profiles').select('account_type,is_active').eq('id', user.id).maybeSingle()
+  if (perfilError || perfil?.account_type !== 'empresa' || perfil.is_active !== true) return { success: false, error: 'Apenas contas de empresa activas podem gerir candidaturas.' }
+
+  const { data: empresas, error: erroEmpresa } = await supabase.from('companies').select('id').eq('user_id', user.id).eq('is_approved', true).eq('estado', 'aprovado')
   if (erroEmpresa || !empresas || empresas.length === 0) return { success: false, error: 'Acesso não autorizado.' }
   const idsEmpresas = empresas.map((empresa) => empresa.id)
   if (empresaActivaId && !idsEmpresas.includes(empresaActivaId)) return { success: false, error: 'Acesso não autorizado.' }

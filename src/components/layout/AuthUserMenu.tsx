@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { logoutAction } from '@/lib/actions/logout'
 import { obterContextoNavegacao } from '@/lib/actions/permissoes'
+import { createBrowserSupabaseClient } from '@/lib/supabase-browser'
 import { acompanharSistema, definirTema } from '@/lib/tema'
 import { GRUPOS_MENU_MOBILE, ITENS_NAVEGACAO, podeVerItem, type ItemNavegacao } from '@/lib/navegacao'
 
@@ -34,8 +35,20 @@ export function AuthUserMenu({ variante = 'cabecalho', onNavigate }: { variante?
     carregar()
     const aoSair = () => { setContexto({ autenticado:false, profissional:false, estadoProfissional:null, empresa:false, empresaAprovada:false, administrador:false, accountType:null, contaAtiva:false }); setAberto(false) }
     window.addEventListener('negomapa:auth-logout-started', aoSair)
+    const supabase = createBrowserSupabaseClient()
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((evento, sessao) => {
+      if (evento === 'SIGNED_OUT' || !sessao) {
+        aoSair()
+        return
+      }
+      if (evento === 'SIGNED_IN' || evento === 'USER_UPDATED') {
+        void obterContextoNavegacao().then((c) => { if (activo) setContexto(c) }).catch(() => {
+          if (activo) setContexto({ autenticado:false, profissional:false, estadoProfissional:null, empresa:false, empresaAprovada:false, administrador:false, accountType:null, contaAtiva:false })
+        })
+      }
+    })
     const pararAcompanharSistema = acompanharSistema()
-    return () => { activo = false; window.removeEventListener('negomapa:auth-logout-started', aoSair); pararAcompanharSistema() }
+    return () => { activo = false; subscription.unsubscribe(); window.removeEventListener('negomapa:auth-logout-started', aoSair); pararAcompanharSistema() }
   }, [])
 
   if (!contexto) return null
@@ -53,12 +66,12 @@ export function AuthUserMenu({ variante = 'cabecalho', onNavigate }: { variante?
       {aberto && <div aria-label="Menu da conta" className="absolute right-0 top-14 z-[250] w-64 rounded-2xl border border-card-border bg-white p-3 shadow-xl dark:bg-neutral-900">
         <div className="px-3 pb-2 text-xs text-neutral-500">A minha conta</div>
         <div className="space-y-1">
-          <Link href={itemPerfil.rota} onClick={() => setAberto(false)} className="block rounded-lg px-3 py-2 text-sm font-medium hover:bg-cream dark:hover:bg-white/10">Perfil</Link>
-          <Link href="/configuracoes" onClick={() => setAberto(false)} className="block rounded-lg px-3 py-2 text-sm font-medium hover:bg-cream dark:hover:bg-white/10">Configurações</Link>
-          {contexto.profissional && <Link role="menuitem" href="/profissional/painel" onClick={() => setAberto(false)} className="block rounded-lg px-3 py-2.5 text-sm hover:bg-cream dark:hover:bg-white/10">Painel profissional</Link>}
-          {contexto.empresa && <Link role="menuitem" href="/empresa/painel" onClick={() => setAberto(false)} className="block rounded-lg px-3 py-2.5 text-sm hover:bg-cream dark:hover:bg-white/10">Painel empresarial</Link>}
-          <Link role="menuitem" href="/mensagens" onClick={() => setAberto(false)} className="block rounded-lg px-3 py-2.5 text-sm hover:bg-cream dark:hover:bg-white/10">Mensagens</Link>
-          <Link role="menuitem" href="/notificacoes" onClick={() => setAberto(false)} className="block rounded-lg px-3 py-2.5 text-sm hover:bg-cream dark:hover:bg-white/10">Notificações</Link>
+          {!contexto.administrador && <Link href={itemPerfil.rota} onClick={() => setAberto(false)} className="block rounded-lg px-3 py-2 text-sm font-medium hover:bg-cream dark:hover:bg-white/10">Perfil</Link>}
+          {!contexto.administrador && <Link href="/configuracoes" onClick={() => setAberto(false)} className="block rounded-lg px-3 py-2 text-sm font-medium hover:bg-cream dark:hover:bg-white/10">Configurações</Link>}
+          {contexto.accountType === 'profissional' && contexto.profissional && <Link role="menuitem" href="/profissional/painel" onClick={() => setAberto(false)} className="block rounded-lg px-3 py-2.5 text-sm hover:bg-cream dark:hover:bg-white/10">Painel profissional</Link>}
+          {contexto.accountType === 'empresa' && contexto.empresa && <Link role="menuitem" href="/empresa/painel" onClick={() => setAberto(false)} className="block rounded-lg px-3 py-2.5 text-sm hover:bg-cream dark:hover:bg-white/10">Painel empresarial</Link>}
+          {!contexto.administrador && <Link role="menuitem" href="/mensagens" onClick={() => setAberto(false)} className="block rounded-lg px-3 py-2.5 text-sm hover:bg-cream dark:hover:bg-white/10">Mensagens</Link>}
+          {!contexto.administrador && <Link role="menuitem" href="/notificacoes" onClick={() => setAberto(false)} className="block rounded-lg px-3 py-2.5 text-sm hover:bg-cream dark:hover:bg-white/10">Notificações</Link>}
           {contexto.administrador && <Link role="menuitem" href="/admin" onClick={() => setAberto(false)} className="block rounded-lg px-3 py-2.5 text-sm hover:bg-cream dark:hover:bg-white/10">Administração</Link>}
         </div>
         <div className="my-2 border-t border-card-border" />
