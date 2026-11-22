@@ -9,6 +9,7 @@ import { PaginacaoDescobrir } from './PaginacaoDescobrir';
 import { RecomendacoesCliente } from './RecomendacoesCliente';
 import type { RecomendacaoDescobrir } from '@/lib/descobrir/recomendacoes';
 import { PageHeader, SearchBar, FilterChips, SettingsSheet, ResultsHeader, ProductCard, ServiceCard } from '@/components/ui/CatalogComponents';
+import { EditorialPageImage } from '@/components/ui/EditorialPageImage';
 
 interface DescobrirPageProps {
   params: ParamsDescobrir;
@@ -34,6 +35,7 @@ export function DescobrirPage({ params, categorias, municipios, totalPaginas, se
   return (
     <section className="bg-cream py-10 dark:bg-navy-dark lg:py-16" aria-labelledby="descobrir-titulo">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <EditorialPageImage src={ehProdutos ? "/images/home/produtos.webp" : "/images/home/servicos.webp"} alt={ehProdutos ? "Produtos disponíveis numa empresa angolana" : "Técnico angolano a trabalhar numa instalação eléctrica"} />
         <PageHeader title="Descobrir" description={ehProdutos
           ? 'Encontre produtos de empresas angolanas por pesquisa, categoria, província, preço e estado.'
           : 'Encontre serviços em Angola por pesquisa, categoria, província, preço e avaliação.'} />
@@ -44,7 +46,7 @@ export function DescobrirPage({ params, categorias, municipios, totalPaginas, se
         <SeparadoresTipo params={params} />
         <div className="mt-5 space-y-4">
           <FilterChips items={categoriasRapidas} value={params.categoria} />
-          <SettingsSheet title="Filtros e definições">
+          <SettingsSheet activeCount={[params.q, params.categoria, params.provincia, params.municipio, params.preco, ehProdutos ? params.estado_produto : params.avaliacao, ehProdutos ? params.entrega : ""].filter(Boolean).length}>
             <FiltrosDescobrir params={params} categorias={categorias} municipios={municipios} />
           </SettingsSheet>
         </div>

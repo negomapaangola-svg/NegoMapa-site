@@ -32,12 +32,22 @@ type LinhaMensagemResumo = {
   criada_em: string
 }
 
+export type AnexoMensagem = {
+  id: string
+  nome_ficheiro: string
+  mime_type: string
+  tamanho_bytes: number
+}
+
 export type MensagemConversa = {
   id: string
   remetente_id: string
+  remetente_nome: string
+  remetente_tipo: string | null
   conteudo: string
   lida_em: string | null
   criada_em: string
+  anexos: AnexoMensagem[]
 }
 
 type Resultado<T> = { success: true; data: T } | { success: false; error: string }
@@ -191,7 +201,45 @@ export async function listarMensagens(conversaId: string): Promise<Resultado<Men
     return { success: false, error: 'Não foi possível carregar as mensagens.' }
   }
 
-  return { success: true, data: (data ?? []) as MensagemConversa[] }
+  const linhas = data ?? []
+  const idsRemetentes = Array.from(new Set(linhas.map((m) => m.remetente_id)))
+  const [perfis, anexos] = await Promise.all([
+    idsRemetentes.length
+      ? supabase.rpc('perfis_remetentes_conversa', {
+          p_conversa_id: conversaId,
+          p_user_ids: idsRemetentes,
+        })
+      : Promise.resolve({ data: [], error: null }),
+    linhas.length
+      ? supabase.from('mensagem_anexos')
+          .select('id, mensagem_id, nome_ficheiro, mime_type, tamanho_bytes')
+          .in('mensagem_id', linhas.map((m) => m.id))
+      : Promise.resolve({ data: [], error: null }),
+  ])
+  if (perfis.error) console.error('Não foi possível obter identificação pública dos remetentes. Código:', perfis.error.code)
+  if (anexos.error) console.error('Não foi possível obter anexos da conversa. Código:', anexos.error.code)
+  const perfilPorId = new Map(((perfis.data ?? []) as {
+    id: string; nome: string | null; account_type: string | null
+  }[]).map((p) => [p.id, p]))
+  const anexosPorMensagem = new Map<string, AnexoMensagem[]>()
+  for (const anexo of (anexos.data ?? []) as (AnexoMensagem & { mensagem_id: string })[]) {
+    const lista = anexosPorMensagem.get(anexo.mensagem_id) ?? []
+    lista.push({ id: anexo.id, nome_ficheiro: anexo.nome_ficheiro, mime_type: anexo.mime_type, tamanho_bytes: anexo.tamanho_bytes })
+    anexosPorMensagem.set(anexo.mensagem_id, lista)
+  }
+
+  return {
+    success: true,
+    data: linhas.map((mensagem) => {
+      const perfil = perfilPorId.get(mensagem.remetente_id)
+      return {
+        ...mensagem,
+        remetente_nome: perfil?.nome?.trim() || 'Participante',
+        remetente_tipo: perfil?.account_type ?? null,
+        anexos: anexosPorMensagem.get(mensagem.id) ?? [],
+      } as MensagemConversa
+    }),
+  }
 }
 
 export async function enviarMensagem(conversaId: string, conteudo: string): Promise<{ success: boolean; error?: string }> {
@@ -595,4 +643,114 @@ export async function marcarMensagensLidas(conversaId: string): Promise<{ succes
   revalidatePath('/mensagens')
   revalidatePath('/empresa/painel/mensagens')
   return { success: true }
+}
+
+const TIPOS_ANEXO_PERMITIDOS: Record<string, string> = {
+  'application/pdf': 'pdf',
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+  'text/plain': 'txt',
+}
+const TAMANHO_MAXIMO_ANEXO = 10 * 1024 * 1024
+
+function assinaturaValida(tipo: string, bytes: Uint8Array): boolean {
+  if (tipo === 'application/pdf') return new TextDecoder().decode(bytes.slice(0, 5)) === '%PDF-'
+  if (tipo === 'image/jpeg') return bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff
+  if (tipo === 'image/png') return bytes.slice(0, 8).join(',') === '137,80,78,71,13,10,26,10'
+  if (tipo === 'image/webp') return new TextDecoder().decode(bytes.slice(0, 4)) === 'RIFF' && new TextDecoder().decode(bytes.slice(8, 12)) === 'WEBP'
+  if (tipo === 'text/plain') {
+    if (bytes.includes(0)) return false
+    try { new TextDecoder('utf-8', { fatal: true }).decode(bytes); return true } catch { return false }
+  }
+  return false
+}
+
+/** Upload validado no servidor; a sessão autenticada e as políticas Storage limitam o acesso. */
+export async function enviarAnexo(
+  conversaId: string,
+  formData: FormData
+): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createSupabaseServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: 'Sessão expirada. Inicie sessão novamente.' }
+  if (!UUID_REGEX.test(conversaId) || !(await utilizadorParticipaNaConversa(supabase, conversaId, user.id))) {
+    return { success: false, error: 'Conversa não encontrada ou sem permissão.' }
+  }
+
+  const ficheiro = formData.get('ficheiro')
+  if (!(ficheiro instanceof File) || ficheiro.size < 1 || ficheiro.size > TAMANHO_MAXIMO_ANEXO) {
+    return { success: false, error: 'Escolha um ficheiro até 10 MB.' }
+  }
+  const extensao = TIPOS_ANEXO_PERMITIDOS[ficheiro.type]
+  if (!extensao) return { success: false, error: 'Tipo de ficheiro não permitido. Use PDF, JPG, PNG, WebP ou TXT.' }
+
+  const bytes = new Uint8Array(await ficheiro.arrayBuffer())
+  if (!assinaturaValida(ficheiro.type, bytes)) {
+    return { success: false, error: 'O conteúdo do ficheiro não corresponde ao tipo declarado.' }
+  }
+
+  const id = crypto.randomUUID()
+  const nomeBase = ficheiro.name.normalize('NFKC').replace(/[^a-zA-Z0-9._-]/g, '_').replace(/\.[^.]+$/, '').slice(-70) || 'anexo'
+  const nomeSeguro = `${nomeBase}.${extensao}`
+  const caminho = `${conversaId}/${id}-${nomeSeguro}`
+  const { error: erroUpload } = await supabase.storage.from('conversas-anexos').upload(caminho, bytes, {
+    contentType: ficheiro.type,
+    upsert: false,
+  })
+  if (erroUpload) {
+    console.error('Falha no upload de anexo. Código:', erroUpload.name)
+    return { success: false, error: 'Não foi possível guardar o ficheiro.' }
+  }
+
+  const { error: erroRegisto } = await supabase.rpc('criar_mensagem_com_anexo', {
+    p_conversa_id: conversaId,
+    p_nome_ficheiro: nomeSeguro,
+    p_mime_type: ficheiro.type,
+    p_tamanho_bytes: ficheiro.size,
+    p_storage_path: caminho,
+  })
+  if (erroRegisto) {
+    const { error: erroRemocao } = await supabase.storage.from('conversas-anexos').remove([caminho])
+    if (erroRemocao) console.error('Não foi possível limpar upload sem registo. Código:', erroRemocao.name)
+    console.error('Falha ao registar mensagem com anexo. Código:', erroRegisto.code)
+    return { success: false, error: 'Não foi possível enviar o ficheiro.' }
+  }
+
+  revalidatePath('/mensagens')
+  revalidatePath('/profissional/painel/mensagens')
+  revalidatePath('/empresa/painel/mensagens')
+  try {
+    await notificarNovaMensagem(conversaId, user.id)
+  } catch {
+    console.error('Erro ao criar notificação de mensagem com anexo.')
+  }
+
+  return { success: true }
+}
+
+/** URL assinada de 60 segundos; a leitura do metadado e o Storage aplicam RLS. */
+export async function obterUrlAnexo(
+  anexoId: string
+): Promise<{ success: true; url: string } | { success: false; error: string }> {
+  const supabase = await createSupabaseServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: 'Sessão expirada. Inicie sessão novamente.' }
+  if (!UUID_REGEX.test(anexoId)) return { success: false, error: 'Ficheiro indisponível.' }
+
+  const { data: anexo, error } = await supabase.from('mensagem_anexos')
+    .select('id, conversa_id, storage_path')
+    .eq('id', anexoId)
+    .maybeSingle()
+  if (error || !anexo || !(await utilizadorParticipaNaConversa(supabase, anexo.conversa_id, user.id))) {
+    return { success: false, error: 'Ficheiro indisponível ou sem permissão.' }
+  }
+
+  const { data: signed, error: signedError } = await supabase.storage
+    .from('conversas-anexos')
+    .createSignedUrl(anexo.storage_path, 60)
+  if (signedError || !signed?.signedUrl) {
+    return { success: false, error: 'Ficheiro indisponível ou removido.' }
+  }
+  return { success: true, url: signed.signedUrl }
 }

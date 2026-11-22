@@ -63,6 +63,8 @@ type ContaDetails = {
 }
 type AvaliacaoConta = { id: string; nota: number; comentario: string | null; created_at: string }
 
+type ServerSupabase = Awaited<ReturnType<typeof createSupabaseServerClient>>
+
 export type ContaSnapshot = {
   user: { id: string; email: string }
   profile: ContaProfile
@@ -140,15 +142,226 @@ function field(form: FormData, name: string) {
   return typeof value === 'string' ? value.trim() : ''
 }
 
-function validImageUrl(value: string) {
-  if (!value) return false
-  try {
-    const url = new URL(value)
-    const base = process.env.NEXT_PUBLIC_SUPABASE_URL
-    return Boolean(base && url.protocol === 'https:' && url.origin === new URL(base).origin && url.pathname.startsWith('/storage/v1/object/public/'))
-  } catch {
-    return false
+function storagePath(value: string, bucket: string): string | null {
+  if (!value) return null
+  if (value.startsWith('/api/imagens/')) {
+    const parts = value.split('/').slice(3)
+    if (parts.shift() !== bucket) return null
+    return parts.map(decodeURIComponent).join('/')
   }
+  if (value.startsWith('http')) {
+    try {
+      const pathname = new URL(value).pathname
+      const marker = '/storage/v1/object/'
+      const index = pathname.indexOf(marker)
+      if (index < 0) return null
+      const parts = pathname.slice(index + marker.length).split('/')
+      if (parts[0] === 'public' || parts[0] === 'sign') parts.shift()
+      if (parts.shift() !== bucket) return null
+      return parts.map(decodeURIComponent).join('/')
+    } catch { return null }
+  }
+  return bucket === 'clientes-avatars' ? value : null
+}
+
+function validImageRef(value: string, bucket: string, userId: string, folder: 'avatar' | 'portfolio') {
+  const path = storagePath(value, bucket)
+  if (!path) return false
+  if (new RegExp('^' + userId + '/' + folder + '/[0-9a-f-]{36}\\.(webp|jpg|png)$', 'i').test(path)) return true
+  if (folder === 'avatar' && bucket === 'profissionais-avatars') {
+    return new RegExp('^' + userId + '/avatars/[0-9a-f-]{36}\\.(webp|jpg|png)$', 'i').test(path)
+  }
+  if (folder === 'avatar' && bucket === 'empresas-logos') {
+    return new RegExp('^' + userId + '/logotipo-[0-9]+\\.(webp|jpg|png)$', 'i').test(path)
+  }
+  return false
+}
+
+function validPortfolioItems(value: unknown, bucket: string, userId: string) {
+  if (!Array.isArray(value)) return false
+  return value.every(item => {
+    if (typeof item === 'string') return validImageRef(item, bucket, userId, 'portfolio')
+    if (!item || typeof item !== 'object' || Array.isArray(item)) return false
+    const record = item as Record<string, unknown>
+    const imageKeys = ['imagem_url', 'image_url', 'foto_url', 'url_imagem', 'url_projeto']
+    return imageKeys.every(key => {
+      const itemValue = record[key]
+      if (itemValue === undefined || itemValue === null) return true
+      if (key === 'url_projeto' && typeof itemValue === 'string' && !itemValue.startsWith('/api/imagens/') && !itemValue.includes('/storage/v1/object/')) return true
+      return typeof itemValue === 'string' && validImageRef(itemValue, bucket, userId, 'portfolio')
+    })
+  })
+}
+
+function imageRefs(value: unknown, bucket: string, userId: string): string[] {
+  const strings: string[] = []
+  const collect = (item: unknown) => {
+    if (typeof item === 'string') strings.push(item)
+    else if (Array.isArray(item)) item.forEach(collect)
+    else if (item && typeof item === 'object') Object.values(item as Record<string, unknown>).forEach(collect)
+  }
+  collect(value)
+  return [...new Set(strings.map(item => storagePath(item, bucket)).filter((path): path is string =>
+    Boolean(path && path.startsWith(userId + '/') && new RegExp('^' + userId + '/(avatar|portfolio)/[0-9a-f-]{36}\\.(webp|jpg|png)$', 'i').test(path))
+  ))]
+}
+
+async function cleanupUnreferencedImages(supabase: ServerSupabase, bucket: string, oldRefs: string[], newRefs: string[]) {
+  const stillUsed = new Set(newRefs)
+  for (const path of [...new Set(oldRefs)]) {
+    if (stillUsed.has(path)) continue
+    const { data, error } = await supabase.rpc('pode_apagar_imagem', { p_bucket: bucket, p_name: path })
+    if (error || data !== true) continue
+    await supabase.storage.from(bucket).remove([path])
+  }
+}
+
+
+function portfolioImageRef(item: unknown, bucket: string): { ref: string; key: string } | null {
+  if (typeof item === 'string') {
+    const path = storagePath(item, bucket)
+    return path ? { ref: item.startsWith('/api/imagens/') ? item : '/api/imagens/' + bucket + '/' + path.split('/').map(encodeURIComponent).join('/'), key: '' } : null
+  }
+  if (!item || typeof item !== 'object' || Array.isArray(item)) return null
+  const record = item as Record<string, unknown>
+  for (const key of ['imagem_url', 'image_url', 'foto_url', 'url_imagem', 'url_projeto']) {
+    if (typeof record[key] !== 'string') continue
+    const raw = record[key] as string
+    const path = storagePath(raw, bucket)
+    if (path) return { ref: raw.startsWith('/api/imagens/') ? raw : '/api/imagens/' + bucket + '/' + path.split('/').map(encodeURIComponent).join('/'), key }
+  }
+  return null
+}
+
+function portfolioWithImageRefs(existing: unknown, refs: string[], bucket: string): unknown[] {
+  const current = Array.isArray(existing) ? existing : []
+  const entries = current.map(item => ({ item, image: portfolioImageRef(item, bucket) }))
+  const preserved = entries.filter(entry => !entry.image).map(entry => entry.item)
+  const images = refs.map(ref => {
+    const previous = entries.find(entry => entry.image?.ref === ref)
+    if (!previous) return { imagem_url: ref }
+    if (typeof previous.item === 'string') return ref
+    const key = previous.image?.key || 'imagem_url'
+    return { ...(previous.item as Record<string, unknown>), [key]: ref }
+  })
+  return [...preserved, ...images]
+}
+
+async function ownedCompany(supabase: ServerSupabase, userId: string) {
+  const { data, error } = await supabase.from('companies')
+    .select('id,name,logo_url,portfolio,is_approved,created_at')
+    .eq('user_id', userId)
+    .order('is_approved', { ascending: false, nullsFirst: false })
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .maybeSingle()
+  if (error) throw new Error('Não foi possível identificar a empresa da conta.')
+  return data
+}
+
+export async function guardarReferenciasImagem(input: {
+  bucket: string
+  folder: 'avatar' | 'portfolio'
+  refs: string[]
+}): Promise<{ ok: boolean; error?: string }> {
+  const { supabase, user } = await authenticated()
+  const { data: profile, error: profileError } = await supabase.from('profiles')
+    .select('account_type').eq('id', user.id).maybeSingle()
+  if (profileError || !profile) return { ok: false, error: 'Não foi possível validar a conta.' }
+
+  const expected: Record<string, { avatar: string; portfolio?: string }> = {
+    profissional: { avatar: 'profissionais-avatars', portfolio: 'profissionais-portfolio' },
+    empresa: { avatar: 'empresas-logos', portfolio: 'empresas-portfolio' },
+    cliente: { avatar: 'clientes-avatars' },
+  }
+  const account = expected[profile?.account_type ?? '']
+  if (!account || (input.folder === 'avatar' ? input.bucket !== account.avatar : input.bucket !== account.portfolio)) {
+    return { ok: false, error: 'O tipo de conta não tem permissão para este armazenamento.' }
+  }
+  if (!Array.isArray(input.refs) || input.refs.some(ref => typeof ref !== 'string') || input.refs.length > 12 || (input.folder === 'avatar' && input.refs.length > 1)) {
+    return { ok: false, error: 'Lista de imagens inválida.' }
+  }
+
+  const refs = [...new Set(input.refs)]
+  for (const ref of refs) {
+    const path = storagePath(ref, input.bucket)
+    if (!path || !path.startsWith(user.id + '/') || !validImageRef(ref, input.bucket, user.id, input.folder)) {
+      return { ok: false, error: 'A imagem não pertence a esta conta ou tem um caminho inválido.' }
+    }
+    const segments = path.split('/')
+    const filename = segments.pop()!
+    const directory = segments.join('/')
+    const { data: files, error } = await supabase.storage.from(input.bucket).list(directory, { search: filename, limit: 100 })
+    if (error || !files?.some(file => file.name === filename)) {
+      return { ok: false, error: 'A imagem não foi encontrada no armazenamento privado.' }
+    }
+  }
+
+  const oldRefs: string[] = []
+  let updateError: { message: string } | null = null
+  if (input.folder === 'avatar') {
+    const value = refs[0] ?? null
+    if (profile.account_type === 'profissional') {
+      const { data: old } = await supabase.from('profissionais').select('avatar_url').eq('user_id', user.id).maybeSingle()
+      oldRefs.push(...imageRefs(old?.avatar_url, input.bucket, user.id))
+      const { error } = await supabase.from('profissionais').update({ avatar_url: value }).eq('user_id', user.id)
+      updateError = error
+    } else if (profile.account_type === 'empresa') {
+      const company = await ownedCompany(supabase, user.id)
+      if (!company) return { ok: false, error: 'Não existe uma empresa associada à conta.' }
+      oldRefs.push(...imageRefs(company.logo_url, input.bucket, user.id))
+      const { error } = await supabase.from('companies').update({ logo_url: value }).eq('id', company.id).eq('user_id', user.id)
+      updateError = error
+    } else {
+      const { data: old } = await supabase.from('profiles').select('avatar_url').eq('id', user.id).maybeSingle()
+      oldRefs.push(...imageRefs(old?.avatar_url, input.bucket, user.id))
+      const { error } = await supabase.from('profiles').update({ avatar_url: value, updated_at: new Date().toISOString() }).eq('id', user.id)
+      updateError = error
+    }
+  } else {
+    if (profile.account_type === 'profissional') {
+      const { data: old } = await supabase.from('profissionais').select('portfolio').eq('user_id', user.id).maybeSingle()
+      oldRefs.push(...imageRefs(old?.portfolio, input.bucket, user.id))
+      const portfolio = portfolioWithImageRefs(old?.portfolio, refs, input.bucket)
+      const { error } = await supabase.from('profissionais').update({ portfolio }).eq('user_id', user.id)
+      updateError = error
+    } else if (profile.account_type === 'empresa') {
+      const company = await ownedCompany(supabase, user.id)
+      if (!company) return { ok: false, error: 'Não existe uma empresa associada à conta.' }
+      oldRefs.push(...imageRefs(company.portfolio, input.bucket, user.id))
+      const portfolio = portfolioWithImageRefs(company.portfolio, refs, input.bucket)
+      const { error } = await supabase.from('companies').update({ portfolio }).eq('id', company.id).eq('user_id', user.id)
+      updateError = error
+    }
+  }
+  if (updateError) return { ok: false, error: 'Não foi possível guardar a referência da imagem.' }
+
+  // Confirma que a referência persistiu antes de comunicar sucesso ou remover objectos antigos.
+  let persisted = false
+  if (input.folder === 'avatar' && profile.account_type === 'profissional') {
+    const { data } = await supabase.from('profissionais').select('avatar_url').eq('user_id', user.id).maybeSingle()
+    persisted = (data?.avatar_url ?? null) === (refs[0] ?? null)
+  } else if (input.folder === 'avatar' && profile.account_type === 'empresa') {
+    const company = await ownedCompany(supabase, user.id)
+    persisted = (company?.logo_url ?? null) === (refs[0] ?? null)
+  } else if (input.folder === 'avatar') {
+    const { data } = await supabase.from('profiles').select('avatar_url').eq('id', user.id).maybeSingle()
+    persisted = (data?.avatar_url ?? null) === (refs[0] ?? null)
+  } else if (profile.account_type === 'profissional') {
+    const { data } = await supabase.from('profissionais').select('portfolio').eq('user_id', user.id).maybeSingle()
+    persisted = refs.every(ref => JSON.stringify(data?.portfolio ?? []).includes(ref))
+  } else {
+    const company = await ownedCompany(supabase, user.id)
+    persisted = refs.every(ref => JSON.stringify(company?.portfolio ?? []).includes(ref))
+  }
+  if (!persisted) return { ok: false, error: 'A base de dados não confirmou a referência da imagem.' }
+
+  const newPaths = refs.map(ref => storagePath(ref, input.bucket)).filter((path): path is string => Boolean(path))
+  await cleanupUnreferencedImages(supabase, input.bucket, oldRefs, newPaths)
+  revalidatePath('/conta')
+  revalidatePath('/conta/perfil')
+  revalidatePath('/perfil')
+  return { ok: true }
 }
 
 export async function guardarPerfilConta(form: FormData): Promise<void> {
@@ -158,6 +371,22 @@ export async function guardarPerfilConta(form: FormData): Promise<void> {
   if (profileError || !['profissional', 'empresa', 'cliente'].includes(tipo)) redirect('/escolher-tipo')
   if (profile?.is_active !== true) redirect('/conta/perfil?erro=conta-inactiva')
 
+  // Snapshot das referências antigas antes de alterar os registos.
+  let oldAvatarRefs: string[] = []
+  let oldPortfolioRefs: string[] = []
+  if (tipo === 'profissional') {
+    const { data: old } = await supabase.from('profissionais').select('avatar_url,portfolio').eq('user_id', user.id).maybeSingle()
+    oldAvatarRefs = imageRefs(old?.avatar_url, 'profissionais-avatars', user.id)
+    oldPortfolioRefs = imageRefs(old?.portfolio, 'profissionais-portfolio', user.id)
+  } else if (tipo === 'empresa') {
+    const old = await ownedCompany(supabase, user.id)
+    oldAvatarRefs = imageRefs(old?.logo_url, 'empresas-logos', user.id)
+    oldPortfolioRefs = imageRefs(old?.portfolio, 'empresas-portfolio', user.id)
+  } else {
+    const { data: old } = await supabase.from('profiles').select('avatar_url').eq('id', user.id).maybeSingle()
+    oldAvatarRefs = imageRefs(old?.avatar_url, 'clientes-avatars', user.id)
+  }
+
   const nome = field(form, 'nome')
   const telefone = field(form, 'telefone')
   const whatsapp = field(form, 'whatsapp')
@@ -166,13 +395,13 @@ export async function guardarPerfilConta(form: FormData): Promise<void> {
 
   if (tipo === 'profissional') {
     const avatar = field(form, 'avatar_url')
-    if (!validImageUrl(avatar)) redirect('/conta/perfil?erro=avatar')
+    if (avatar && !validImageRef(avatar, 'profissionais-avatars', user.id, 'avatar')) redirect('/conta/perfil?erro=avatar')
     const especialidades = field(form, 'especialidades').split(',').map(v => v.trim()).filter(Boolean).slice(0, 20)
     const portfolioRaw = field(form, 'portfolio')
     let portfolio: unknown = []
     if (portfolioRaw) {
       try { portfolio = JSON.parse(portfolioRaw) } catch { redirect('/conta/perfil?erro=portfolio') }
-      if (!Array.isArray(portfolio)) redirect('/conta/perfil?erro=portfolio')
+      if (!validPortfolioItems(portfolio, 'profissionais-portfolio', user.id)) redirect('/conta/perfil?erro=portfolio')
     }
     const { data: owned } = await supabase.from('profissionais').select('id').eq('user_id', user.id).maybeSingle()
     if (!owned) redirect('/conta/perfil?erro=sem-perfil')
@@ -180,33 +409,33 @@ export async function guardarPerfilConta(form: FormData): Promise<void> {
       nome, telefone: telefone || null, whatsapp: whatsapp || null, bio: field(form, 'bio') || null,
       provincia: field(form, 'provincia') || null, municipio: field(form, 'municipio') || null, bairro: field(form, 'bairro') || null,
       categoria_id: field(form, 'categoria_id') || null, especialidades,
-      disponibilidade: field(form, 'disponibilidade') || null, avatar_url: avatar, portfolio,
+      disponibilidade: field(form, 'disponibilidade') || null, avatar_url: avatar || null, portfolio,
     }).eq('user_id', user.id).select('id').maybeSingle()
     if (error || !actualizado) redirect('/conta/perfil?erro=guardar')
   } else if (tipo === 'empresa') {
     const logo = field(form, 'logo_url')
-    if (!validImageUrl(logo)) redirect('/conta/perfil?erro=avatar')
+    if (logo && !validImageRef(logo, 'empresas-logos', user.id, 'avatar')) redirect('/conta/perfil?erro=avatar')
     const portfolioRaw = field(form, 'portfolio')
     let portfolio: unknown = []
     if (portfolioRaw) {
       try { portfolio = JSON.parse(portfolioRaw) } catch { redirect('/conta/perfil?erro=portfolio') }
-      if (!Array.isArray(portfolio)) redirect('/conta/perfil?erro=portfolio')
+      if (!validPortfolioItems(portfolio, 'empresas-portfolio', user.id)) redirect('/conta/perfil?erro=portfolio')
     }
-    const { data: owned } = await supabase.from('companies').select('id').eq('user_id', user.id).maybeSingle()
+    const owned = await ownedCompany(supabase, user.id)
     if (!owned) redirect('/conta/perfil?erro=sem-perfil')
     const { data: actualizado, error } = await supabase.from('companies').update({
       name: nome, sector: field(form, 'sector') || 'Geral', phone: telefone || null,
       whatsapp: whatsapp || null, province: field(form, 'province') || '', city: field(form, 'city') || null,
       bairro: field(form, 'bairro') || null, rua: field(form, 'rua') || null, referencia_localizacao: field(form, 'referencia_localizacao') || null, website: field(form, 'website') || null,
       description: field(form, 'description') || null, horario_atendimento: field(form, 'disponibilidade') || null,
-      logo_url: logo, portfolio,
-    }).eq('user_id', user.id).select('id').maybeSingle()
+      logo_url: logo || null, portfolio,
+    }).eq('id', owned.id).eq('user_id', user.id).select('id').maybeSingle()
     if (error || !actualizado) redirect('/conta/perfil?erro=guardar')
   } else {
-    // Não enviar updated_at: authenticated não tem UPDATE nessa coluna.
-    // O trigger trg_profiles_updated_at_b2 actualiza-a automaticamente.
+    const avatar = field(form, 'avatar_url')
+    if (avatar && !validImageRef(avatar, 'clientes-avatars', user.id, 'avatar')) redirect('/conta/perfil?erro=avatar')
     const { data: actualizado, error } = await supabase.from('profiles').update({
-      nome, telefone: telefone || null, whatsapp: whatsapp || null,
+      nome, telefone: telefone || null, whatsapp: whatsapp || null, avatar_url: avatar || null,
       localizacao_provincia: field(form, 'provincia') || null,
       localizacao_municipio: field(form, 'municipio') || null,
       localizacao_bairro: field(form, 'bairro') || null,
@@ -231,6 +460,20 @@ export async function guardarPerfilConta(form: FormData): Promise<void> {
   if (detailsError || detalhesGuardados?.user_id !== user.id) {
     if (detailsError) console.error('Erro ao guardar dados complementares da conta. Código:', detailsError.code)
     redirect('/conta/perfil?erro=detalhes')
+  }
+
+  // Só depois de todas as gravações bem-sucedidas tentamos remover referências antigas.
+  if (tipo === 'profissional') {
+    const { data: current } = await supabase.from('profissionais').select('avatar_url,portfolio').eq('user_id', user.id).maybeSingle()
+    await cleanupUnreferencedImages(supabase, 'profissionais-avatars', oldAvatarRefs, imageRefs(current?.avatar_url, 'profissionais-avatars', user.id))
+    await cleanupUnreferencedImages(supabase, 'profissionais-portfolio', oldPortfolioRefs, imageRefs(current?.portfolio, 'profissionais-portfolio', user.id))
+  } else if (tipo === 'empresa') {
+    const current = await ownedCompany(supabase, user.id)
+    await cleanupUnreferencedImages(supabase, 'empresas-logos', oldAvatarRefs, imageRefs(current?.logo_url, 'empresas-logos', user.id))
+    await cleanupUnreferencedImages(supabase, 'empresas-portfolio', oldPortfolioRefs, imageRefs(current?.portfolio, 'empresas-portfolio', user.id))
+  } else {
+    const { data: current } = await supabase.from('profiles').select('avatar_url').eq('id', user.id).maybeSingle()
+    await cleanupUnreferencedImages(supabase, 'clientes-avatars', oldAvatarRefs, imageRefs(current?.avatar_url, 'clientes-avatars', user.id))
   }
 
   revalidatePath('/conta')
@@ -301,7 +544,7 @@ export async function getContaAvaliacoes() {
     const { data } = await supabase.from('avaliacoes').select('id,nota,comentario,created_at').eq('company_id', company.data.id).order('created_at', { ascending: false }).limit(50)
     received = data ?? []
   }
-  return { type: profile?.account_type, received, given: given.data ?? [] }
+  return { type: profile?.account_type, received, given: (given.data ?? []) as AvaliacaoConta[] }
 }
 
 export async function guardarNotificacoesConta(form: FormData): Promise<void> {

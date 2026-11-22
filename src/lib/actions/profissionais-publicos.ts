@@ -10,9 +10,13 @@ import { createSupabaseServerClient } from '@/lib/supabase-server'
  */
 
 export type PortfolioItem = {
-  titulo: string
+  titulo?: string | null
   descricao?: string | null
   url_projeto?: string | null
+  imagem_url?: string | null
+  image_url?: string | null
+  foto_url?: string | null
+  url_imagem?: string | null
 }
 
 export type DisponibilidadeHorarios = {

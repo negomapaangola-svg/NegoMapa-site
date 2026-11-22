@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { isAdmin, getUser } from '@/lib/auth';
 import { getAllVagasAdmin, type VagaAdminItem } from '@/lib/actions/vagas';
 import { MainLayout } from '@/components/layout/MainLayout';
+import { SettingsSheet } from '@/components/ui/CatalogComponents';
 import { VagasListClient } from './_components/VagasListClient';
 
 export const dynamic = 'force-dynamic'
@@ -96,8 +97,8 @@ export default async function AdminVagasPage({
         </header>
 
         <main className="max-w-7xl mx-auto px-6 py-8">
-          <div className="mb-6">
-            <h2 className="text-lg font-semibold text-ink dark:text-cream mb-3">Filtrar por estado</h2>
+          <SettingsSheet activeCount={estado ? 1 : 0} className="mb-6">
+          <div>
             <div className="flex flex-wrap gap-2">
               {estados.map((e) => (
                 <Link
@@ -113,7 +114,9 @@ export default async function AdminVagasPage({
                 </Link>
               ))}
             </div>
+            {estado && <Link href="/admin/vagas" className="mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-orange-700 underline underline-offset-4 dark:text-orange-300">Limpar filtros</Link>}
           </div>
+          </SettingsSheet>
 
           <div className="mb-4 flex items-center justify-between">
             <p className="text-sm text-neutral-600 dark:text-cream-text" role="status" aria-live="polite">

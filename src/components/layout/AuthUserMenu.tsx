@@ -31,9 +31,9 @@ export function AuthUserMenu({ variante = 'cabecalho', onNavigate }: { variante?
   const pathname = usePathname()
   useEffect(() => {
     let activo = true
-    const carregar = () => obterContextoNavegacao().then((c) => { if (activo) setContexto(c) }).catch(() => { if (activo) setContexto({ autenticado:false, profissional:false, estadoProfissional:null, empresa:false, empresaAprovada:false, administrador:false, accountType:null }) })
+    const carregar = () => obterContextoNavegacao().then((c) => { if (activo) setContexto(c) }).catch(() => { if (activo) setContexto({ autenticado:false, profissional:false, estadoProfissional:null, empresa:false, empresaAprovada:false, administrador:false, accountType:null, contaAtiva:false }) })
     carregar()
-    const aoSair = () => { setContexto({ autenticado:false, profissional:false, estadoProfissional:null, empresa:false, empresaAprovada:false, administrador:false, accountType:null }); setAberto(false) }
+    const aoSair = () => { setContexto({ autenticado:false, profissional:false, estadoProfissional:null, empresa:false, empresaAprovada:false, administrador:false, accountType:null, contaAtiva:false }); setAberto(false) }
     window.addEventListener('negomapa:auth-logout-started', aoSair)
     const supabase = createBrowserSupabaseClient()
     const { data: { subscription } } = supabase.auth.onAuthStateChange((evento, sessao) => {
@@ -43,13 +43,13 @@ export function AuthUserMenu({ variante = 'cabecalho', onNavigate }: { variante?
       }
       if (evento === 'SIGNED_IN' || evento === 'USER_UPDATED') {
         void obterContextoNavegacao().then((c) => { if (activo) setContexto(c) }).catch(() => {
-          if (activo) setContexto({ autenticado:false, profissional:false, estadoProfissional:null, empresa:false, empresaAprovada:false, administrador:false, accountType:null })
+          if (activo) setContexto({ autenticado:false, profissional:false, estadoProfissional:null, empresa:false, empresaAprovada:false, administrador:false, accountType:null, contaAtiva:false })
         })
       }
     })
     const pararAcompanharSistema = acompanharSistema()
     return () => { activo = false; subscription.unsubscribe(); window.removeEventListener('negomapa:auth-logout-started', aoSair); pararAcompanharSistema() }
-  }, [pathname])
+  }, [])
 
   if (!contexto) return null
   const lista = variante === 'lista'

@@ -8,6 +8,7 @@ import { ordenarPorDistanciaEAdministrativa } from '@/lib/localizacao/ordenar-re
 import { obterDistanciasAproximadas } from '@/lib/actions/proximidade';
 import { PageHeader, SearchBar, FilterChips, SettingsSheet, ResultsHeader, ProfessionalCard } from '@/components/ui/CatalogComponents';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { EditorialPageImage } from '@/components/ui/EditorialPageImage';
 
 export const metadata: Metadata = {
   title: 'Profissionais | NegóMapa',
@@ -50,13 +51,14 @@ export default async function ProfissionaisPage({ searchParams }: { searchParams
   return <MainLayout>
     <section className="bg-cream py-12 dark:bg-navy-dark lg:py-16">
       <div className="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">
+        <EditorialPageImage src="/images/home/profissionais.webp" alt="Profissional de costura no seu espaço de trabalho" />
         <PageHeader title="Profissionais" description="Encontre profissionais qualificados por área e localização em Angola." />
         <SearchBar action="/profissionais" defaultValue={filtros.q} placeholder="Nome, serviço ou província" />
         <FilterChips value={filtros.categoria} items={[
           {label:"Todas",value:"",href:`/profissionais?${new URLSearchParams({q:filtros.q,provincia:filtros.provincia})}`},
           ...categorias.map(c=>({label:c,value:c,href:`/profissionais?${new URLSearchParams({q:filtros.q,categoria:c,provincia:filtros.provincia})}`}))
         ]} />
-        <SettingsSheet title="Filtros e definições">
+        <SettingsSheet activeCount={[filtros.q, filtros.categoria, filtros.provincia].filter(Boolean).length}>
           <FiltrosProfissionais q={filtros.q} categoria={filtros.categoria} provincia={filtros.provincia} categorias={categorias} provincias={provincias} />
         </SettingsSheet>
         <ResultsHeader count={profissionais.length} label={profissionais.length===1?"profissional":"profissionais"} />

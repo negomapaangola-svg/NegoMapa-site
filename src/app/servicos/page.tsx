@@ -3,6 +3,8 @@ import Image from 'next/image';
 import { IMAGENS } from '@/lib/imagens';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { MainLayout } from '@/components/layout/MainLayout';
+import { SettingsSheet } from '@/components/ui/CatalogComponents';
+import { EditorialPageImage } from '@/components/ui/EditorialPageImage';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card';
 import { formatCurrency } from '@/lib/utils';
 import {
@@ -260,6 +262,7 @@ export default async function ServicosPage({
     <MainLayout>
       <section className="py-16 lg:py-24 bg-cream dark:bg-navy-dark" aria-labelledby="servicos-title">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <EditorialPageImage src="/images/home/servicos.webp" alt="Técnico angolano a trabalhar numa instalação eléctrica" />
           <div className="text-center max-w-3xl mx-auto mb-12">
             <h1 id="servicos-title" className="text-4xl sm:text-5xl font-bold tracking-tight text-ink dark:text-cream">
               Serviços Profissionais
@@ -273,6 +276,7 @@ export default async function ServicosPage({
             <Image src={IMAGENS.fundoPadrao} alt="" fill sizes="100vw" className="object-cover" />
             <div className="absolute inset-0 bg-cream/85 dark:bg-navy-dark/90" aria-hidden="true" />
             <div className="relative">
+            <SettingsSheet activeCount={[searchParams.q, searchParams.categoria, searchParams.provincia, searchParams.municipio].filter(Boolean).length}>
             <FiltersForm
               initialSearchParams={{
                 q: searchParams.q,
@@ -284,6 +288,7 @@ export default async function ServicosPage({
               provincias={provincias}
               municipios={municipios}
             />
+            </SettingsSheet>
             </div>
           </div>
 

@@ -3,6 +3,8 @@ import { MainLayout } from "@/components/layout/MainLayout"
 import { getVagasPublicas, VagaPublic, VagasPublicasResult } from "@/lib/actions/vagas-public"
 import { VagasContent } from "./_components/VagasContent"
 import { FiltrosVagas } from "./_components/FiltrosVagas"
+import { SettingsSheet } from "@/components/ui/CatalogComponents"
+import { EditorialPageImage } from "@/components/ui/EditorialPageImage"
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -77,30 +79,43 @@ export default async function VagasPage({ searchParams }: { searchParams: Search
     <MainLayout>
       <div className="p-6 md:p-8 bg-cream dark:bg-navy-dark">
         <div className="max-w-7xl mx-auto">
+          <EditorialPageImage src="/images/home/vagas.webp" alt="Candidata numa conversa de entrevista profissional" />
           <div className="mb-6">
             <h1 className="text-3xl md:text-4xl font-bold text-ink dark:text-cream">
               Vagas de Emprego
             </h1>
           </div>
 
-          {vagas.length > 0 && (
-            <FiltrosVagas
-              q={filtros.q}
-              categoria={filtros.categoria}
-              provincia={filtros.provincia}
-              categorias={listaUnica(vagas.map((v: VagaPublic) => v.categoria))}
-              provincias={listaUnica(vagas.map((v: VagaPublic) => v.provincia))}
-            />
-          )}
+          {!result.success ? (
+            <div role="alert" className="rounded-[4px] border border-red-200 bg-red-50 p-5 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/30 dark:text-red-200">
+              <h2 className="font-semibold">Não foi possível carregar as vagas</h2>
+              <p className="mt-1">{result.error}</p>
+              <p className="mt-2">Tente novamente dentro de alguns instantes.</p>
+            </div>
+          ) : (
+            <>
+              {vagas.length > 0 && (
+                <SettingsSheet activeCount={[filtros.q, filtros.categoria, filtros.provincia].filter(Boolean).length}>
+                  <FiltrosVagas
+                    q={filtros.q}
+                    categoria={filtros.categoria}
+                    provincia={filtros.provincia}
+                    categorias={listaUnica(vagas.map((v: VagaPublic) => v.categoria))}
+                    provincias={listaUnica(vagas.map((v: VagaPublic) => v.provincia))}
+                  />
+                </SettingsSheet>
+              )}
 
-          <VagasContent
-            vagasPagina={filtradas.slice(inicio, inicio + VAGAS_POR_PAGINA)}
-            totalVagas={filtradas.length}
-            paginaAtual={paginaAtual}
-            totalPaginas={totalPaginas}
-            parametros={{ ...filtros }}
-            temFiltros={temFiltros}
-          />
+              <VagasContent
+                vagasPagina={filtradas.slice(inicio, inicio + VAGAS_POR_PAGINA)}
+                totalVagas={filtradas.length}
+                paginaAtual={paginaAtual}
+                totalPaginas={totalPaginas}
+                parametros={{ ...filtros }}
+                temFiltros={temFiltros}
+              />
+            </>
+          )}
         </div>
       </div>
     </MainLayout>

@@ -1,9 +1,6 @@
 name: Validate
 
 on:
-  push:
-    branches:
-      - feat/admin-painel-completo
   pull_request:
     branches:
       - main
@@ -18,7 +15,7 @@ concurrency:
 
 jobs:
   validate:
-    name: Changed-file lint, build and TypeScript
+    name: Lint, build and TypeScript
     runs-on: ubuntu-latest
     timeout-minutes: 20
 

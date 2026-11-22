@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Inter, Space_Grotesk } from 'next/font/google';
 import './globals.css';
 import { AdminBottomBar } from '@/components/layout/AdminBottomBar';
+import { GoogleAnalytics } from '@/components/analytics/GoogleAnalytics';
 import { OG_IMAGE_PATH, OG_IMAGE_WIDTH, OG_IMAGE_HEIGHT } from '@/lib/og';
 import { TEMA_SCRIPT } from '@/lib/tema';
 
@@ -16,19 +17,58 @@ const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
   weight: '700',
   variable: '--font-heading',
-  display: 'swap',
   preload: true,
 });
 
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://nego-mapa-site-mu.vercel.app';
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'WebSite',
+      '@id': `${SITE_URL}/#website`,
+      url: SITE_URL,
+      name: 'NegóMapa',
+      description:
+        'Plataforma em Angola que liga clientes a profissionais e empresas e apresenta oportunidades de emprego.',
+      inLanguage: 'pt-AO',
+      publisher: {
+        '@id': `${SITE_URL}/#organization`,
+      },
+      potentialAction: {
+        '@type': 'SearchAction',
+        target: {
+          '@type': 'EntryPoint',
+          urlTemplate: `${SITE_URL}/descobrir?q={search_term_string}`,
+        },
+        'query-input': 'required name=search_term_string',
+      },
+    },
+    {
+      '@type': 'Organization',
+      '@id': `${SITE_URL}/#organization`,
+      name: 'NegóMapa',
+      url: SITE_URL,
+      email: 'negomapaangola@gmail.com',
+      telephone: '+244926311857',
+      areaServed: {
+        '@type': 'Country',
+        name: 'Angola',
+      },
+    },
+  ],
+};
+
 export const metadata: Metadata = {
-  metadataBase: new URL(
-    'https://nego-mapa-site-negomapaangola-svg.vercel.app'
-  ),
+  metadataBase: new URL(SITE_URL),
   title: {
     default: 'NegóMapa - Serviços e Empregos em Angola',
     template: '%s | NegóMapa',
   },
-  description: 'Plataforma em Angola que liga clientes a profissionais e empresas e apresenta oportunidades de emprego.',
+  description:
+    'Plataforma em Angola que liga clientes a profissionais e empresas e apresenta oportunidades de emprego.',
   keywords: ['serviços', 'empregos', 'Angola', 'trabalho', 'profissionais', 'vagas', 'freelance'],
   authors: [{ name: 'NegóMapa' }],
   creator: 'NegóMapa',
@@ -49,7 +89,8 @@ export const metadata: Metadata = {
     locale: 'pt_AO',
     siteName: 'NegóMapa',
     title: 'NegóMapa - Serviços e Empregos em Angola',
-    description: 'Encontre serviços profissionais, profissionais, empresas e oportunidades de emprego em Angola através da NegóMapa.',
+    description:
+      'Encontre serviços profissionais, profissionais, empresas e oportunidades de emprego em Angola através da NegóMapa.',
     images: [
       {
         url: OG_IMAGE_PATH,
@@ -62,7 +103,8 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'NegóMapa',
-    description: 'Encontre serviços profissionais, profissionais, empresas e oportunidades de emprego em Angola através da NegóMapa.',
+    description:
+      'Encontre serviços profissionais, profissionais, empresas e oportunidades de emprego em Angola através da NegóMapa.',
     images: [OG_IMAGE_PATH],
   },
   icons: {
@@ -90,6 +132,10 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
         <script dangerouslySetInnerHTML={{ __html: TEMA_SCRIPT }} />
       </head>
       <body className="min-h-full flex flex-col antialiased">
@@ -97,6 +143,7 @@ export default function RootLayout({
           Ir para o conteúdo principal
         </a>
         {children}
+        <GoogleAnalytics />
         <AdminBottomBar />
       </body>
     </html>

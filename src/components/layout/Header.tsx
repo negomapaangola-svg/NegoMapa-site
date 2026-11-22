@@ -26,9 +26,9 @@ export const Header = forwardRef<HTMLElement, { className?: string; hideGlobalSe
 
     useEffect(() => {
       let activo = true
-      const carregar = () => obterContextoNavegacao().then((c) => { if (activo) setContexto(c) }).catch(() => { if (activo) setContexto({ autenticado:false, profissional:false, estadoProfissional:null, empresa:false, empresaAprovada:false, administrador:false, accountType:null }) })
+      const carregar = () => obterContextoNavegacao().then((c) => { if (activo) setContexto(c) }).catch(() => { if (activo) setContexto({ autenticado:false, profissional:false, estadoProfissional:null, empresa:false, empresaAprovada:false, administrador:false, accountType: null, contaAtiva: false }) })
       carregar()
-      const aoSair = () => setContexto({ autenticado:false, profissional:false, estadoProfissional:null, empresa:false, empresaAprovada:false, administrador:false, accountType:null })
+      const aoSair = () => setContexto({ autenticado:false, profissional:false, estadoProfissional:null, empresa:false, empresaAprovada:false, administrador:false, accountType: null, contaAtiva: false })
       window.addEventListener('negomapa:auth-logout-started', aoSair)
       const supabase = createBrowserSupabaseClient()
       const { data: { subscription } } = supabase.auth.onAuthStateChange((evento, sessao) => {
