@@ -75,7 +75,7 @@ export const Header = forwardRef<HTMLElement, { className?: string; hideGlobalSe
               {publicar && <Link href={publicar.href} className="hidden min-h-11 shrink-0 items-center rounded-full bg-orange-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-orange-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 xl:inline-flex">{publicar.label}</Link>}
               <AuthUserMenu />
               {contexto?.autenticado && !contexto.administrador && <NotificacoesBotao />}
-              <button type="button" onClick={() => setMenuAberto(true)} aria-expanded={menuAberto} aria-controls="mobile-menu" aria-label="Abrir menu" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-card-border bg-white/70 text-navy transition-colors hover:border-orange-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:bg-navy-dark/70 dark:text-cream xl:hidden"><IconeMenu /></button>
+              <button type="button" onClick={() => setMenuAberto((aberto) => !aberto)} aria-expanded={menuAberto} aria-controls="mobile-menu" aria-label={menuAberto ? "Fechar menu" : "Abrir menu"} className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-card-border bg-white/70 text-navy transition-colors hover:border-orange-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:bg-navy-dark/70 dark:text-cream xl:hidden"><IconeMenu /></button>
             </div>
           </div>
           {!hideGlobalSearch && <div className="pb-3 md:hidden"><PesquisaGlobal /></div>}

@@ -46,7 +46,7 @@ export function MainLayout({ children, className, hideGlobalSearch = false }: Ma
           </div>
         </nav>
       ) : null}
-      <main className="flex-1 w-full max-w-full" role="main">
+      <main id="main-content" className="flex-1 w-full max-w-full" role="main">
         {children}
       </main>
       {!isAdminArea ? <Footer /> : null}
