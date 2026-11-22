@@ -3,6 +3,7 @@ import { MainLayout } from "@/components/layout/MainLayout"
 import { getVagasPublicas, VagaPublic, VagasPublicasResult } from "@/lib/actions/vagas-public"
 import { VagasContent } from "./_components/VagasContent"
 import { FiltrosVagas } from "./_components/FiltrosVagas"
+import { SettingsSheet } from "@/components/ui/CatalogComponents"
 import { EditorialPageImage } from "@/components/ui/EditorialPageImage"
 
 export const dynamic = 'force-dynamic'
@@ -94,13 +95,15 @@ export default async function VagasPage({ searchParams }: { searchParams: Search
           ) : (
             <>
               {vagas.length > 0 && (
-                <FiltrosVagas
-                  q={filtros.q}
-                  categoria={filtros.categoria}
-                  provincia={filtros.provincia}
-                  categorias={listaUnica(vagas.map((v: VagaPublic) => v.categoria))}
-                  provincias={listaUnica(vagas.map((v: VagaPublic) => v.provincia))}
-                />
+                <SettingsSheet activeCount={[filtros.q, filtros.categoria, filtros.provincia].filter(Boolean).length}>
+                  <FiltrosVagas
+                    q={filtros.q}
+                    categoria={filtros.categoria}
+                    provincia={filtros.provincia}
+                    categorias={listaUnica(vagas.map((v: VagaPublic) => v.categoria))}
+                    provincias={listaUnica(vagas.map((v: VagaPublic) => v.provincia))}
+                  />
+                </SettingsSheet>
               )}
 
               <VagasContent
