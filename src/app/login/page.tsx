@@ -6,12 +6,14 @@ import { Button } from "@/components/ui/Button"
 import Link from "next/link"
 import { loginAction } from "@/lib/actions/login"
 import { redirectSeguro } from "@/lib/redirect-seguro"
+import { createBrowserSupabaseClient } from "@/lib/supabase-browser"
 
 function LoginForm() {
   const [email, setEmail] = React.useState("")
   const [password, setPassword] = React.useState("")
   const [error, setError] = React.useState<string | null>(null)
   const [isLoading, setIsLoading] = React.useState(false)
+  const [isGoogleLoading, setIsGoogleLoading] = React.useState(false)
   const searchParams = useSearchParams()
   const rawRedirectTo = searchParams.get("redirectTo")
   const redirectTo = redirectSeguro(rawRedirectTo)
@@ -37,6 +39,32 @@ function LoginForm() {
 
     if (result?.error) {
       setError(result.error)
+    }
+  }
+
+  const handleGoogleLogin = async () => {
+    setError(null)
+    setIsGoogleLoading(true)
+
+    try {
+      const supabase = createBrowserSupabaseClient()
+      const callbackUrl = new URL('/auth/callback', window.location.origin)
+      callbackUrl.searchParams.set('next', redirectTo)
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: callbackUrl.toString(),
+        },
+      })
+
+      if (error) {
+        setError('Não foi possível iniciar sessão com o Google. Tente novamente.')
+        setIsGoogleLoading(false)
+      }
+    } catch {
+      setError('Não foi possível iniciar sessão com o Google. Tente novamente.')
+      setIsGoogleLoading(false)
     }
   }
 
@@ -66,6 +94,27 @@ function LoginForm() {
           {error}
         </div>
       )}
+
+      <Button
+        type="button"
+        variant="outline"
+        className="w-full mb-4"
+        onClick={handleGoogleLogin}
+        disabled={isGoogleLoading || isLoading}
+      >
+        {isGoogleLoading ? 'A abrir o Google...' : 'Continuar com Google'}
+      </Button>
+
+      <div className="relative mb-4">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t border-card-border" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-white px-2 text-neutral-500 dark:bg-neutral-800 dark:text-cream-text">
+            ou
+          </span>
+        </div>
+      </div>
 
       <form
         onSubmit={handleSubmit}
