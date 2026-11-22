@@ -54,7 +54,9 @@ Checklist para gerar, rever e aprovar `schema-only-<data>.sql`. Nada disto é ex
 
 - [ ] Todas as linhas `equivalente` e `pre-registo` estão cobertas pelo baseline.
 - [ ] Todas as linhas `sem ficheiro` e `superada` estão cobertas pelo baseline.
-- [ ] Nenhuma linha `divergente` ou `pendente` está coberta sem decisão explícita.
+- [ ] Não existe nenhuma linha `divergente` no registo.
+- [ ] As linhas `pendente` (D9a–D9d) têm decisão explícita antes de o baseline ser aprovado.
+- [ ] Nenhuma linha `arquivada` está coberta como aplicada; os ficheiros arquivados estão em `docs/arquivadas/`.
 - [ ] A ordem das migrações pendentes, depois do baseline, não quebra dependências.
 
 ## 7. Reprodutibilidade
@@ -78,4 +80,4 @@ O baseline só entra no repositório com aprovação de **duas pessoas diferente
 - [ ] `fase8_local_invariants.sql` passa.
 - [ ] As migrações pendentes aplicam sem erro sobre o baseline.
 - [ ] O catálogo local coincide com produção, excepto as pendentes esperadas.
-- [ ] Todas as decisões de `docs/FASE-8-BASELINE-ESTADO.md` estão fechadas.
+- [ ] Todas as decisões de `docs/FASE-8-BASELINE-ESTADO.md` estão fechadas, incluindo D9a–D9d.

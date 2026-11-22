@@ -1,3 +1,5 @@
+-- ARQUIVADO: não aplicar. Decisão da sessão central.
+-- Motivo: estado já coberto pelo baseline / migrações registadas.
 -- =============================================================================
 -- FASE 3B — Modelo comercial corrigido para serviços de empresas e profissionais
 -- Migração incremental, idempotente e compatível com a aplicação actual.

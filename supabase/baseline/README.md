@@ -16,33 +16,37 @@ Esta pasta prepara o baseline do schema de produção usado pelo runner Supabase
 | Ficheiro | Função |
 |---|---|
 | `README.md` | Este documento. |
-| `VALIDACAO.md` | Checklist de ausência de dados e segredos, RLS, buckets, objectos fora de `public` e critério de aprovação. |
-| `applied-migrations.txt` | Registo de equivalência entre as migrações aplicadas em produção, os ficheiros da `main` e o baseline. |
+| `VALIDACAO.md` | Checklist de ausência de dados e segredos, RLS, buckets, objectos fora de `public`, coerência com o registo e critério de aprovação. |
+| `applied-migrations.txt` | Registo de equivalência entre migrações aplicadas, ficheiros da `main` e o baseline. |
 | `.gitignore` | Impede versionar dumps brutos e ficheiros de ambiente. |
 | `schema-only-<data>.sql` | **Ainda não existe.** Será o baseline aprovado. |
 
+Ficheiros arquivados (não aplicar): [`docs/arquivadas/`](../../docs/arquivadas/).
+
 ## Registo `applied-migrations.txt`
 
-Formato: `versao|nome_normalizado|sha256_normalizado|estado|ficheiro_main|nota`.
+Formato: `versao|nome_normalizado|sha256_normalizado|estado|ficheiro|nota`.
 
-Normalização do SQL antes do SHA-256: remover comentários `/* ... */` e `-- ...`, colapsar espaços em branco, fazer trim. Os hashes foram calculados a partir do registo `supabase_migrations.schema_migrations` (leitura) e dos ficheiros da `main`, com a mesma regra.
+Normalização do SQL antes do SHA-256: remover comentários `/* ... */` e `-- ...`, colapsar espaços em branco, fazer trim (UTF-8). Os hashes foram calculados a partir do registo `supabase_migrations.schema_migrations` (leitura) e dos ficheiros, com esta mesma regra.
 
-Estados:
+### Estados
 
 | Estado | Significado | Tratamento no runner |
 |---|---|---|
-| `equivalente` | O SQL aplicado é igual (ou igual em tokens) ao ficheiro da `main`. | Excluído da cópia: já está no baseline. |
-| `pre-registo` | Ficheiro anterior ao registo de migrações, sem linha em `schema_migrations`. Efeito presente em produção, a confirmar no baseline. | Excluído da cópia, sujeito à confirmação de revisão. |
-| `sem ficheiro` | Aplicada em produção sem ficheiro na `main`. Pode existir numa branch (indicado na nota). | Não tem ficheiro; tem de estar no baseline. |
-| `superada` | Aplicada, mas substituída por migrações posteriores. | Não tem ficheiro; tem de estar no baseline. |
-| `divergente` | O estado aplicado difere do ficheiro da `main`, ou há sobreposição com produção. | **Falha o runner** até haver decisão. |
-| `pendente` | Ficheiro na `main` ainda não aplicado em produção. | Mantido na cópia, por ordem de versão. |
+| `equivalente` | O SQL aplicado é igual (ou igual em tokens) ao ficheiro. Pode não haver ficheiro na `main` se o idêntico estiver só num branch (`ficheiro` = `-`, com a nota). | Excluído da cópia, se o ficheiro existir em `migrations/`. Coberto pelo baseline. |
+| `pre-registo` | Ficheiro anterior ao registo de migrações, sem linha em `schema_migrations`. Efeito presente em produção. | Excluído da cópia. A revisão do baseline tem de confirmar cada objeto. |
+| `sem ficheiro` | Aplicada em produção, sem ficheiro no repositório. | Não tem ficheiro. Tem de estar no baseline. |
+| `superada` | Aplicada, substituída por migrações posteriores aplicadas. | Excluída se o ficheiro existir. Coberta pelo baseline. |
+| `arquivada` | Ficheiro candidato **não aplicado**, decidido como não aplicar. Movido para `docs/arquivadas/`. | Excluída se o ficheiro existir em `migrations/`. Nunca aplicada. |
+| `pendente` | Ficheiro na `main` ainda não aplicado em produção, a decidir ou a aplicar. | Mantido na cópia, por ordem de versão. |
+| `divergente` | Estado não decidido. | **Falha o runner.** Não deve existir no registo quando o baseline for gerado. Estado atual: **zero**. |
 
-Os estados `pre-registo` e `pendente` não estavam no conjunto inicial. Foram acrescentados porque há ficheiros na `main` sem linha de registo, e a sua classificação tem de ficar explícita.
+Os estados `pre-registo`, `pendente` e `arquivada` não estavam no conjunto inicial. Foram acrescentados porque o registo tem de explicitar ficheiros sem linha em `schema_migrations`, pendentes e arquivados.
 
-Duas linhas têm particularidades:
-- `20261114130322` e `20261113214036` têm o mesmo SQL. Foram registadas duas vezes. Não se remove nada em produção; a duplicação fica como nota.
-- `20261115071246` tem um texto placeholder em vez de SQL. A equivalência é pelo blob `d42557a0`, que é o ficheiro `20261114190000_eliminacao_segura_contas_admin.sql` da `main`.
+### Duplicações e placeholders
+
+- `20261113214036` e `20261114130322` têm o mesmo SQL (`fe12ebca…`) e estão registados duas vezes (D6). Os dois apontam para o mesmo ficheiro, que é excluído uma só vez. Nada é removido do histórico Supabase.
+- `20261115071246` tem um texto placeholder em vez de SQL (D7). A equivalência é pelo blob `d42557a0`, que é o ficheiro `20261114190000_eliminacao_segura_contas_admin.sql`.
 
 ## Como o runner usa este registo
 
@@ -51,15 +55,18 @@ Duas linhas têm particularidades:
 1. Falha se não existir exactamente um `schema-only-*.sql` em `supabase/baseline/`.
 2. Falha se o baseline contiver instruções de dados (`COPY`, `INSERT INTO`, linhas de dados) ou padrões de segredo.
 3. Valida o formato do registo e os estados.
-4. Falha se um ficheiro de `supabase/migrations/` não tiver linha no registo.
-5. Falha se houver qualquer linha `divergente`.
-6. Exclui da cópia descartável os ficheiros `equivalente` e `pre-registo`.
-7. Mantém os `pendente`, por ordem de versão, sem renumerar. Falha se houver versões duplicadas.
-8. Instala o baseline na cópia com a versão `00000000000001`, que fica antes de qualquer migração existente.
+4. Falha se restar qualquer linha `divergente`.
+5. Falha se um registo `equivalente`, `pre-registo` ou `pendente` apontar para um ficheiro que não existe em `supabase/migrations/`.
+6. Falha se um ficheiro de `supabase/migrations/` não tiver linha no registo.
+7. Exclui da cópia descartável os ficheiros `equivalente`, `pre-registo`, `arquivada` e `superada`.
+8. Mantém os `pendente`, por ordem de versão, sem renumerar. Falha se houver versões duplicadas, ou versões anteriores ao baseline.
+9. Falha se duas pendentes tiverem o mesmo SQL, ou se uma pendente tiver o mesmo SQL de um ficheiro já excluído. Assim, o mesmo SQL nunca é aplicado duas vezes.
+10. Instala o baseline na cópia com a versão `00000000000001`, que fica antes de qualquer migração existente.
 
 O repositório nunca é alterado pelo script. Tudo acontece em `$RUNNER_TEMP`.
 
 ## Estado actual
 
 - Não há baseline. O workflow `supabase-local.yml` está em `workflow_dispatch` e **não corre automaticamente**.
-- Há decisões pendentes (divergências, sobreposições e migrações por decidir). Estão listadas em [docs/FASE-8-BASELINE-ESTADO.md](../../docs/FASE-8-BASELINE-ESTADO.md).
+- Estados: zero `divergente`. Pendentes: 4, todos com decisão D9 em aberto.
+- Decisões e lacunas: [docs/FASE-8-BASELINE-ESTADO.md](../../docs/FASE-8-BASELINE-ESTADO.md).
