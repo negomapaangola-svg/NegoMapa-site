@@ -38,7 +38,7 @@ export const Header = forwardRef<HTMLElement, { className?: string; hideGlobalSe
         }
         if (evento === 'SIGNED_IN' || evento === 'USER_UPDATED') {
           void obterContextoNavegacao().then((c) => { if (activo) setContexto(c) }).catch(() => {
-            if (activo) setContexto({ autenticado:false, profissional:false, estadoProfissional:null, empresa:false, empresaAprovada:false, administrador:false, accountType:null })
+            if (activo) setContexto({ autenticado:false, profissional:false, estadoProfissional:null, empresa:false, empresaAprovada:false, administrador:false, accountType:null, contaAtiva:false })
           })
         }
       })
