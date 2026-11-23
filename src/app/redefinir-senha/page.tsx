@@ -55,6 +55,24 @@ export default function RedefinirSenhaPage() {
           Crie uma nova senha para a sua conta NegóMapa.
         </p>
 
+        <div className="mb-6 p-4 bg-orange-50 dark:bg-neutral-700 border border-orange-200 dark:border-neutral-600 rounded-[4px]">
+          <h2 className="text-sm font-semibold text-ink dark:text-cream mb-2">
+            Como funciona a recuperação de senha
+          </h2>
+          <ol className="list-decimal list-inside space-y-1 text-sm text-neutral-600 dark:text-cream-text">
+            <li>Introduza o e-mail da sua conta NegóMapa.</li>
+            <li>Vai receber um e-mail de recuperação de senha.</li>
+            <li>O e-mail pode aparecer como enviado pelo Supabase.</li>
+            <li>Abra o e-mail e clique no botão ou link “Redefinir senha”.</li>
+            <li>Será levado para esta página para criar uma nova senha.</li>
+            <li>Crie uma senha com pelo menos 8 caracteres.</li>
+            <li>Depois de guardar, volte à página de login e entre com a nova senha.</li>
+          </ol>
+          <p className="mt-3 text-sm text-neutral-600 dark:text-cream-text">
+            Se não encontrar o e-mail, verifique a pasta Spam ou Promoções.
+          </p>
+        </div>
+
         {error ? (
           <div className="mb-4 p-3 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded-[4px] text-sm">
             {error}
