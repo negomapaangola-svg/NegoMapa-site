@@ -1,3 +1,5 @@
+-- ARQUIVADO: não aplicar. Decisão da sessão central.
+-- Motivo: estado já coberto pelo baseline / migrações registadas.
 -- =====================================================================
 -- B.6.30 — Segurança do BI e dos comprovativos (PROPOSTA, NÃO APLICAR)
 -- Projeto: sjelyaewgcmmtnudcgem

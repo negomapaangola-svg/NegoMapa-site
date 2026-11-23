@@ -1,3 +1,5 @@
+-- ARQUIVADO: não aplicar. Decisão da sessão central.
+-- Motivo: estado já coberto pelo baseline / migrações registadas.
 -- Fase 1: Storage privado, autorização de leitura pública via rota server-side e limpeza conservadora.
 begin;
 
