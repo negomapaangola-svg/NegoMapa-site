@@ -1,8 +1,9 @@
 'use server'
 
 import 'server-only'
-import { createSupabaseServerClient } from '@/lib/supabase-server'
+import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
+import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { isAdmin } from '@/lib/auth'
 
 export type DadosEmpresaPendente = {
@@ -109,4 +110,38 @@ export async function criarEmpresaPendente(dados: DadosEmpresaPendente) {
   revalidatePath('/perfil')
   revalidatePath('/cadastrar-empresa')
   return { success: true }
+}
+
+export async function converterContaCliente(formData: FormData) {
+  const supabase = await createSupabaseServerClient()
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+  if (authError || !user) {
+    redirect('/login?erro=conversao')
+  }
+
+  const targetRole = typeof formData.get('target_role') === 'string' ? String(formData.get('target_role')) : ''
+  const displayName = typeof formData.get('nome') === 'string' ? String(formData.get('nome')).trim() : ''
+
+  if (targetRole !== 'profissional' && targetRole !== 'empresa') {
+    redirect('/conta/configuracoes?erro=conversao')
+  }
+
+  if (displayName.length < 2 || displayName.length > 160) {
+    redirect('/conta/configuracoes?erro=conversao')
+  }
+
+  const { data, error } = await supabase.rpc('convert_client_account', {
+    p_target_role: targetRole,
+    p_display_name: displayName,
+  })
+
+  if (error || !data) {
+    console.error('Erro ao converter conta. Código:', error?.code)
+    redirect('/conta/configuracoes?erro=conversao')
+  }
+
+  revalidatePath('/conta')
+  revalidatePath('/conta/configuracoes')
+  redirect('/conta/perfil')
 }
