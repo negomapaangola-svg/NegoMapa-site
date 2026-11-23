@@ -1,4 +1,4 @@
-FICHEIRO ORIGINAL PRESERVADO BYTE A BYTE, COM APENAS ESTAS TRÊS ALTERAÇÕES:
-1) 20261030045209: ficheiro_main passa de '-' para '20261029_restringir_colunas_publicas_profissionais.sql'; nota passa para 'equivalente: ficheiro promovido pelo PR #44; SHA verificado'.
-2) 20261109205227: ficheiro_main passa de '-' para '20261109120000_produtos_modelo.sql'; nota passa para 'equivalente: ficheiro promovido pelo PR #44; SHA verificado'.
-3) 20261109205233: ficheiro_main passa de '-' para '20261109120100_produtos_storage.sql'; nota passa para 'equivalente: ficheiro promovido pelo PR #44; SHA verificado'.
+RESTAURAÇÃO DO REGISTO ORIGINAL DE 85 LINHAS, COM APENAS AS TRÊS LINHAS DE MAPEAMENTO ALTERADAS:
+20261030045209 -> 20261029_restringir_colunas_publicas_profissionais.sql
+20261109205227 -> 20261109120000_produtos_modelo.sql
+20261109205233 -> 20261109120100_produtos_storage.sql
