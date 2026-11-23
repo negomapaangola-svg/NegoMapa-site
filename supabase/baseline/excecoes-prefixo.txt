@@ -1,0 +1,49 @@
+# excecoes-prefixo.txt — exceções documentadas ao prefixo do ficheiro (guardião de migrações).
+# Formato: ficheiro|versao_registo|motivo
+# Estas migrações estão marcadas como equivalente e já reflectidas em produção (ver applied-migrations.txt).
+# A versão do registo é a versão registada no Supabase; o prefixo do ficheiro é diferente.
+# Consequência: `supabase db push` identificaria estas migrações por versão e poderia tentar reaplicá-las.
+# Por isso não se corre `supabase db push` em lado nenhum (o guardião falha se aparecer).
+# Lista apenas para migrações já aplicadas. Qualquer entrada nova exige decisão documentada.
+# Não renomear ficheiros nem alterar o registo sem autorização explícita.
+20261027_protect_profiles_is_admin.sql|20261027201608|versão do registo difere do prefixo do ficheiro; aplicada conforme registo
+20261028_restringir_colunas_publicas_companies.sql|20261029201759|versão do registo difere do prefixo do ficheiro; aplicada conforme registo
+20261029_restringir_colunas_publicas_profissionais.sql|20261030045209|versão do registo difere do prefixo do ficheiro; aplicada conforme registo
+20261101_admin_ler_logos_empresas.sql|20261101140614|versão do registo difere do prefixo do ficheiro; aplicada conforme registo
+20261101_admin_obter_empresa.sql|20261101142218|versão do registo difere do prefixo do ficheiro; aplicada conforme registo
+20261101_profissional_cadastro_6_etapas.sql|20261101143928|versão do registo difere do prefixo do ficheiro; aplicada conforme registo
+20261101_profissionais_privilegios_minimos.sql|20261101144200|versão do registo difere do prefixo do ficheiro; aplicada conforme registo
+20261102120000_fase_a_vistas_contacto_candidatura.sql|20261102203511|versão do registo difere do prefixo do ficheiro; aplicada conforme registo
+20261102130000_admin_profissionais_suspenso_categoria.sql|20261102203530|versão do registo difere do prefixo do ficheiro; aplicada conforme registo
+20261102140000_categorias_oficiais.sql|20261102203538|versão do registo difere do prefixo do ficheiro; aplicada conforme registo
+20261102150000_categorias_casos_pendentes.sql|20261102203545|versão do registo difere do prefixo do ficheiro; aplicada conforme registo
+20261102160000_normalizar_provincias.sql|20261102203801|versão do registo difere do prefixo do ficheiro; aplicada conforme registo
+20261102170000_notificacoes.sql|20261102203811|versão do registo difere do prefixo do ficheiro; aplicada conforme registo
+20261102180000_pedidos_servico.sql|20261102203824|versão do registo difere do prefixo do ficheiro; aplicada conforme registo
+20261102190000_candidaturas.sql|20261102203834|versão do registo difere do prefixo do ficheiro; aplicada conforme registo
+20261102200000_conversas_mensagens.sql|20261102203846|versão do registo difere do prefixo do ficheiro; aplicada conforme registo
+20261102210000_modelos_mensagem.sql|20261102203856|versão do registo difere do prefixo do ficheiro; aplicada conforme registo
+20261102220000_profissionais_publicos.sql|20261102211458|versão do registo difere do prefixo do ficheiro; aplicada conforme registo
+20261102230000_profissionais_publicos_contactos.sql|20261102212613|versão do registo difere do prefixo do ficheiro; aplicada conforme registo
+20261102240000_revoke_anon_bairro_created_at.sql|20261102213206|versão do registo difere do prefixo do ficheiro; aplicada conforme registo
+20261103120000_perfil_publico_empresa.sql|20261103202500|versão do registo difere do prefixo do ficheiro; aplicada conforme registo
+20261103140000_candidaturas_contacto.sql|20261104134115|versão do registo difere do prefixo do ficheiro; aplicada conforme registo
+20261104100000_candidaturas_estados.sql|20261104134757|versão do registo difere do prefixo do ficheiro; aplicada conforme registo
+20261109120000_produtos_modelo.sql|20261109205227|versão do registo difere do prefixo do ficheiro; aplicada conforme registo
+20261109120100_produtos_storage.sql|20261109205233|versão do registo difere do prefixo do ficheiro; aplicada conforme registo
+20261110_revoke_anon_sensitive_company_columns.sql|20261110172820|versão do registo difere do prefixo do ficheiro; aplicada conforme registo
+20261110_remove_admin_read_policies_messages.sql|20261110180155|versão do registo difere do prefixo do ficheiro; aplicada conforme registo
+20261112_b2_01_profiles_pessoais.sql|20261112155234|versão do registo difere do prefixo do ficheiro; aplicada conforme registo
+20261112_b2_02_account_type.sql|20261112155244|versão do registo difere do prefixo do ficheiro; aplicada conforme registo
+20261112_b2_03_estados_empresariais.sql|20261112155254|versão do registo difere do prefixo do ficheiro; aplicada conforme registo
+20261113090000_fase_c1_privacidade_localizacao_preferencias.sql|20261113135504|versão do registo difere do prefixo do ficheiro; aplicada conforme registo
+20261113091500_fase_c1_vistas_publicas_seguras.sql|20261113135712|versão do registo difere do prefixo do ficheiro; aplicada conforme registo
+20261113150000_corrigir_update_localizacao_perfil_cliente.sql|20261113140834|versão do registo difere do prefixo do ficheiro; aplicada conforme registo
+20261113170000_fase_c2_coordenadas_aproximadas_prestadores.sql|20261113174954|versão do registo difere do prefixo do ficheiro; aplicada conforme registo
+20261114090000_admin_foundation.sql|20261113212205|versão do registo difere do prefixo do ficheiro; aplicada conforme registo
+20261114100000_versionar_definicoes_legadas.sql|20261113214036|versão do registo difere do prefixo do ficheiro; aplicada conforme registo
+20261114100000_versionar_definicoes_legadas.sql|20261114130322|versão do registo difere do prefixo do ficheiro; aplicada conforme registo
+20261114190000_eliminacao_segura_contas_admin.sql|20261115071246|versão do registo difere do prefixo do ficheiro; aplicada conforme registo
+20261115080000_eliminacao_segura_contas_admin_correctiva.sql|20261115212128|versão do registo difere do prefixo do ficheiro; aplicada conforme registo
+20261118100000_fix_image_rpc_privileges.sql|20261117231337|versão do registo difere do prefixo do ficheiro; aplicada conforme registo
+20261118120000_imagem_proprietario_e_referencias.sql|20261118044133|versão do registo difere do prefixo do ficheiro; aplicada conforme registo

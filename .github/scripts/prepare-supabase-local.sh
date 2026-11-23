@@ -7,6 +7,8 @@
 #   primeira migração da cópia. As migrações já reflectidas nele, ou que não
 #   devem ser aplicadas, são removidas da cópia segundo
 #   supabase/baseline/applied-migrations.txt.
+# - Por defeito só o baseline: pendentes só entram se estiverem em
+#   RUNNER_PENDENTES_PERMITIDAS (lista separada por vírgulas; uso local, nunca no CI).
 # - Falha explicitamente se o baseline não existir, se o registo for inválido,
 #   se restar algum estado `divergente`, ou se houver SQL duplicado a aplicar.
 # - Só escreve em $RUNNER_TEMP; o repositório não é alterado.
@@ -84,6 +86,17 @@ MIG="$WORKDIR/supabase/migrations"
 
 excluidas=0
 excluidas_hashes=()
+nao_selecionadas=0
+# Pendentes selecionadas explicitamente. Por defeito vazia: só o baseline.
+declare -A permitidas=()
+if [[ -n "${RUNNER_PENDENTES_PERMITIDAS:-}" ]]; then
+  IFS=',' read -ra _selecionadas <<< "$RUNNER_PENDENTES_PERMITIDAS"
+  for _n in "${_selecionadas[@]}"; do
+    if [[ -n "$_n" ]]; then
+      permitidas["$_n"]=1
+    fi
+  done
+fi
 pendentes=()
 pendentes_hashes=()
 shopt -s nullglob
@@ -100,18 +113,29 @@ for file in "$REPO_MIG"/*.sql; do
       excluidas=$((excluidas + 1))
       ;;
     pendente)
-      pendentes+=("$name")
-      pendentes_hashes+=("$(sha256sum "$file" | cut -d' ' -f1)")
+      if [[ -n "${permitidas[$name]:-}" ]]; then
+        pendentes+=("$name")
+        pendentes_hashes+=("$(sha256sum "$file" | cut -d' ' -f1)")
+      else
+        rm -f "$MIG/$name"
+        nao_selecionadas=$((nao_selecionadas + 1))
+      fi
       ;;
     divergente)
       fail "Migração divergente sem decisão (não pode correr): $name"
       ;;
     *)
-      fail "Estado inesperado para $name: $estado"
+      fail "Estado inesperado para $name: $name"
       ;;
   esac
 done
 shopt -u nullglob
+
+# 4b. Cada pendente selecionada tem de ser pendente no registo e existir.
+for _n in "${!permitidas[@]}"; do
+  [[ "${estado_de[$_n]:-}" == "pendente" ]] || fail "RUNNER_PENDENTES_PERMITIDAS inclui $_n, que não é pendente no registo (não pode ser reaplicada por esta via)."
+  [[ -f "$REPO_MIG/$_n" ]] || fail "RUNNER_PENDENTES_PERMITIDAS inclui $_n, que não existe em supabase/migrations/."
+done
 
 # 5. Validar as pendentes: versões únicas, posteriores ao baseline e sem SQL duplicado.
 for name in "${pendentes[@]}"; do
@@ -138,5 +162,6 @@ cp "$baseline" "$MIG/${BASELINE_VERSION}_baseline_schema_only.sql"
 printf 'Baseline: %s\n' "${baseline##*/}"
 printf 'Migrações excluídas (equivalente, pre-registo, arquivada, superada): %s\n' "$excluidas"
 printf 'Migrações pendentes mantidas, por ordem: %s\n' "${#pendentes[@]}"
+printf 'Pendentes não selecionadas (removidas da cópia): %s\n' "$nao_selecionadas"
 for name in "${pendentes[@]}"; do printf '  - %s\n' "$name"; done
 printf 'Cópia descartável preparada em %s\n' "$WORKDIR"
