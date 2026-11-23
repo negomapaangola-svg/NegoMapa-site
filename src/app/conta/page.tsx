@@ -5,7 +5,7 @@ import { getContaSnapshot } from '@/lib/actions/conta'
 export const metadata: Metadata = { title: 'A minha conta | NegóMapa' }
 
 const shortcuts = [
-  ['Perfil', '/conta/perfil', 'Dados pessoais e profissionais'],
+  ['Conta', '/conta/perfil', 'Dados pessoais e profissionais'],
   ['Conteúdo', '/conta/conteudo', 'Serviços, produtos, pedidos e vagas'],
   ['Mensagens', '/conta/mensagens', 'Conversas da plataforma'],
   ['Candidaturas', '/candidaturas', 'Acompanhe as suas candidaturas'],
@@ -20,7 +20,7 @@ export default async function ContaPage() {
   const typeLabel = data.accountType === 'profissional' ? 'Profissional' : data.accountType === 'empresa' ? 'Empresa' : 'Cliente'
   const name = data.accountType === 'profissional' ? data.professional?.nome : data.accountType === 'empresa' ? data.company?.name : data.profile.nome
   const avatar = data.accountType === 'profissional' ? data.professional?.avatar_url : data.accountType === 'empresa' ? data.company?.logo_url : data.profile.avatar_url
-  const status = !data.profile.is_active ? 'Conta suspensa' : data.accountType === 'profissional' ? (data.professional?.estado ?? 'Perfil por completar') : data.accountType === 'empresa' ? (data.company?.is_approved ? 'Aprovada' : data.company?.estado ?? 'Em análise') : 'Activa'
+  const status = !data.profile.is_active ? 'Conta suspensa' : data.accountType === 'profissional' ? (data.professional?.estado ?? 'Conta por completar') : data.accountType === 'empresa' ? (data.company?.is_approved ? 'Aprovada' : data.company?.estado ?? 'Em análise') : 'Activa'
   const statusLabel = status === 'aprovado' ? 'Aprovada' : status === 'pendente' ? 'Pendente' : status === 'rejeitado' ? 'Rejeitada' : status === 'suspenso' ? 'Suspensa' : status
   return <section className="space-y-6">
     <header className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:flex-row sm:items-center">
@@ -29,10 +29,10 @@ export default async function ContaPage() {
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-sm text-slate-500">Bem-vindo à sua conta</p>
-        <h1 className="truncate text-2xl font-semibold tracking-tight">{name || 'Complete o seu perfil'}</h1>
+        <h1 className="truncate text-2xl font-semibold tracking-tight">{name || 'Complete a sua conta'}</h1>
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{data.user.email}</p>
       </div>
-      <Link href="/conta/perfil" className="inline-flex min-h-11 items-center justify-center rounded-xl bg-slate-900 px-4 text-sm font-semibold text-white hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:bg-white dark:text-slate-900">Editar perfil</Link>
+      <Link href="/conta/perfil" className="inline-flex min-h-11 items-center justify-center rounded-xl bg-slate-900 px-4 text-sm font-semibold text-white hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:bg-white dark:text-slate-900">Editar conta</Link>
     </header>
 
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -42,7 +42,7 @@ export default async function ContaPage() {
       </article>
       <article className="flex min-h-36 flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <p className="text-sm font-medium text-slate-500">Estado da conta</p>
-        <div><p className="text-2xl font-semibold">{statusLabel}</p><p className="mt-1 text-sm text-slate-500">Estado actual do seu perfil na plataforma</p></div>
+        <div><p className="text-2xl font-semibold">{statusLabel}</p><p className="mt-1 text-sm text-slate-500">Estado actual da sua conta na plataforma</p></div>
       </article>
     </div>
 
