@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { redirect } from 'next/navigation'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { getUser } from '@/lib/auth'
 import { reativarContaAposLogin, sairSemReativar } from '@/lib/actions/reativar-conta'
@@ -14,8 +15,9 @@ export default async function ReativarContaPage({ searchParams }: { searchParams
     redirect('/login')
   }
 
+  const userId = user.id
   const supabase = await createSupabaseServerClient()
-  const { data: profile } = await supabase.from('profiles').select('account_status').eq('id', user.id).maybeSingle()
+  const { data: profile } = await supabase.from('profiles').select('account_status').eq('id', userId).maybeSingle()
   const status = profile?.account_status ?? 'active'
   const redirectTo = redirectSeguro(typeof params.redirectTo === 'string' ? params.redirectTo : null)
 
