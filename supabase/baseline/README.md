@@ -70,3 +70,16 @@ O repositório nunca é alterado pelo script. Tudo acontece em `$RUNNER_TEMP`.
 - Não há baseline. O workflow `supabase-local.yml` está em `workflow_dispatch` e **não corre automaticamente**.
 - Estados: zero `divergente`. Pendentes: 4, todos com decisão D9 em aberto.
 - Decisões e lacunas: [docs/FASE-8-BASELINE-ESTADO.md](../../docs/FASE-8-BASELINE-ESTADO.md).
+
+## Modo só baseline e guardião de migrações
+
+- Por defeito o runner só usa o baseline. As migrações pendentes (D9) não entram na cópia descartável.
+- As pendentes só entram por lista explícita, passada apenas em testes locais:
+  `RUNNER_TEMP=/tmp/teste GITHUB_WORKSPACE="$PWD" RUNNER_PENDENTES_PERMITIDAS=<ficheiro1>,<ficheiro2> bash .github/scripts/prepare-supabase-local.sh`
+- A lista explícita não pode ser definida em workflows. O guardião falha se aparecer.
+- Cada pendente da lista tem de ser `pendente` no registo e existir em `supabase/migrations/`.
+  Uma migração já aplicada ou equivalente nunca entra por esta via.
+- O guardião (`.github/scripts/guardiao_migracoes.py`, job `guardiao-migracoes.yml`) é offline: sem credenciais, sem Supabase, sem SQL.
+- `supabase/baseline/excecoes-prefixo.txt` lista as migrações cujo prefixo difere da versão registada.
+  Não corrigir estes nomes sem autorização explícita: renomear faria o CLI tratá-las como novas.
+- Nunca correr `supabase db push`, `supabase migration up`, `supabase migration repair`, `supabase db reset`, `supabase link` ou usar `--db-url` com produção.
