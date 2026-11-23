@@ -30,7 +30,7 @@ export default async function ContaConfiguracoesPage({ searchParams }: { searchP
     {params.pedido && <p role="status" className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">Pedido de eliminação criado. Confirme abaixo para eliminar definitivamente.</p>}
 
     <section id="localizacao" className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
-      <div><h2 className="font-semibold">Localização</h2><p className="text-sm text-slate-500">Actualize a província, município e bairro na secção de perfil. A localização GPS é opcional e depende do seu consentimento.</p></div>
+      <div><h2 className="font-semibold">Localização</h2><p className="text-sm text-slate-500">Actualize a província, município e bairro na secção de conta. A localização GPS é opcional e depende do seu consentimento.</p></div>
       <a href="/conta/perfil#localizacao-preferencias" className="inline-flex min-h-11 items-center text-sm font-semibold text-orange-700 hover:underline dark:text-orange-300">Gerir localização e preferências</a>
     </section>
 
