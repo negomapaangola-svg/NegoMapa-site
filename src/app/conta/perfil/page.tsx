@@ -2,7 +2,7 @@ import { ImageFields } from '@/components/images/ImageFields'
 import type { Metadata } from 'next'
 import { getContaSnapshot, guardarPerfilConta } from '@/lib/actions/conta'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
-export const metadata: Metadata = { title: 'Perfil da conta | NegóMapa' }
+export const metadata: Metadata = { title: 'Conta | NegóMapa' }
 function Field({label,name,value,type='text',required=false,readOnly=false}:{label:string;name:string;value?:string|null;type?:string;required?:boolean;readOnly?:boolean}) {
  return <label className="block space-y-1.5 text-sm font-medium text-slate-700 dark:text-slate-200"><span>{label}</span><input name={name} type={type} defaultValue={value??''} required={required} readOnly={readOnly} aria-readonly={readOnly} className="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-base text-slate-900 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100 dark:border-slate-700 dark:bg-slate-950 dark:text-white"/></label>
 }
@@ -34,12 +34,12 @@ export default async function ContaPerfilPage({searchParams}:{searchParams:Promi
  const errorMessages:Record<string,string>={nome:'O nome deve ter entre 2 e 120 caracteres.',contacto:'Verifique os contactos.',avatar:'É obrigatória uma imagem válida no armazenamento NegóMapa.',portfolio:'O portfólio deve ser uma lista JSON válida.',guardar:'Não foi possível guardar. Verifique as permissões da conta.',detalhes:'Não foi possível guardar os campos complementares.','sem-perfil':'Não existe perfil associado a esta conta.','conta-inactiva':'Esta conta está inactiva e não pode alterar os dados.'}
  const error=typeof params.erro==='string'?errorMessages[params.erro]:null
  return <section className="space-y-6">
-  <header><h1 className="text-2xl font-semibold tracking-tight">Perfil</h1><p className="mt-1 text-sm text-slate-500">Gira os seus dados privados num único lugar.</p></header>
+  <header><h1 className="text-2xl font-semibold tracking-tight">Conta</h1><p className="mt-1 text-sm text-slate-500">Gira os seus dados privados num único lugar.</p></header>
   {error&&<p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">{error}</p>}
   {params.salvo&&<p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">Alterações guardadas com sucesso.</p>}
   <section className="rounded-2xl border border-slate-200 bg-white p-6 text-center dark:border-slate-800 dark:bg-slate-900">
    <div className="mx-auto flex h-32 w-32 items-center justify-center overflow-hidden rounded-full border-4 border-slate-100 bg-slate-100 text-3xl font-semibold text-slate-500 dark:border-slate-800 dark:bg-slate-800">{avatar?<img src={avatar} alt={`Imagem de ${name??kind}`} className="h-full w-full object-cover"/>:<span>{name?.[0]?.toUpperCase()??'N'}</span>}</div>
-   <h2 className="mt-4 text-lg font-semibold">{name||'O seu perfil'}</h2><p className="mt-1 text-sm text-slate-500">{kind}</p>
+   <h2 className="mt-4 text-lg font-semibold">{name||'A sua conta'}</h2><p className="mt-1 text-sm text-slate-500">{kind}</p>
    {(pro||emp)&&!avatar&&<p className="mt-2 text-sm font-medium text-red-700">Imagem obrigatória para profissional e empresa.</p>}
   </section>
   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
