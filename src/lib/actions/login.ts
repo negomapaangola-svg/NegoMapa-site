@@ -25,7 +25,7 @@ export async function loginAction(formData: FormData) {
   if (error) {
     return {
       error: error.code === 'user_banned'
-        ? 'Esta conta está desactivada. Contacte a administração da plataforma.'
+        ? 'Esta conta está suspensa. Contacte a administração da plataforma.'
         : error.message,
     }
   }
@@ -34,20 +34,34 @@ export async function loginAction(formData: FormData) {
     return { error: 'Sessão não criada. Tente novamente.' }
   }
 
-  // A coluna só existe depois da migração de desactivação segura.
-  // Em ambientes ainda sem migração, mantém-se o fluxo de autenticação anterior.
-  const { data: profileStatus, error: profileStatusError } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from('profiles')
-    .select('is_active')
+    .select('account_status')
     .eq('id', data.user.id)
     .maybeSingle()
 
-  if (!profileStatusError && profileStatus?.is_active === false) {
-    await supabase.auth.signOut({ scope: 'local' })
-    return { error: 'Esta conta está desactivada. Contacte a administração da plataforma.' }
+  const status = profile?.account_status ?? 'active'
+
+  if (status === 'deactivated') {
+    redirect(`/reativar-conta?redirectTo=${encodeURIComponent(redirectTo)}`)
   }
 
-  if (profileStatusError && !(profileStatusError.code === '42703' || profileStatusError.code === 'PGRST204')) {
+  if (status === 'suspended') {
+    await supabase.auth.signOut({ scope: 'local' })
+    return { error: 'Esta conta está suspensa. Contacte a administração da plataforma.' }
+  }
+
+  if (status === 'pending_deletion') {
+    await supabase.auth.signOut({ scope: 'local' })
+    return { error: 'Esta conta tem uma eliminação pendente. Entre nas configurações para confirmar ou cancelar.' }
+  }
+
+  if (status === 'deleted') {
+    await supabase.auth.signOut({ scope: 'local' })
+    return { error: 'Esta conta foi eliminada e não pode ser restaurada.' }
+  }
+
+  if (profileError && !(profileError.code === '42703' || profileError.code === 'PGRST204')) {
     await supabase.auth.signOut({ scope: 'local' })
     return { error: 'Não foi possível confirmar o estado da conta. Tente novamente.' }
   }
