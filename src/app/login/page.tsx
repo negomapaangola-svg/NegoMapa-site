@@ -115,6 +115,12 @@ function LoginForm() {
         </div>
       )}
 
+      {searchParams.get("mensagem") === "senha-atualizada" && !error && (
+        <div className="mb-4 rounded-[4px] bg-green-100 p-3 text-sm text-green-800 dark:bg-green-900 dark:text-green-200">
+          A sua senha foi atualizada com sucesso. Entre com a nova senha.
+        </div>
+      )}
+
       {error && (
         <div className="mb-4 p-3 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded-[4px] text-sm">
           {error}
@@ -157,6 +163,15 @@ function LoginForm() {
           {isLoading ? 'A entrar...' : 'Entrar'}
         </Button>
       </form>
+
+      <div className="mt-3 text-center">
+        <Link
+          href="/recuperar-senha"
+          className="text-sm font-medium text-orange-500 dark:text-orange-400 hover:underline"
+        >
+          Esqueceu a senha?
+        </Link>
+      </div>
 
       <div className="relative my-6">
         <div className="absolute inset-0 flex items-center">
