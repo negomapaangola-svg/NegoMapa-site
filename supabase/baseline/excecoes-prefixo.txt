@@ -49,3 +49,4 @@
 20261118120000_imagem_proprietario_e_referencias.sql|20261118044133|versão do registo difere do prefixo do ficheiro; aplicada conforme registo
 20261123210000_fase1_auto_gestao_conta.sql|20261123201116|a migração já foi aplicada no Supabase com outra versão gerada pela ferramenta de aplicação
 20261123230000_fase4_conversao_conta_cliente.sql|20261124040535|a migração já foi aplicada no Supabase com outra versão gerada pela ferramenta de aplicação
+20261124054600_fase4_corrigir_conversao_empresa.sql|20261124045625|a migração já foi aplicada no Supabase como fase4_corrigir_conversao_empresa_v2 com outra versão gerada pela ferramenta de aplicação
