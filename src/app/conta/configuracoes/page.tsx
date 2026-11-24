@@ -3,6 +3,7 @@ import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { getUser } from '@/lib/auth'
 import { alterarPalavraPasse, guardarNotificacoesConta, terminarTodasSessoes } from '@/lib/actions/conta'
 import { desativarContaPropria, reativarContaPropria, suspenderContaPropria, restaurarContaPropria, pedirEliminacaoPropria, confirmarEliminacaoPropria } from '@/lib/actions/conta-estado'
+import { converterContaCliente } from '@/lib/actions/conversao-conta'
 
 export const metadata: Metadata = { title: 'Configurações da conta | NegóMapa' }
 
@@ -12,14 +13,15 @@ export default async function ContaConfiguracoesPage({ searchParams }: { searchP
   if (!user) return null
   const supabase = await createSupabaseServerClient()
   const { data: preferences } = await supabase.from('preferencias_notificacao').select('plataforma,email,whatsapp').eq('user_id', user.id).maybeSingle()
-  const { data: profile } = await supabase.from('profiles').select('account_status').eq('id', user.id).maybeSingle()
+  const { data: profile } = await supabase.from('profiles').select('account_status,account_type').eq('id', user.id).maybeSingle()
   const status = profile?.account_status ?? 'active'
+  const accountType = profile?.account_type ?? 'cliente'
   const pref = preferences ?? { plataforma: true, email: false, whatsapp: false }
   const messages: Record<string, string> = {
     nome: 'Verifique o nome introduzido.', contacto: 'Verifique os contactos.', avatar: 'É necessária uma imagem válida do armazenamento NegóMapa.',
     notificacoes: 'Não foi possível guardar as preferências.', password: 'A palavra-passe deve ter pelo menos 10 caracteres e as confirmações devem coincidir.',
     confirmacao: 'Escreva ELIMINAR para confirmar o pedido.', motivo: 'Indique um motivo entre 10 e 1000 caracteres.', pedido: 'Não foi possível enviar o pedido ao administrador.',
-    estado: 'Não foi possível alterar o estado da conta.',
+    estado: 'Não foi possível alterar o estado da conta.', conversao: 'Não foi possível converter a conta. Verifique os dados e tente novamente.',
   }
   const error = typeof params.erro === 'string' ? messages[params.erro] : null
   return <section className="space-y-5">
@@ -35,6 +37,21 @@ export default async function ContaConfiguracoesPage({ searchParams }: { searchP
     </section>
 
     <section id="mensagens" className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900"><div><h2 className="font-semibold">Mensagens</h2><p className="text-sm text-slate-500">As conversas e mensagens são privadas e apenas os participantes podem aceder-lhes.</p></div><a href="/conta/mensagens" className="inline-flex min-h-11 items-center text-sm font-semibold text-orange-700">Abrir mensagens</a></section>
+
+    {accountType === 'cliente' && (
+      <section id="conversao-conta" className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+        <div><h2 className="font-semibold">Mudar de conta</h2><p className="text-sm text-slate-500">Como cliente, pode passar a profissional ou empresa. Após a conversão, deixa de ser cliente e deverá completar o novo perfil.</p></div>
+        <form action={converterContaCliente} className="space-y-3">
+          <label className="block space-y-1.5 text-sm font-medium">Nome de apresentação<input name="nome" required minLength={2} maxLength={160} className="mt-1 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 dark:border-slate-700 dark:bg-slate-950" /></label>
+          <fieldset className="space-y-2">
+            <legend className="text-sm font-medium">Novo tipo de conta</legend>
+            <label className="flex min-h-11 items-center gap-3 text-sm"><input type="radio" name="target_role" value="profissional" required className="h-5 w-5 accent-orange-700" /><span>Profissional</span></label>
+            <label className="flex min-h-11 items-center gap-3 text-sm"><input type="radio" name="target_role" value="empresa" required className="h-5 w-5 accent-orange-700" /><span>Empresa</span></label>
+          </fieldset>
+          <button className="inline-flex min-h-11 items-center rounded-xl bg-orange-700 px-4 text-sm font-semibold text-white hover:bg-orange-800">Mudar de conta</button>
+        </form>
+      </section>
+    )}
 
     <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
       <div id="notificacoes"><h2 className="font-semibold">Notificações</h2><p className="text-sm text-slate-500">Escolha como pretende receber actualizações.</p></div>
