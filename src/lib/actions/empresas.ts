@@ -99,7 +99,7 @@ export async function aprovarEmpresa(empresaId: string): Promise<ActionResult> {
 
   const { data: empresa, error: leituraError } = await supabase
     .from('companies')
-    .select('id, name, user_id')
+    .select('id, name, user_id, sector, province, city, description, email, phone, whatsapp')
     .eq('id', empresaId)
     .maybeSingle()
 
@@ -110,9 +110,28 @@ export async function aprovarEmpresa(empresaId: string): Promise<ActionResult> {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Sessão expirada.' }
 
+  const emailValido = typeof empresa.email === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(empresa.email)
+  const contactoValido = Boolean((empresa.phone ?? '').trim() || (empresa.whatsapp ?? '').trim())
+  const perfilCompleto = Boolean(
+    empresa.name?.trim() &&
+    empresa.sector?.trim() &&
+    empresa.province?.trim() &&
+    empresa.city?.trim() &&
+    empresa.description?.trim() &&
+    emailValido &&
+    contactoValido
+  )
+
   const { data, error } = await supabase
     .from('companies')
-    .update({ is_approved: true, estado: 'aprovado', motivo_decisao: null, decidido_em: new Date().toISOString(), decidido_por: user.id })
+    .update({
+      is_approved: true,
+      estado: 'aprovado',
+      motivo_decisao: null,
+      decidido_em: new Date().toISOString(),
+      decidido_por: user.id,
+      ...(perfilCompleto ? { profile_completed_at: new Date().toISOString() } : {}),
+    })
     .eq('id', empresaId)
     .select('id')
 

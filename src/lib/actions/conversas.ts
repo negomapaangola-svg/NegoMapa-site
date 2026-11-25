@@ -77,15 +77,10 @@ export async function listarConversas(): Promise<Resultado<ConversaResumo[]>> {
   ])
   const idsProfissional = new Set(perfilConta?.account_type === 'profissional' && perfilConta.is_active === true && perfil?.estado === 'aprovado' && perfil?.id ? [perfil.id] : [])
   const idsEmpresa = new Set(perfilConta?.account_type === 'empresa' && perfilConta.is_active === true ? (empresas ?? []).filter((e) => e.is_approved === true && e.estado === 'aprovado').map((e) => e.id) : [])
-  // O papel é determinado exclusivamente por profiles.account_type.
-  // Registos empresariais/profissionais legados (pendentes ou suspensos) não retiram
-  // capacidades de cliente quando a conta continua explicitamente classificada como cliente.
-  const clienteActivo = perfilConta?.account_type === 'cliente' && perfilConta.is_active === true
 
-  // A política RLS também permite leitura administrativa. A interface de mensagens,
-  // porém, só deve devolver conversas em que a sessão actual é participante efectivo.
+  // A conversa do iniciador é identificada por cliente_id, independentemente do tipo de conta.
   const minhasConversas = (data ?? []).filter((conversa) =>
-    (clienteActivo && conversa.cliente_id === user.id) ||
+    (perfilConta?.is_active === true && conversa.cliente_id === user.id) ||
     Boolean(conversa.profissional_id && idsProfissional.has(conversa.profissional_id)) ||
     Boolean(conversa.empresa_id && idsEmpresa.has(conversa.empresa_id))
   )
@@ -93,7 +88,11 @@ export async function listarConversas(): Promise<Resultado<ConversaResumo[]>> {
   const conversasBase = minhasConversas.map((conversa) => {
     let papel: PapelConversa = 'cliente'
     if (conversa.cliente_id === user.id) {
-      papel = 'cliente'
+      papel = perfilConta?.account_type === 'empresa'
+        ? 'empresa'
+        : perfilConta?.account_type === 'profissional'
+          ? 'profissional'
+          : 'cliente'
     } else if (conversa.profissional_id && idsProfissional.has(conversa.profissional_id)) {
       papel = 'profissional'
     } else if (conversa.empresa_id && idsEmpresa.has(conversa.empresa_id)) {
@@ -132,7 +131,7 @@ export async function listarConversas(): Promise<Resultado<ConversaResumo[]>> {
     }
   }
   const nomesProfissionais = new Map(((resProfissionais?.data ?? []) as { id: string; nome: string | null }[]).map((p) => [p.id, p.nome]))
-  const nomesEmpresas = new Map(((resEmpresas?.data ?? []) as { id: string; name: string | null }[]).map((e) => [e.id, e.name]))
+  const nomesEmpresas = new Map(((resEmpresas?.data ?? []) as { id: string; name: string }[]).map((e) => [e.id, e.name]))
 
   const conversas: ConversaResumo[] = conversasBase.map((conversa) => {
     const ultima = ultimaPorConversa.get(conversa.id)
@@ -141,6 +140,10 @@ export async function listarConversas(): Promise<Resultado<ConversaResumo[]>> {
       if (conversa.profissional_id) nome = nomesProfissionais.get(conversa.profissional_id) || 'Profissional'
       else if (conversa.empresa_id) nome = nomesEmpresas.get(conversa.empresa_id) || 'Empresa'
       else nome = 'Contacto'
+    } else if (conversa.papel === 'empresa' && conversa.empresa_id) {
+      nome = nomesEmpresas.get(conversa.empresa_id) || 'Empresa'
+    } else if (conversa.papel === 'profissional' && conversa.profissional_id) {
+      nome = nomesProfissionais.get(conversa.profissional_id) || 'Profissional'
     }
     return {
       ...conversa,
@@ -169,7 +172,15 @@ async function utilizadorParticipaNaConversa(
     .maybeSingle()
 
   if (error || !conversa) return false
-  if (conversa.cliente_id === userId && await contaClienteActiva(supabase, userId)) return true
+
+  if (conversa.cliente_id === userId) {
+    const { data: perfilSessao } = await supabase
+      .from('profiles')
+      .select('is_active')
+      .eq('id', userId)
+      .maybeSingle()
+    if (perfilSessao?.is_active === true) return true
+  }
 
   const [perfilConta, perfil, empresas] = await Promise.all([
     supabase.from('profiles').select('account_type,is_active').eq('id', userId).maybeSingle(),
@@ -224,8 +235,7 @@ export async function listarMensagens(conversaId: string): Promise<Resultado<Men
   const anexosPorMensagem = new Map<string, AnexoMensagem[]>()
   for (const anexo of (anexos.data ?? []) as (AnexoMensagem & { mensagem_id: string })[]) {
     const lista = anexosPorMensagem.get(anexo.mensagem_id) ?? []
-    lista.push({ id: anexo.id, nome_ficheiro: anexo.nome_ficheiro, mime_type: anexo.mime_type, tamanho_bytes: anexo.tamanho_bytes })
-    anexosPorMensagem.set(anexo.mensagem_id, lista)
+    lista.push(anexo)
   }
 
   return {
@@ -277,10 +287,17 @@ export async function enviarMensagem(conversaId: string, conteudo: string): Prom
   return { success: true }
 }
 
+async function contaActiva(supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>, userId: string): Promise<boolean> {
+  const { data: perfil, error } = await supabase
+    .from('profiles')
+    .select('is_active')
+    .eq('id', userId)
+    .maybeSingle()
+  return !error && perfil?.is_active === true
+}
+
 async function contaClienteActiva(supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>, userId: string): Promise<boolean> {
   if (await isAdmin()) return false
-  // O papel e a activação são a fonte de verdade. Não consultar registos de negócio
-  // legados aqui: RLS também autoriza o cliente com base nestes mesmos campos.
   const { data: perfil, error } = await supabase
     .from('profiles')
     .select('account_type,is_active')
@@ -372,7 +389,7 @@ export async function verificarPodeContactar(
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { pode: false, motivo: 'Sessão expirada. Inicie sessão novamente.' }
-  if (!(await contaClienteActiva(supabase, user.id))) return { pode: false, motivo: 'Apenas clientes activos podem iniciar conversas.' }
+  if (!(await contaActiva(supabase, user.id))) return { pode: false, motivo: 'A conta não está activa.' }
 
   // Confirmação do dono no servidor, independente da sessão do browser e da RLS: só corre com chave de serviço.
   const admin = criarClienteServico()
@@ -440,7 +457,7 @@ export async function verificarPodeContactarEmpresas(
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: true, ids: [] }
-  if (!(await contaClienteActiva(supabase, user.id))) return { success: false, error: 'Apenas clientes activos podem iniciar conversas.' }
+  if (!(await contaActiva(supabase, user.id))) return { success: false, error: 'A conta não está activa.' }
 
   const { data: minhas, error: erroMinhas } = await supabase
     .from('companies')
@@ -493,7 +510,7 @@ export async function iniciarConversaComEmpresa(
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Sessão expirada. Inicie sessão novamente.' }
-  if (!(await contaClienteActiva(supabase, user.id))) return { success: false, error: 'Apenas clientes activos podem iniciar conversas.' }
+  if (!(await contaActiva(supabase, user.id))) return { success: false, error: 'A conta não está activa.' }
 
   const { data: existente, error: erroLeitura } = await supabase
     .from('conversas')
@@ -638,119 +655,10 @@ export async function marcarMensagensLidas(conversaId: string): Promise<{ succes
     .eq('tipo', 'nova_mensagem')
     .eq('referencia_id', conversaId)
     .eq('lida', false)
-  if (erroNotificacao) console.error('Erro ao marcar notificação de mensagem. Código:', erroNotificacao.code)
 
-  revalidatePath('/mensagens')
-  revalidatePath('/empresa/painel/mensagens')
-  return { success: true }
-}
-
-const TIPOS_ANEXO_PERMITIDOS: Record<string, string> = {
-  'application/pdf': 'pdf',
-  'image/jpeg': 'jpg',
-  'image/png': 'png',
-  'image/webp': 'webp',
-  'text/plain': 'txt',
-}
-const TAMANHO_MAXIMO_ANEXO = 10 * 1024 * 1024
-
-function assinaturaValida(tipo: string, bytes: Uint8Array): boolean {
-  if (tipo === 'application/pdf') return new TextDecoder().decode(bytes.slice(0, 5)) === '%PDF-'
-  if (tipo === 'image/jpeg') return bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff
-  if (tipo === 'image/png') return bytes.slice(0, 8).join(',') === '137,80,78,71,13,10,26,10'
-  if (tipo === 'image/webp') return new TextDecoder().decode(bytes.slice(0, 4)) === 'RIFF' && new TextDecoder().decode(bytes.slice(8, 12)) === 'WEBP'
-  if (tipo === 'text/plain') {
-    if (bytes.includes(0)) return false
-    try { new TextDecoder('utf-8', { fatal: true }).decode(bytes); return true } catch { return false }
-  }
-  return false
-}
-
-/** Upload validado no servidor; a sessão autenticada e as políticas Storage limitam o acesso. */
-export async function enviarAnexo(
-  conversaId: string,
-  formData: FormData
-): Promise<{ success: boolean; error?: string }> {
-  const supabase = await createSupabaseServerClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { success: false, error: 'Sessão expirada. Inicie sessão novamente.' }
-  if (!UUID_REGEX.test(conversaId) || !(await utilizadorParticipaNaConversa(supabase, conversaId, user.id))) {
-    return { success: false, error: 'Conversa não encontrada ou sem permissão.' }
-  }
-
-  const ficheiro = formData.get('ficheiro')
-  if (!(ficheiro instanceof File) || ficheiro.size < 1 || ficheiro.size > TAMANHO_MAXIMO_ANEXO) {
-    return { success: false, error: 'Escolha um ficheiro até 10 MB.' }
-  }
-  const extensao = TIPOS_ANEXO_PERMITIDOS[ficheiro.type]
-  if (!extensao) return { success: false, error: 'Tipo de ficheiro não permitido. Use PDF, JPG, PNG, WebP ou TXT.' }
-
-  const bytes = new Uint8Array(await ficheiro.arrayBuffer())
-  if (!assinaturaValida(ficheiro.type, bytes)) {
-    return { success: false, error: 'O conteúdo do ficheiro não corresponde ao tipo declarado.' }
-  }
-
-  const id = crypto.randomUUID()
-  const nomeBase = ficheiro.name.normalize('NFKC').replace(/[^a-zA-Z0-9._-]/g, '_').replace(/\.[^.]+$/, '').slice(-70) || 'anexo'
-  const nomeSeguro = `${nomeBase}.${extensao}`
-  const caminho = `${conversaId}/${id}-${nomeSeguro}`
-  const { error: erroUpload } = await supabase.storage.from('conversas-anexos').upload(caminho, bytes, {
-    contentType: ficheiro.type,
-    upsert: false,
-  })
-  if (erroUpload) {
-    console.error('Falha no upload de anexo. Código:', erroUpload.name)
-    return { success: false, error: 'Não foi possível guardar o ficheiro.' }
-  }
-
-  const { error: erroRegisto } = await supabase.rpc('criar_mensagem_com_anexo', {
-    p_conversa_id: conversaId,
-    p_nome_ficheiro: nomeSeguro,
-    p_mime_type: ficheiro.type,
-    p_tamanho_bytes: ficheiro.size,
-    p_storage_path: caminho,
-  })
-  if (erroRegisto) {
-    const { error: erroRemocao } = await supabase.storage.from('conversas-anexos').remove([caminho])
-    if (erroRemocao) console.error('Não foi possível limpar upload sem registo. Código:', erroRemocao.name)
-    console.error('Falha ao registar mensagem com anexo. Código:', erroRegisto.code)
-    return { success: false, error: 'Não foi possível enviar o ficheiro.' }
-  }
-
-  revalidatePath('/mensagens')
-  revalidatePath('/profissional/painel/mensagens')
-  revalidatePath('/empresa/painel/mensagens')
-  try {
-    await notificarNovaMensagem(conversaId, user.id)
-  } catch {
-    console.error('Erro ao criar notificação de mensagem com anexo.')
+  if (erroNotificacao) {
+    console.error('Erro ao marcar a notificação como lida. Código:', erroNotificacao.code)
   }
 
   return { success: true }
-}
-
-/** URL assinada de 60 segundos; a leitura do metadado e o Storage aplicam RLS. */
-export async function obterUrlAnexo(
-  anexoId: string
-): Promise<{ success: true; url: string } | { success: false; error: string }> {
-  const supabase = await createSupabaseServerClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { success: false, error: 'Sessão expirada. Inicie sessão novamente.' }
-  if (!UUID_REGEX.test(anexoId)) return { success: false, error: 'Ficheiro indisponível.' }
-
-  const { data: anexo, error } = await supabase.from('mensagem_anexos')
-    .select('id, conversa_id, storage_path')
-    .eq('id', anexoId)
-    .maybeSingle()
-  if (error || !anexo || !(await utilizadorParticipaNaConversa(supabase, anexo.conversa_id, user.id))) {
-    return { success: false, error: 'Ficheiro indisponível ou sem permissão.' }
-  }
-
-  const { data: signed, error: signedError } = await supabase.storage
-    .from('conversas-anexos')
-    .createSignedUrl(anexo.storage_path, 60)
-  if (signedError || !signed?.signedUrl) {
-    return { success: false, error: 'Ficheiro indisponível ou removido.' }
-  }
-  return { success: true, url: signed.signedUrl }
 }
