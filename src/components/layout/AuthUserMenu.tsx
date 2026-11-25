@@ -80,7 +80,7 @@ export function AuthUserMenu({ variante = 'cabecalho', onNavigate }: { variante?
           {(['claro', 'escuro', 'sistema'] as const).map((opcao) => <button key={opcao} type="button" aria-pressed={tema === opcao} onClick={() => { definirTema(opcao); setTema(opcao) }} className={`rounded-lg px-2 py-2 text-xs capitalize focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 ${tema === opcao ? 'bg-orange-500/15 font-semibold text-orange-700 dark:text-orange-300' : 'hover:bg-cream dark:hover:bg-white/10'}`}>{opcao === 'sistema' ? 'Sistema' : opcao}</button>)}
         </div>
         <div className="my-2 border-t border-card-border" />
-        <form action={logoutAction}><button type="submit" onClick={() => setAberto(false)} className="w-full rounded-lg px-3 py-2.5 text-left text-sm font-medium text-red-700 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 dark:text-red-300 dark:hover:bg-red-950/30">Terminar sessão</button></form>
+        <form action={logoutAction}><button type="submit" className="w-full rounded-lg px-3 py-2.5 text-left text-sm font-medium text-red-700 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 dark:text-red-300 dark:hover:bg-red-950/30">Terminar sessão</button></form>
       </div>}
     </div>
   }
@@ -91,11 +91,11 @@ export function AuthUserMenu({ variante = 'cabecalho', onNavigate }: { variante?
       if (!itens.length) return null
       return <section key={grupo.id} aria-labelledby={`menu-${grupo.id}`}>
         <h2 id={`menu-${grupo.id}`} className="px-3 pb-1 text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-cream-text/70">{grupo.titulo}</h2>
-        <ul className="space-y-1">{itens.map((item) => <li key={item.id}>{item.id === 'sair' ? <form action={logoutAction}><button type="submit" onClick={onNavigate} className={`${classeLink} w-full text-left`}>Sair</button></form> : link(item)}</li>)}</ul>
+        <ul className="space-y-1">{itens.map((item) => <li key={item.id}>{item.id === 'sair' ? <form action={logoutAction}><button type="submit" className={`${classeLink} w-full text-left`}>Sair</button></form> : link(item)}</li>)}</ul>
       </section>
     })}
     <section aria-labelledby="menu-tema">
-      <h2 id="menu-tema" className="px-3 pb-1 text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-cream-text/70">Tema</h2>
+      <h2 id="menu-tema" className="px-3 pb-1 text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-cream-text/70">{"Tema"}</h2>
       <div className="grid grid-cols-3 gap-2 px-3">{(['claro', 'escuro', 'sistema'] as const).map((opcao) => <button key={opcao} type="button" onClick={() => definirTema(opcao)} className="min-h-11 rounded-lg border border-card-border px-2 text-sm capitalize focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500">{opcao}</button>)}</div>
     </section>
   </nav>
