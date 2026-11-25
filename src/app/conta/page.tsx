@@ -22,6 +22,25 @@ export default async function ContaPage() {
   const avatar = data.accountType === 'profissional' ? data.professional?.avatar_url : data.accountType === 'empresa' ? data.company?.logo_url : data.profile.avatar_url
   const status = !data.profile.is_active ? 'Conta suspensa' : data.accountType === 'profissional' ? (data.professional?.estado ?? 'Conta por completar') : data.accountType === 'empresa' ? (data.company?.is_approved ? 'Aprovada' : data.company?.estado ?? 'Em análise') : 'Activa'
   const statusLabel = status === 'aprovado' ? 'Aprovada' : status === 'pendente' ? 'Pendente' : status === 'rejeitado' ? 'Rejeitada' : status === 'suspenso' ? 'Suspensa' : status
+  const missingFields = data.accountType === 'profissional' ? [
+    !data.professional?.nome?.trim(),
+    !data.professional?.categoria_id,
+    !data.professional?.provincia?.trim(),
+    !data.professional?.municipio?.trim(),
+    !data.professional?.experiencia_faixa?.trim(),
+    !data.professional?.bio?.trim(),
+    !(data.professional?.telefone?.trim() || data.professional?.whatsapp?.trim()),
+  ] : data.accountType === 'empresa' ? [
+    !data.company?.name?.trim(),
+    !data.company?.sector?.trim(),
+    !data.company?.province?.trim(),
+    !data.company?.city?.trim(),
+    !data.company?.description?.trim(),
+    !data.company?.email?.trim() || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$/.test(data.company.email),
+    !(data.company?.phone?.trim() || data.company?.whatsapp?.trim()),
+  ] : []
+  const profileCompletedAt = data.accountType === 'profissional' ? data.professional?.profile_completed_at : data.accountType === 'empresa' ? data.company?.profile_completed_at : null
+  const profileIncomplete = (data.accountType === 'profissional' || data.accountType === 'empresa') && (!profileCompletedAt || missingFields.some(Boolean))
   return <section className="space-y-6">
     <header className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:flex-row sm:items-center">
       <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-slate-100 text-xl font-semibold text-slate-500 dark:bg-slate-800">
@@ -35,6 +54,7 @@ export default async function ContaPage() {
       <Link href="/conta/perfil" className="inline-flex min-h-11 items-center justify-center rounded-xl bg-slate-900 px-4 text-sm font-semibold text-white hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:bg-white dark:text-slate-900">Editar conta</Link>
     </header>
 
+    {profileIncomplete&&<section className="flex flex-col gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-5 dark:border-amber-700 dark:bg-amber-950/30"><div><h2 className="font-semibold text-amber-950 dark:text-amber-100">Perfil incompleto</h2><p className="mt-1 text-sm text-amber-900 dark:text-amber-200">Conclua os campos obrigatórios para enviar o seu perfil para análise. A publicação continua dependente da aprovação da administração.</p></div><Link href="/conta/perfil" className="inline-flex min-h-11 w-fit items-center justify-center rounded-xl bg-orange-700 px-4 text-sm font-semibold text-white hover:bg-orange-800">Concluir perfil</Link></section>}
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <article className="flex min-h-36 flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <p className="text-sm font-medium text-slate-500">Tipo de conta</p>
