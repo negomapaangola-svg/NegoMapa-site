@@ -36,7 +36,7 @@ export default async function ContaPage() {
     !data.company?.province?.trim(),
     !data.company?.city?.trim(),
     !data.company?.description?.trim(),
-    !data.company?.email?.trim() || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$/.test(data.company.email),
+    !data.company?.email?.trim() || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$/.test(data.company?.email ?? ''),
     !(data.company?.phone?.trim() || data.company?.whatsapp?.trim()),
   ] : []
   const profileCompletedAt = data.accountType === 'profissional' ? data.professional?.profile_completed_at : data.accountType === 'empresa' ? data.company?.profile_completed_at : null
