@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
 import { encerrarVaga } from '@/lib/actions/vagas'
+import { eliminarVaga } from '@/lib/actions/eliminacao'
 
 type Props = {
   vagaId: string
@@ -32,6 +33,19 @@ export function VagaActions({ vagaId, vagaSlug, empresaId, estado, encerradaEm }
     })
   }
 
+  function eliminar() {
+    if (!window.confirm('Tem certeza? Esta ação não pode ser revertida.')) return
+    setError(null)
+    startTransition(async () => {
+      const result = await eliminarVaga(vagaId, empresaId)
+      if (!result.success) {
+        setError(result.error ?? 'Não foi possível eliminar a vaga.')
+        return
+      }
+      router.refresh()
+    })
+  }
+
   return (
     <div className="flex flex-col items-start gap-2 sm:items-end">
       {estado === 'aprovado' && !encerradaEm && (
@@ -49,9 +63,17 @@ export function VagaActions({ vagaId, vagaSlug, empresaId, estado, encerradaEm }
               {pending ? 'A encerrar…' : 'Encerrar vaga'}
             </Button>
           )}
+          <Button variant="destructive" size="sm" disabled={pending} onClick={eliminar}>
+            {pending ? 'A eliminar…' : 'Eliminar'}
+          </Button>
         </div>
       ) : (
-        <span className="text-sm text-neutral-600 dark:text-cream-text/70">Esta vaga foi encerrada.</span>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm text-neutral-600 dark:text-cream-text/70">Esta vaga foi encerrada.</span>
+          <Button variant="destructive" size="sm" disabled={pending} onClick={eliminar}>
+            {pending ? 'A eliminar…' : 'Eliminar'}
+          </Button>
+        </div>
       )}
       {error && <p role="alert" className="max-w-xs text-sm text-red-700 dark:text-red-300">{error}</p>}
     </div>
