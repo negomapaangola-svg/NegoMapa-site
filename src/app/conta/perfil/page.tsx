@@ -44,7 +44,7 @@ export default async function ContaPerfilPage({searchParams}:{searchParams:Promi
   !c.province?.trim() ? 'Província' : null,
   !c.city?.trim() ? 'Município' : null,
   !c.description?.trim() ? 'Descrição' : null,
-  !c.email?.trim() || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$/.test(c.email ?? '') ? 'Email empresarial válido' : null,
+  !c.email?.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(c.email ?? '') ? 'Email empresarial válido' : null,
   !(c.phone?.trim() || c.whatsapp?.trim()) ? 'Telefone ou WhatsApp' : null,
  ].filter((item): item is string => Boolean(item)) : []
  const profileCompletedAt = pro ? p.profile_completed_at : emp ? c.profile_completed_at : null
