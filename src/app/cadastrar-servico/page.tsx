@@ -25,7 +25,24 @@ async function getProfile() {
 export default async function CadastrarServicoPage() {
   if (await isAdmin()) redirect('/admin')
   const contexto = await obterContextoUtilizador()
-  if (contexto.empresa) redirect('/empresa/painel')
+
+  // Empresas aprovadas e activas podem publicar serviços.
+  if (
+    contexto.empresa &&
+    contexto.empresa.is_approved === true &&
+    (contexto.empresa.estado ?? 'aprovado') === 'aprovado' &&
+    contexto.isActive === true
+  ) {
+    const supabase = await createSupabaseServerClient()
+    const categorias = await getCategories()
+
+    return (
+      <MainLayout>
+        <ServiceFormPage categorias={categorias} profileEstado="aprovado" />
+      </MainLayout>
+    )
+  }
+
   if (contexto.accountType && contexto.accountType !== 'cliente' && !contexto.profissional) redirect('/')
   const supabase = await createSupabaseServerClient()
 
@@ -110,7 +127,7 @@ function ProfileSuspendedPage({ profile }: { profile: { estado: string; nome: st
             </p>
             <a
               href="/servicos"
-              className="inline-flex items-center gap-2 px-4 py-2 border border-card-border rounded-[4px] bg-white text-ink dark:text-cream hover:bg-cream dark:hover:bg-navy-dark transition-colors"
+              className="inline-flex items-center gap-4 py-2 border border-card-border rounded-[4px] bg-white text-ink dark:text-cream hover:bg-cream dark:hover:bg-navy-dark transition-colors"
             >
               <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />

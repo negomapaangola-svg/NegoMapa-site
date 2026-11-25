@@ -41,7 +41,7 @@ export function BotaoContactarEmpresa({ empresaId, visivel = true, aoIniciar, cl
   return (
     <div className={className}>
       <Button type="button" variant="primary" size="sm" onClick={contactar} disabled={pending}>
-        {pending ? 'A abrir…' : 'Contactar'}
+        {pending ? 'A abrir…' : 'Enviar mensagem'}
       </Button>
       {erro && (
         <p role="alert" className="mt-2 text-xs text-red-700 dark:text-red-300">
