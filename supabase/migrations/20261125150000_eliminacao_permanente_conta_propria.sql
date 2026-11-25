@@ -178,8 +178,6 @@ begin
   where p.cliente_id = v_user or p.profissional_id = any(v_professional_ids)
      or p.servico_id = any(v_service_ids);
 
-  delete from public.mensagem_anexos a
-  where a.remetente_id = v_user or a.conversa_id = any(v_conversation_ids);
   delete from public.mensagens m
   where m.remetente_id = v_user or m.conversa_id = any(v_conversation_ids);
   delete from public.conversas c where c.id = any(v_conversation_ids);
