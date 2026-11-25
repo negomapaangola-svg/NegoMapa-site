@@ -49,234 +49,135 @@ function EmpresaContent() {
   const [avaliacoes, setAvaliacoes] = React.useState<Awaited<ReturnType<typeof getAvaliacoesPorAlvo>>>([])
   const [userId, setUserId] = React.useState<string | null>(null)
   const [contacto, setContacto] = React.useState<{ empresaId: string; pode: boolean } | null>(null)
-  const podeContactar = Boolean(empresa && userId && contacto?.empresaId === empresa.id && contacto.pode)
   const [avaliacoesCarregando, setAvaliacoesCarregando] = React.useState(true)
   const [erroCarregamento, setErroCarregamento] = React.useState(false)
+  const [aba, setAba] = React.useState("")
+  const podeContactar = Boolean(empresa && userId && contacto?.empresaId === empresa.id && contacto.pode)
 
   React.useEffect(() => {
-    async function carregarEmpresa() {
-      if (!slug) {
-        setCarregando(false)
-        return
+    let activo = true
+    setCarregando(true)
+    setEmpresa(null)
+    setAba("")
+    setMedia({ media: 0, total: 0 })
+    setAvaliacoes([])
+    setContacto(null)
+    async function carregar() {
+      try {
+        const { data, error } = await supabase.from("empresas_publicas")
+          .select("id, name, sector, province, city, bairro, rua, referencia_localizacao, description, horario_atendimento, slug, is_approved, whatsapp, logo_url, portfolio")
+          .eq("slug", slug).eq("is_approved", true).maybeSingle()
+        if (!activo) return
+        setErroCarregamento(Boolean(error))
+        setEmpresa(error ? null : data as EmpresaPublica | null)
+      } catch {
+        if (activo) setErroCarregamento(true)
+      } finally {
+        if (activo) setCarregando(false)
       }
-
-      // Leitura a partir da vista pública: a tabela companies já não é legível pelo anon
-      // em email, phone e estado_legalizacao (migração 20261110), o que causava "não encontrada".
-      const { data, error } = await supabase
-        .from("empresas_publicas")
-        .select("id, name, sector, province, city, bairro, rua, referencia_localizacao, description, horario_atendimento, slug, is_approved, whatsapp, logo_url, portfolio")
-        .eq("slug", slug)
-        .eq("is_approved", true)
-        .maybeSingle()
-
-      if (error) {
-        console.error("Erro ao carregar empresa. Código:", error.code)
-        setErroCarregamento(true)
-        setEmpresa(null)
-      } else {
-        setErroCarregamento(false)
-        setEmpresa(data as EmpresaPublica | null)
-      }
-      setCarregando(false)
     }
-
-    carregarEmpresa()
+    if (slug) void carregar()
+    else setCarregando(false)
+    return () => { activo = false }
   }, [slug])
 
   React.useEffect(() => {
     if (!empresa) return
-    const empresaId = empresa.id
-
-    async function carregarAvaliacoes() {
-      setAvaliacoesCarregando(true)
-      try {
-        const [mediaResult, avaliacoesResult] = await Promise.all([
-          getMediaAvaliacoes({ tipo: 'empresa', id: empresaId }),
-          getAvaliacoesPorAlvo({ tipo: 'empresa', id: empresaId }),
-        ])
-        setMedia(mediaResult)
-        setAvaliacoes(avaliacoesResult)
-      } catch (error) {
-        console.error("Erro ao carregar avaliações:", error)
-      } finally {
-        setAvaliacoesCarregando(false)
-      }
-    }
-
-    carregarAvaliacoes()
+    let activo = true
+    setAvaliacoesCarregando(true)
+    Promise.all([
+      getMediaAvaliacoes({ tipo: 'empresa', id: empresa.id }),
+      getAvaliacoesPorAlvo({ tipo: 'empresa', id: empresa.id }),
+    ]).then(([resumo, lista]) => {
+      if (activo) { setMedia(resumo); setAvaliacoes(lista) }
+    }).catch(() => {}).finally(() => { if (activo) setAvaliacoesCarregando(false) })
+    return () => { activo = false }
   }, [empresa])
 
   React.useEffect(() => {
-    async function getUser() {
-      const browserSupabase = createBrowserSupabaseClient()
-      const { data: { session } } = await browserSupabase.auth.getSession()
-      setUserId(session?.user?.id || null)
-    }
-    getUser()
+    let activo = true
+    const client = createBrowserSupabaseClient()
+    void client.auth.getSession().then(({ data: { session } }) => {
+      if (activo) setUserId(session?.user?.id || null)
+    })
+    const { data: { subscription } } = client.auth.onAuthStateChange((_event, session) => {
+      if (activo) setUserId(session?.user?.id || null)
+    })
+    return () => { activo = false; subscription.unsubscribe() }
   }, [])
 
   React.useEffect(() => {
     if (!empresa || !userId) return
-    const empresaId = empresa.id
     let activo = true
+    const empresaId = empresa.id
     verificarPodeContactar({ tipo: 'empresa', id: empresaId })
-      .then((resultado) => {
-        if (activo) setContacto({ empresaId, pode: resultado.pode })
-      })
-      .catch(() => {
-        if (activo) setContacto({ empresaId, pode: false })
-      })
-    return () => {
-      activo = false
-    }
+      .then((resultado) => { if (activo) setContacto({ empresaId, pode: resultado.pode }) })
+      .catch(() => { if (activo) setContacto({ empresaId, pode: false }) })
+    return () => { activo = false }
   }, [empresa, userId])
 
-  if (carregando) {
-    return (
-      <MainLayout>
-        <div className="flex min-h-[50vh] items-center justify-center bg-white p-4 dark:bg-navy-dark">
-          <p className="text-neutral-600 dark:text-cream-text">Carregando empresa...</p>
-        </div>
-      </MainLayout>
-    )
-  }
-
-  if (!empresa) {
-    return (
-      <MainLayout>
-        <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4 bg-white p-8 text-center dark:bg-navy-dark">
-          <p role={erroCarregamento ? "alert" : "status"} className="text-lg font-medium text-neutral-800 dark:text-cream">
-            {erroCarregamento ? "Não foi possível carregar este perfil." : "Empresa não encontrada"}
-          </p>
-          {erroCarregamento && <button type="button" onClick={() => window.location.reload()} className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-orange-600 px-5 py-2 font-semibold text-white hover:bg-orange-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2">Tentar novamente</button>}
-          <Link href="/empresas" className="inline-flex min-h-[44px] items-center font-semibold text-orange-700 underline-offset-4 hover:underline dark:text-orange-300">Voltar às empresas</Link>
-        </div>
-      </MainLayout>
-    )
-  }
+  if (carregando) return <MainLayout><div role="status" className="flex min-h-[50vh] items-center justify-center p-4">Carregando empresa...</div></MainLayout>
+  if (!empresa) return <MainLayout><div className="flex min-h-[50vh] flex-col items-center justify-center gap-4 p-8 text-center"><p role={erroCarregamento ? "alert" : "status"}>{erroCarregamento ? "Não foi possível carregar este perfil." : "Empresa não encontrada"}</p>{erroCarregamento && <button type="button" onClick={() => window.location.reload()} className="min-h-11 rounded-xl bg-orange-600 px-5 text-white">Tentar novamente</button>}<Link href="/empresas" className="inline-flex min-h-11 items-center text-orange-600">Voltar às empresas</Link></div></MainLayout>
 
   const alvo = { tipo: 'empresa' as const, id: empresa.id }
-  const alvoDenuncia: AlvoDenuncia = { tipo: 'empresa', id: empresa.id }
-
-  const temEnderecoDetalhado = empresa.rua || empresa.bairro || empresa.referencia_localizacao
+  const alvoDenuncia: AlvoDenuncia = alvo
   const localizacao = [empresa.city, empresa.province].filter(Boolean).join(", ")
-  const temPortfolio = Array.isArray(empresa.portfolio) && empresa.portfolio.length > 0
-  // As referências privadas migradas são servidas pela rota autenticada/pública controlada.
-  const logoSrc = typeof empresa.logo_url === "string" &&
-    (empresa.logo_url.startsWith("/api/imagens/") || isHttpsUrl(empresa.logo_url))
-    ? empresa.logo_url
-    : null
+  const endereco = [empresa.rua, empresa.bairro, localizacao].filter(Boolean).join(", ")
+  const itensPortfolio = (empresa.portfolio ?? []).filter((item) => item && (
+    (typeof item.titulo === "string" && item.titulo.trim()) ||
+    [item.imagem_url, item.image_url, item.foto_url, item.url_imagem, item.url_projeto].some((valor) => typeof valor === "string" && valor.startsWith("/api/imagens/")) ||
+    (typeof item.url_projeto === "string" && isHttpsUrl(item.url_projeto))
+  ))
+  const logoSrc = typeof empresa.logo_url === "string" && (empresa.logo_url.startsWith("/api/imagens/") || isHttpsUrl(empresa.logo_url)) ? empresa.logo_url : null
+  const abas = [
+    ...(empresa.description?.trim() ? [{ id: "sobre", titulo: "Sobre" }] : []),
+    ...(itensPortfolio.length ? [{ id: "portfolio", titulo: "Portfólio" }] : []),
+    ...(media.total > 0 || userId ? [{ id: "avaliacoes", titulo: "Avaliações" }] : []),
+  ]
+  const selecionada = abas.some((item) => item.id === aba) ? aba : abas[0]?.id
 
-  return (
-    <MainLayout>
-      <div className="mx-auto max-w-4xl space-y-6 bg-white px-4 py-8 dark:bg-navy-dark sm:px-6 lg:px-8">
-        <Link
-          href="/empresas"
-          className="inline-flex min-h-[44px] items-center text-sm font-medium text-neutral-600 hover:text-orange-600 dark:text-cream-text dark:hover:text-orange-400"
-        >
-          ← Voltar a empresas
-        </Link>
-
-        <Card variant="muted" padding="md">
-          <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center">
-            {logoSrc ? (
-              <img
-                src={logoSrc}
-                alt={`Logótipo de ${empresa.name}`}
-                className="h-20 w-20 shrink-0 rounded-2xl border border-neutral-100 bg-white object-contain p-2 dark:border-neutral-700 dark:bg-neutral-800"
-              />
-            ) : (
-              <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-neutral-100 text-2xl font-semibold text-neutral-600 dark:bg-neutral-800 dark:text-cream-text">
-                {empresa.name?.charAt(0)?.toUpperCase() || "E"}
-              </div>
-            )}
-
-            <div className="min-w-0 space-y-2">
-              <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-cream sm:text-3xl">
-                {empresa.name}
-              </h1>
-              <div className="flex flex-wrap items-center gap-2 text-sm text-neutral-600 dark:text-cream-text">
-                {empresa.sector && <Badge variant="neutral">{empresa.sector}</Badge>}
-                {localizacao && <span>{localizacao}</span>}
-              </div>
-              <div className="pt-1"><Rating media={media.media} total={media.total} size="md" /></div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <section aria-label="Contacto principal" className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="w-full sm:max-w-xs"><BotaoContactarEmpresa empresaId={empresa.id} visivel={podeContactar} className="[&>button]:min-h-[44px] [&>button]:w-full" /></div>
-          {empresa.whatsapp && <div className="w-full sm:max-w-xs"><ProfissionalWhatsApp whatsapp={empresa.whatsapp} tipoEntidade="empresa" /></div>}
-        </section>
-
-        {empresa.description && (
-          <Card variant="muted" padding="md">
-            <CardContent className="space-y-3">
-              <SectionHeader title="Sobre a empresa" />
-              <p className="whitespace-pre-line leading-relaxed text-neutral-700 dark:text-cream-text">
-                {empresa.description}
-              </p>
-            </CardContent>
-          </Card>
-        )}
-
-        <Card variant="muted" padding="md">
-          <CardContent className="space-y-5">
-            <SectionHeader title="Informações" />
-
-            <div>
-              <p className="text-sm font-medium text-neutral-500 dark:text-cream-text/70">Endereço</p>
-              <div className="mt-1 space-y-1 text-neutral-900 dark:text-cream">
-                {temEnderecoDetalhado ? (
-                  <>
-                    {empresa.rua && <p>{empresa.rua}</p>}
-                    {empresa.bairro && <p>Bairro: {empresa.bairro}</p>}
-                    {empresa.referencia_localizacao && <p>Ref.: {empresa.referencia_localizacao}</p>}
-                    {localizacao && <p>{localizacao}</p>}
-                  </>
-                ) : (
-                  <p>{localizacao || "Não informado"}</p>
-                )}
-              </div>
-            </div>
-
-            <div>
-              <p className="text-sm font-medium text-neutral-500 dark:text-cream-text/70">Disponibilidade e horário</p>
-              <p className="mt-1 whitespace-pre-wrap text-neutral-900 dark:text-cream">{empresa.horario_atendimento || "Horário ainda não informado pela empresa."}</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {temPortfolio && (
-          <section>
-            <PortfolioProfissional itens={empresa.portfolio} />
-          </section>
-        )}
-
-        <section className="space-y-6">
-          {avaliacoesCarregando ? (
-            <p role="status" aria-live="polite" className="py-8 text-center text-neutral-500 dark:text-cream-text/70">Carregando avaliações...</p>
-          ) : (
-            <AvaliacoesProfissional avaliacoes={avaliacoes} resumo={media} tipoEntidade="empresa" />
-          )}
-
-          {userId && <ReviewForm alvo={alvo} userId={userId} />}
-        </section>
-
-        <section className="space-y-4">
-          <SectionHeader title="Segurança" />
-          {userId ? (
-            <ReportForm alvo={alvoDenuncia} userId={userId} triggerLabel="Denunciar esta empresa" />
-          ) : (
-            <EmptyState
-              title="Denúncia indisponível"
-              description="Crie uma conta para denunciar informações desta empresa."
-            />
-          )}
-        </section>
-      </div>
-    </MainLayout>
-  )
+  return <MainLayout>
+    <div className="mx-auto min-w-0 max-w-4xl space-y-5 px-4 py-5 text-neutral-900 dark:text-cream sm:px-6 lg:px-8">
+      <Link href="/empresas" className="inline-flex min-h-11 items-center text-sm text-neutral-600 hover:text-orange-600 dark:text-cream-text">← Voltar a empresas</Link>
+      <Card variant="muted" padding="md">
+        <CardContent className="flex min-w-0 items-start gap-3 sm:gap-5">
+          {logoSrc ? <img src={logoSrc} alt={`Logótipo de ${empresa.name}`} className="h-16 w-16 shrink-0 rounded-2xl border border-card-border bg-white object-contain p-1 sm:h-20 sm:w-20" /> : <div aria-hidden="true" className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-neutral-100 text-2xl text-neutral-600 dark:bg-neutral-800 dark:text-cream sm:h-20 sm:w-20">{empresa.name?.charAt(0)?.toUpperCase() || "E"}</div>}
+          <div className="min-w-0 flex-1 space-y-2 break-words">
+            <h1 className="text-xl font-bold tracking-tight sm:text-3xl">{empresa.name}</h1>
+            <div className="flex flex-wrap items-center gap-2 text-sm text-neutral-600 dark:text-cream-text">{empresa.sector && <Badge variant="neutral">{empresa.sector}</Badge>}{localizacao && <span>{localizacao}</span>}</div>
+            <Rating media={media.media} total={media.total} size="md" />
+          </div>
+        </CardContent>
+      </Card>
+      {(podeContactar || empresa.whatsapp) && <section aria-label="Contacto principal" className="grid min-w-0 gap-3">
+        <div className="w-full [&_button]:min-h-11 [&_button]:w-full [&_a]:min-h-11 [&_a]:w-full"><BotaoContactarEmpresa empresaId={empresa.id} visivel={podeContactar} className="w-full [&>button]:w-full" /></div>
+        {empresa.whatsapp && <div className="w-full [&_a]:min-h-11 [&_a]:w-full [&_a]:justify-center [&_button]:w-full"><ProfissionalWhatsApp whatsapp={empresa.whatsapp} tipoEntidade="empresa" /></div>}
+      </section>}
+      {(endereco || empresa.horario_atendimento) && <section aria-label="Informações rápidas" className="grid min-w-0 gap-4 rounded-2xl border border-card-border p-4 sm:grid-cols-2">
+        {endereco && <div className="min-w-0"><h2 className="text-sm font-semibold">Endereço</h2><p className="mt-1 break-words text-sm text-neutral-600 dark:text-cream-text">{endereco}</p></div>}
+        {empresa.horario_atendimento && <div className="min-w-0"><h2 className="text-sm font-semibold">Horário de atendimento</h2><p className="mt-1 whitespace-pre-wrap break-words text-sm text-neutral-600 dark:text-cream-text">{empresa.horario_atendimento}</p></div>}
+      </section>}
+      {abas.length > 0 && <section className="min-w-0 space-y-4">
+        <div role="tablist" aria-label="Conteúdos da empresa" className="flex flex-wrap gap-1 border-b border-card-border">
+          {abas.map((item) => <button key={item.id} id={`empresa-aba-${item.id}`} type="button" role="tab" aria-selected={selecionada === item.id} aria-controls={`empresa-painel-${item.id}`} onClick={() => setAba(item.id)} onKeyDown={(event) => {
+            if (!["ArrowRight", "ArrowLeft", "Home", "End"].includes(event.key)) return
+            event.preventDefault()
+            const indice = abas.findIndex((a) => a.id === item.id)
+            const proxima = event.key === "Home" ? 0 : event.key === "End" ? abas.length - 1 : (indice + (event.key === "ArrowRight" ? 1 : -1) + abas.length) % abas.length
+            setAba(abas[proxima].id)
+            document.getElementById(`empresa-aba-${abas[proxima].id}`)?.focus()
+          }} tabIndex={selecionada === item.id ? 0 : -1} className={`min-h-11 min-w-0 border-b-2 px-3 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 ${selecionada === item.id ? "border-orange-500 text-orange-600 dark:text-orange-400" : "border-transparent text-neutral-600 dark:text-cream-text"}`}>{item.titulo}</button>)}
+        </div>
+        {abas.map((item) => <div key={item.id} id={`empresa-painel-${item.id}`} role="tabpanel" aria-labelledby={`empresa-aba-${item.id}`} hidden={selecionada !== item.id} tabIndex={0} className="min-w-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500">
+          {item.id === "sobre" && <Card variant="muted" padding="md"><CardContent className="space-y-3"><SectionHeader title="Sobre a empresa" /><p className="whitespace-pre-line break-words leading-relaxed text-neutral-700 dark:text-cream-text">{empresa.description}</p></CardContent></Card>}
+          {item.id === "portfolio" && <div className="[&>section]:mt-0 [&_ul]:gap-3 min-[360px]:[&_ul]:grid-cols-2 [&_li]:min-w-0 [&_li]:break-words [&_li]:p-3"><PortfolioProfissional itens={itensPortfolio} /></div>}
+          {item.id === "avaliacoes" && <div className="space-y-5">{avaliacoesCarregando ? <p role="status" className="py-4 text-center">Carregando avaliações...</p> : <AvaliacoesProfissional avaliacoes={avaliacoes} resumo={media} tipoEntidade="empresa" />}{userId && <ReviewForm alvo={alvo} userId={userId} />}</div>}
+        </div>)}
+      </section>}
+      {(endereco || empresa.referencia_localizacao) && <section aria-labelledby="empresa-localizacao" className="space-y-2 rounded-2xl border border-card-border p-4"><h2 id="empresa-localizacao" className="text-lg font-semibold">Localização</h2>{endereco && <p className="break-words text-sm text-neutral-600 dark:text-cream-text">{endereco}</p>}{empresa.referencia_localizacao && <p className="break-words text-sm text-neutral-600 dark:text-cream-text">Referência: {empresa.referencia_localizacao}</p>}</section>}
+      <section className="space-y-3 border-t border-card-border pt-4"><SectionHeader title="Segurança" />{userId ? <ReportForm alvo={alvoDenuncia} userId={userId} triggerLabel="Denunciar esta empresa" /> : <EmptyState title="Denúncia indisponível" description="Crie uma conta para denunciar informações desta empresa." />}</section>
+    </div>
+  </MainLayout>
 }
 
 export default function EmpresaPage() {
