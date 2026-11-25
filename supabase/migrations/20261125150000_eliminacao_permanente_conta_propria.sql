@@ -178,6 +178,8 @@ begin
   where p.cliente_id = v_user or p.profissional_id = any(v_professional_ids)
      or p.servico_id = any(v_service_ids);
 
+  delete from public.mensagem_anexos a
+  where a.remetente_id = v_user or a.conversa_id = any(v_conversation_ids);
   delete from public.mensagens m
   where m.remetente_id = v_user or m.conversa_id = any(v_conversation_ids);
   delete from public.conversas c where c.id = any(v_conversation_ids);
@@ -203,8 +205,6 @@ begin
   delete from public.vagas v where v.id = any(v_vacancy_ids);
   delete from public.companies c where c.id = any(v_company_ids);
   delete from public.profissionais p where p.id = any(v_professional_ids);
-
-  delete from public.profiles p where p.id = v_user;
 
   delete from auth.users u where u.id = v_user;
   if not found then raise exception 'Não foi possível remover o utilizador de autenticação' using errcode = 'P0002'; end if;
