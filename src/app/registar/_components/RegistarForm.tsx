@@ -12,6 +12,7 @@ type Props = {
 }
 
 const PALAVRA_PASSE_MINIMA = 8
+const ESCOLHER_TIPO = "/escolher-tipo"
 
 const campo =
   "w-full px-3 py-2 border border-card-border rounded-[4px] shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-neutral-700 dark:text-cream"
@@ -47,8 +48,8 @@ export function RegistarForm({ destino }: Props) {
       email: emailLimpo,
       password: palavraPasse,
       options: {
-        // O destino segue no parâmetro next; o callback volta a validá-lo.
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(destino)}`,
+        // Novas contas devem escolher o tipo antes de aceder à plataforma.
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(ESCOLHER_TIPO)}`,
       },
     })
     setASubmeter(false)
@@ -64,7 +65,7 @@ export function RegistarForm({ destino }: Props) {
     }
     // Confirmação de email desativada: a sessão já existe.
     if (data.session) {
-      router.replace(destino)
+      router.replace(ESCOLHER_TIPO)
       router.refresh()
       return
     }
@@ -81,7 +82,7 @@ export function RegistarForm({ destino }: Props) {
         </p>
         <ol className="list-decimal pl-5 space-y-2 text-neutral-600 dark:text-cream-text">
           <li>Abra o email e clique no link de confirmação.</li>
-          <li>Será levado de volta à NegóMapa, já com a sessão iniciada.</li>
+          <li>Será levado à página para escolher o tipo de conta.</li>
         </ol>
         <p className="text-sm text-neutral-500 dark:text-cream-text/70">Não recebeu o email? Verifique a pasta de spam.</p>
       </div>
@@ -92,7 +93,7 @@ export function RegistarForm({ destino }: Props) {
     <div className="max-w-md w-full bg-white rounded-[4px] p-8 shadow dark:bg-neutral-800 border border-card-border">
       <h1 className="text-2xl font-bold text-center mb-2 text-ink dark:text-cream">Criar conta</h1>
       <p className="text-center text-neutral-600 dark:text-cream-text mb-6">
-        Uma conta de cliente, para pedir orçamentos, enviar mensagens e candidatar-se a vagas.
+        Crie a sua conta e escolha se pretende utilizar a NegóMapa como cliente, profissional ou empresa.
       </p>
 
       {erro && (
