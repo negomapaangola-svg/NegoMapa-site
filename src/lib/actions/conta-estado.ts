@@ -80,35 +80,37 @@ export async function confirmarEliminacaoPropria(formData: FormData) {
   const objects = (manifest as { objects?: Array<{ bucket_id: string; name: string }> } | null)?.objects
   if (!Array.isArray(objects)) redirect('/conta/configuracoes?erro=storage')
 
-  // Os objectos são removidos pela Storage API (nunca por DELETE em storage.objects).
-  // A chave privilegiada só é lida nesta Server Action e nunca é enviada ao browser.
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const storageSecret = process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY
-  if (!supabaseUrl || !storageSecret) {
-    console.error('Falta configurar SUPABASE_SECRET_KEY ou SUPABASE_SERVICE_ROLE_KEY para a limpeza de Storage.')
-    redirect('/conta/configuracoes?erro=storage')
-  }
-
-  const storageAdmin = createClient(supabaseUrl, storageSecret, {
-    auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
-  })
-  const porBucket = new Map<string, Set<string>>()
-  for (const object of objects) {
-    if (!object || typeof object.bucket_id !== 'string' || typeof object.name !== 'string') {
+  if (objects.length > 0) {
+    // Os objectos são removidos pela Storage API (nunca por DELETE em storage.objects).
+    // A chave privilegiada só é lida nesta Server Action e nunca é enviada ao browser.
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const storageSecret = process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY
+    if (!supabaseUrl || !storageSecret) {
+      console.error('Falta configurar SUPABASE_SECRET_KEY ou SUPABASE_SERVICE_ROLE_KEY para a limpeza de Storage.')
       redirect('/conta/configuracoes?erro=storage')
     }
-    const paths = porBucket.get(object.bucket_id) ?? new Set<string>()
-    paths.add(object.name)
-    porBucket.set(object.bucket_id, paths)
-  }
 
-  for (const [bucket, pathsSet] of porBucket) {
-    const paths = [...pathsSet]
-    for (let offset = 0; offset < paths.length; offset += 1000) {
-      const { error } = await storageAdmin.storage.from(bucket).remove(paths.slice(offset, offset + 1000))
-      if (error) {
-        console.error('Erro ao remover ficheiros de Storage:', { bucket, error })
+    const storageAdmin = createClient(supabaseUrl, storageSecret, {
+      auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
+    })
+    const porBucket = new Map<string, Set<string>>()
+    for (const object of objects) {
+      if (!object || typeof object.bucket_id !== 'string' || typeof object.name !== 'string') {
         redirect('/conta/configuracoes?erro=storage')
+      }
+      const paths = porBucket.get(object.bucket_id) ?? new Set<string>()
+      paths.add(object.name)
+      porBucket.set(object.bucket_id, paths)
+    }
+
+    for (const [bucket, pathsSet] of porBucket) {
+      const paths = [...pathsSet]
+      for (let offset = 0; offset < paths.length; offset += 1000) {
+        const { error } = await storageAdmin.storage.from(bucket).remove(paths.slice(offset, offset + 1000))
+        if (error) {
+          console.error('Erro ao remover ficheiros de Storage:', { bucket, error })
+          redirect('/conta/configuracoes?erro=storage')
+        }
       }
     }
   }
