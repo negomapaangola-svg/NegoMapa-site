@@ -111,6 +111,9 @@ function LoginForm() {
         provider: 'google',
         options: {
           redirectTo: callbackUrl.toString(),
+          queryParams: {
+            prompt: 'select_account',
+          },
         },
       })
 
@@ -140,13 +143,13 @@ function LoginForm() {
       )}
 
       {searchParams.get("erro") === "confirmacao" && !error && (
-        <div className="mb-4 p-3 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded-[4px] text-sm">
+        <div className="mb-4 p-3 bg-red-100 dark:bg-red-100 text-red-800 dark:text-red-200 rounded-[4px] text-sm">
           Não foi possível confirmar o seu email. Tente novamente ou crie a conta de novo.
         </div>
       )}
 
       {searchParams.get("mensagem") === "senha-atualizada" && !error && (
-        <div className="mb-4 rounded-[4px] bg-green-100 p-3 text-sm text-green-800 dark:bg-green-900 dark:text-green-200">
+        <div className="mb-4 rounded-[4px] bg-green-100 p-3 text-sm text-green-800 dark:bg-green-900 dark:text-green-100">
           A sua senha foi atualizada com sucesso. Entre com a nova senha.
         </div>
       )}
