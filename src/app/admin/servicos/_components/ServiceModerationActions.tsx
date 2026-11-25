@@ -1,7 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { approveService, rejectService, suspendService, reactivateService } from '@/lib/actions/servicos';
+import { eliminarConteudoAdmin } from '@/lib/actions/admin-eliminacao';
 import { Button } from '@/components/ui/Button';
 import { ActionResult } from '@/lib/actions/servicos';
 
@@ -15,7 +17,9 @@ interface ServiceModerationActionsProps {
 }
 
 export function ServiceModerationActions({ serviceId, serviceTitulo, currentEstado, onStateChange }: ServiceModerationActionsProps) {
+  const router = useRouter();
   const [isPending, setIsPending] = useState(false);
+  const [eliminado, setEliminado] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -33,9 +37,7 @@ export function ServiceModerationActions({ serviceId, serviceTitulo, currentEsta
     if (isPending) return;
 
     if (requiresConfirmation) {
-      const confirmed = window.confirm(
-        `Tem a certeza que deseja ${actionLabel.toLowerCase()} o serviço "${serviceTitulo}"?`
-      );
+      const confirmed = window.confirm(`Tem a certeza que deseja ${actionLabel.toLowerCase()} o serviço "${serviceTitulo}"?`);
       if (!confirmed) return;
     }
 
@@ -43,7 +45,6 @@ export function ServiceModerationActions({ serviceId, serviceTitulo, currentEsta
     setIsPending(true);
 
     const result: ActionResult = await action(serviceId);
-
     setIsPending(false);
 
     if (result.success) {
@@ -55,113 +56,46 @@ export function ServiceModerationActions({ serviceId, serviceTitulo, currentEsta
     }
   };
 
-  if (currentEstado === 'pendente') {
-    return (
-      <div className="flex items-center gap-2">
-        {error && (
-          <div className="text-red-600 dark:text-red-400 text-sm" role="alert">
-            {error}
-          </div>
-        )}
-        {success && (
-          <div className="text-green-600 dark:text-green-400 text-sm" role="status">
-            {success}
-          </div>
-        )}
-        <Button
-          variant="primary"
-          size="sm"
-          disabled={isPending}
-          onClick={() => handleAction(approveService, 'aprovado', 'Aprovar', false)}
-        >
-          Aprovar
-        </Button>
-        <Button
-          variant="destructive"
-          size="sm"
-          disabled={isPending}
-          onClick={() => handleAction(rejectService, 'rejeitado', 'Rejeitar', true)}
-        >
-          Rejeitar
-        </Button>
-      </div>
-    );
-  }
+  const eliminar = async () => {
+    if (isPending) return;
+    if (!window.confirm('Tem certeza? Esta ação não pode ser revertida.')) return;
 
-  if (currentEstado === 'aprovado') {
-    return (
-      <div className="flex items-center gap-2">
-        {error && (
-          <div className="text-red-600 dark:text-red-400 text-sm" role="alert">
-            {error}
-          </div>
-        )}
-        {success && (
-          <div className="text-green-600 dark:text-green-400 text-sm" role="status">
-            {success}
-          </div>
-        )}
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={isPending}
-          onClick={() => handleAction(suspendService, 'suspenso', 'Suspender', true)}
-        >
-          Suspender
-        </Button>
-      </div>
-    );
-  }
+    clearMessages();
+    setIsPending(true);
+    const result = await eliminarConteudoAdmin('servico', serviceId);
+    setIsPending(false);
 
-  if (currentEstado === 'rejeitado') {
-    return (
-      <div className="flex items-center gap-2">
-        {error && (
-          <div className="text-red-600 dark:text-red-400 text-sm" role="alert">
-            {error}
-          </div>
-        )}
-        {success && (
-          <div className="text-green-600 dark:text-green-400 text-sm" role="status">
-            {success}
-          </div>
-        )}
-        <Button
-          variant="primary"
-          size="sm"
-          disabled={isPending}
-          onClick={() => handleAction(approveService, 'aprovado', 'Aprovar', false)}
-        >
-          Aprovar
-        </Button>
-      </div>
-    );
-  }
+    if (result.success) {
+      setEliminado(true);
+      router.refresh();
+    } else {
+      setError(result.error || 'Erro ao eliminar serviço.');
+    }
+  };
 
-  if (currentEstado === 'suspenso') {
-    return (
-      <div className="flex items-center gap-2">
-        {error && (
-          <div className="text-red-600 dark:text-red-400 text-sm" role="alert">
-            {error}
-          </div>
-        )}
-        {success && (
-          <div className="text-green-600 dark:text-green-400 text-sm" role="status">
-            {success}
-          </div>
-        )}
-        <Button
-          variant="primary"
-          size="sm"
-          disabled={isPending}
-          onClick={() => handleAction(reactivateService, 'aprovado', 'Reativar', false)}
-        >
-          Reativar
-        </Button>
-      </div>
-    );
-  }
+  if (eliminado) return null;
 
-  return null;
+  const acoes = currentEstado === 'pendente' ? (
+    <>
+      <Button variant="primary" size="sm" disabled={isPending} onClick={() => handleAction(approveService, 'aprovado', 'Aprovar', false)}>Aprovar</Button>
+      <Button variant="destructive" size="sm" disabled={isPending} onClick={() => handleAction(rejectService, 'rejeitado', 'Rejeitar', true)}>Rejeitar</Button>
+    </>
+  ) : currentEstado === 'aprovado' ? (
+    <Button variant="outline" size="sm" disabled={isPending} onClick={() => handleAction(suspendService, 'suspenso', 'Suspender', true)}>Suspender</Button>
+  ) : currentEstado === 'rejeitado' ? (
+    <Button variant="primary" size="sm" disabled={isPending} onClick={() => handleAction(approveService, 'aprovado', 'Aprovar', false)}>Aprovar</Button>
+  ) : currentEstado === 'suspenso' ? (
+    <Button variant="primary" size="sm" disabled={isPending} onClick={() => handleAction(reactivateService, 'aprovado', 'Reativar', false)}>Reativar</Button>
+  ) : null;
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      {error && <div className="text-red-600 dark:text-red-400 text-sm" role="alert">{error}</div>}
+      {success && <div className="text-green-600 dark:text-green-400 text-sm" role="status">{success}</div>}
+      {acoes}
+      <Button variant="destructive" size="sm" disabled={isPending} onClick={eliminar}>
+        {isPending ? 'A eliminar…' : 'Eliminar'}
+      </Button>
+    </div>
+  );
 }
