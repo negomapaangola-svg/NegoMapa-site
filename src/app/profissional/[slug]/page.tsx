@@ -133,7 +133,7 @@ export default async function ProfissionalPublicoPage({ params }: { params: Para
     ? `${dados.anos_experiencia} ${dados.anos_experiencia === 1 ? 'ano' : 'anos'} de experiência`
     : 'Experiência não indicada';
   const precoInicial = dados.faixa_preco_desde != null
-    ? `A partir de ${formatCurrency(dados.faixa_preco_desde)}`
+    ? `A partir de ${formatCurrency(Number(dados.faixa_preco_desde))}`
     : 'Preço sob consulta';
   const disponibilidade = dados.disponibilidade_dias?.length
     ? 'Agenda indicada'
