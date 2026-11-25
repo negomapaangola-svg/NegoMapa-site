@@ -5,6 +5,11 @@ import { redirect } from 'next/navigation'
 
 export async function logoutAction() {
   const supabase = await createSupabaseServerClient()
-  await supabase.auth.signOut()
+  const { error } = await supabase.auth.signOut()
+
+  if (error) {
+    redirect('/?erro=terminar-sessao')
+  }
+
   redirect('/')
 }
