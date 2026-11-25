@@ -51,3 +51,4 @@
 20261123230000_fase4_conversao_conta_cliente.sql|20261124040535|a migração já foi aplicada no Supabase com outra versão gerada pela ferramenta de aplicação
 20261124054600_fase4_corrigir_conversao_empresa.sql|20261124045625|a migração já foi aplicada no Supabase como fase4_corrigir_conversao_empresa_v2 com outra versão gerada pela ferramenta de aplicação
 20261124054600_fase4_corrigir_conversao_empresa.sql|20261125124008|a migração foi aplicada na produção como fase4_corrigir_conversao_empresa_v3; prefixo do ficheiro anterior à versão remota
+20261125090000_fase5_conclusao_obrigatoria_perfil.sql|20261125131431|aplicada na produção pela ferramenta Supabase; versão remota gerada difere do prefixo do ficheiro; SHA-256 normalizado confirmado
