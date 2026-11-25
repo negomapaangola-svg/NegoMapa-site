@@ -33,11 +33,15 @@ type ContaProfessional = {
   disponibilidade: string | null
   disponibilidade_dias: string[] | null
   disponibilidade_horarios: Record<string, boolean> | null
+  experiencia_faixa: string | null
+  profile_completed_at: string | null
   portfolio: unknown
 }
 type ContaCompany = {
   id: string
   name: string
+  email: string | null
+  profile_completed_at: string | null
   sector: string
   province: string
   city: string | null
@@ -117,6 +121,9 @@ export async function getContaSnapshot(): Promise<ContaSnapshot | null> {
     }
     const row = Array.isArray(data) ? data[0] : data
     professional = (row as ContaProfessional | null) ?? null
+    const { data: completion, error: completionError } = await supabase.rpc('get_my_profile_completion')
+    if (completionError) throw new Error('Não foi possível carregar os dados de conclusão do perfil.')
+    if (professional) professional = { ...professional, experiencia_faixa: completion?.experiencia_faixa ?? null, profile_completed_at: completion?.profile_completed_at ?? null }
   } else if (accountType === 'empresa') {
     const { data, error } = await supabase.rpc('get_my_company_profile')
     if (error) {
@@ -125,6 +132,9 @@ export async function getContaSnapshot(): Promise<ContaSnapshot | null> {
     }
     const row = Array.isArray(data) ? data[0] : data
     company = (row as ContaCompany | null) ?? null
+    const { data: completion, error: completionError } = await supabase.rpc('get_my_profile_completion')
+    if (completionError) throw new Error('Não foi possível carregar os dados de conclusão do perfil.')
+    if (company) company = { ...company, email: completion?.email ?? null, profile_completed_at: completion?.profile_completed_at ?? null }
   }
 
   return {
@@ -249,7 +259,7 @@ function portfolioWithImageRefs(existing: unknown, refs: string[], bucket: strin
 
 async function ownedCompany(supabase: ServerSupabase, userId: string) {
   const { data, error } = await supabase.from('companies')
-    .select('id,name,logo_url,portfolio,is_approved,created_at')
+    .select('id,name,sector,province,city,description,email,phone,whatsapp,logo_url,portfolio,is_approved,estado,profile_completed_at,created_at')
     .eq('user_id', userId)
     .order('is_approved', { ascending: false, nullsFirst: false })
     .order('created_at', { ascending: true })
@@ -403,13 +413,20 @@ export async function guardarPerfilConta(form: FormData): Promise<void> {
       try { portfolio = JSON.parse(portfolioRaw) } catch { redirect('/conta/perfil?erro=portfolio') }
       if (!validPortfolioItems(portfolio, 'profissionais-portfolio', user.id)) redirect('/conta/perfil?erro=portfolio')
     }
-    const { data: owned } = await supabase.from('profissionais').select('id').eq('user_id', user.id).maybeSingle()
+    const { data: owned } = await supabase.from('profissionais').select('id,nome,categoria_id,provincia,municipio,experiencia_faixa,bio,telefone,whatsapp').eq('user_id', user.id).maybeSingle()
     if (!owned) redirect('/conta/perfil?erro=sem-perfil')
+    const categoriaId = field(form, 'categoria_id') || null
+    const provincia = field(form, 'provincia') || null
+    const municipio = field(form, 'municipio') || null
+    const experiencia = field(form, 'experiencia_faixa') || null
+    const bio = field(form, 'bio') || null
+    const requiredChanged = owned.nome !== nome || owned.categoria_id !== categoriaId || owned.provincia !== provincia || owned.municipio !== municipio || owned.experiencia_faixa !== experiencia || owned.bio !== bio || owned.telefone !== (telefone || null) || owned.whatsapp !== (whatsapp || null)
     const { data: actualizado, error } = await supabase.from('profissionais').update({
-      nome, telefone: telefone || null, whatsapp: whatsapp || null, bio: field(form, 'bio') || null,
-      provincia: field(form, 'provincia') || null, municipio: field(form, 'municipio') || null, bairro: field(form, 'bairro') || null,
-      categoria_id: field(form, 'categoria_id') || null, especialidades,
+      nome, telefone: telefone || null, whatsapp: whatsapp || null, bio,
+      provincia, municipio, bairro: field(form, 'bairro') || null,
+      categoria_id: categoriaId, experiencia_faixa: experiencia, especialidades,
       disponibilidade: field(form, 'disponibilidade') || null, avatar_url: avatar || null, portfolio,
+      ...(requiredChanged ? { profile_completed_at: null } : {}),
     }).eq('user_id', user.id).select('id').maybeSingle()
     if (error || !actualizado) redirect('/conta/perfil?erro=guardar')
   } else if (tipo === 'empresa') {
@@ -423,12 +440,19 @@ export async function guardarPerfilConta(form: FormData): Promise<void> {
     }
     const owned = await ownedCompany(supabase, user.id)
     if (!owned) redirect('/conta/perfil?erro=sem-perfil')
+    const sector = field(form, 'sector')
+    const province = field(form, 'province')
+    const city = field(form, 'city')
+    const description = field(form, 'description')
+    const email = field(form, 'email').toLowerCase()
+    const requiredChanged = owned.name !== nome || owned.sector !== sector || owned.province !== province || owned.city !== (city || null) || owned.description !== (description || null) || owned.email !== (email || null) || owned.phone !== (telefone || null) || owned.whatsapp !== (whatsapp || null)
     const { data: actualizado, error } = await supabase.from('companies').update({
-      name: nome, sector: field(form, 'sector') || 'Geral', phone: telefone || null,
-      whatsapp: whatsapp || null, province: field(form, 'province') || '', city: field(form, 'city') || null,
+      name: nome, sector: sector || 'Geral', email: email || null, phone: telefone || null,
+      whatsapp: whatsapp || null, province: province || '', city: city || null,
       bairro: field(form, 'bairro') || null, rua: field(form, 'rua') || null, referencia_localizacao: field(form, 'referencia_localizacao') || null, website: field(form, 'website') || null,
-      description: field(form, 'description') || null, horario_atendimento: field(form, 'disponibilidade') || null,
+      description: description || null, horario_atendimento: field(form, 'disponibilidade') || null,
       logo_url: logo || null, portfolio,
+      ...(requiredChanged ? { profile_completed_at: null } : {}),
     }).eq('id', owned.id).eq('user_id', user.id).select('id').maybeSingle()
     if (error || !actualizado) redirect('/conta/perfil?erro=guardar')
   } else {
@@ -476,10 +500,18 @@ export async function guardarPerfilConta(form: FormData): Promise<void> {
     await cleanupUnreferencedImages(supabase, 'clientes-avatars', oldAvatarRefs, imageRefs(current?.avatar_url, 'clientes-avatars', user.id))
   }
 
+  if (field(form, 'intent') === 'complete' && (tipo === 'profissional' || tipo === 'empresa')) {
+    const { data: completion, error: completionError } = await supabase.rpc('complete_my_profile', { p_profile_type: tipo })
+    if (completionError || completion?.completed !== true) {
+      console.error('Erro ao concluir perfil. Código:', completionError?.code)
+      redirect('/conta/perfil?erro=complete')
+    }
+  }
+
   revalidatePath('/conta')
   revalidatePath('/conta/perfil')
   revalidatePath('/perfil')
-  redirect('/conta/perfil?salvo=1')
+  redirect(field(form, 'intent') === 'complete' ? '/conta/perfil?concluido=1' : '/conta/perfil?salvo=1')
 }
 
 export async function getContaConteudo() {
