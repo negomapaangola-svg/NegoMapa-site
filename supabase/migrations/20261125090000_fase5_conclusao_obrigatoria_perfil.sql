@@ -37,7 +37,7 @@ declare
   v_type text;
   v_result jsonb;
 begin
-  if v_user is null then
+  if v_user is null or public.is_admin() then
     raise exception 'Sessão inválida' using errcode = '42501';
   end if;
 
@@ -100,7 +100,7 @@ declare
   v_missing text[] := array[]::text[];
   v_email text;
 begin
-  if v_user is null then
+  if v_user is null or public.is_admin() then
     raise exception 'Sessão inválida' using errcode = '42501';
   end if;
 
