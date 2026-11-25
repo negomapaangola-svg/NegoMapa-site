@@ -27,7 +27,7 @@ export default async function RegistarPage({
   return (
     <MainLayout>
       <section className="py-12 lg:py-16 bg-cream dark:bg-navy-dark">
-        <div className="mx-auto max-w-md px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-2xl px-4 sm:px-6 lg:px-8">
           <RegistarForm destino={destino} />
         </div>
       </section>
