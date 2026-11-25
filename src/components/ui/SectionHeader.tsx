@@ -18,8 +18,8 @@ export function SectionHeader({ title, description, action, className, ...props 
       {...props}
     >
       <div>
-        <h2 className="text-xl font-bold text-neutral-900">{title}</h2>
-        {description && <p className="mt-1 max-w-2xl text-sm text-neutral-500">{description}</p>}
+        <h2 className="text-xl font-bold text-neutral-900 dark:text-cream">{title}</h2>
+        {description && <p className="mt-1 max-w-2xl text-sm text-neutral-500 dark:text-cream-text/70">{description}</p>}
       </div>
       {action && <div className="shrink-0">{action}</div>}
     </div>
