@@ -400,7 +400,7 @@ export async function guardarPerfilConta(form: FormData): Promise<void> {
   const nome = field(form, 'nome')
   const telefone = field(form, 'telefone')
   const whatsapp = field(form, 'whatsapp')
-  if (nome.length < 2 || nome.length > 120 || /[<>]/.test(nome)) redirect('/conta/perfil?erro=nome')
+  if (nome.length < 2 || nome.length > (tipo === 'empresa' ? 160 : 120) || /[<>]/.test(nome)) redirect('/conta/perfil?erro=nome')
   if (telefone.length > 32 || whatsapp.length > 32) redirect('/conta/perfil?erro=contacto')
 
   if (tipo === 'profissional') {
