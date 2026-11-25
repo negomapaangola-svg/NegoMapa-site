@@ -214,6 +214,55 @@ export async function escolherTipoConta(tipo: unknown) {
       }
     }
 
+    // Cria um registo provisório para contas de empresa ou profissional,
+    // permitindo que o utilizador preencha os dados reais no painel da conta.
+    if (tipo === 'empresa') {
+      const { data: empresaExistente } = await admin
+        .from('companies')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle()
+
+      if (!empresaExistente) {
+        const { error: empresaError } = await admin.from('companies').insert({
+          user_id: user.id,
+          name: 'Empresa por confirmar',
+          slug: `empresa-${crypto.randomUUID().slice(0, 8)}`,
+          sector: 'Geral',
+          province: 'Luanda',
+          estado: 'pendente',
+          is_approved: false,
+        })
+
+        if (empresaError) {
+          console.error('Erro ao criar perfil provisório de empresa. Código:', empresaError.code)
+          return { ok: false, message: 'A conta foi criada, mas não foi possível preparar o perfil de empresa. Contacte o apoio.' }
+        }
+      }
+    }
+
+    if (tipo === 'profissional') {
+      const { data: profissionalExistente } = await admin
+        .from('profissionais')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle()
+
+      if (!profissionalExistente) {
+        const { error: profissionalError } = await admin.from('profissionais').insert({
+          user_id: user.id,
+          nome: 'Profissional por confirmar',
+          slug: `profissional-${crypto.randomUUID().slice(0, 8)}`,
+          estado: 'pendente',
+        })
+
+        if (profissionalError) {
+          console.error('Erro ao criar perfil provisório de profissional. Código:', profissionalError.code)
+          return { ok: false, message: 'A conta foi criada, mas não foi possível preparar o perfil de profissional. Contacte o apoio.' }
+        }
+      }
+    }
+
     revalidatePath('/', 'layout')
     revalidatePath('/perfil')
     revalidatePath('/escolher-tipo')
