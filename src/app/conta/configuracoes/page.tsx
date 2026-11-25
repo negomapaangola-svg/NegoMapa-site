@@ -20,8 +20,8 @@ export default async function ContaConfiguracoesPage({ searchParams }: { searchP
   const messages: Record<string, string> = {
     nome: 'Verifique o nome introduzido.', contacto: 'Verifique os contactos.', avatar: 'É necessária uma imagem válida do armazenamento NegóMapa.',
     notificacoes: 'Não foi possível guardar as preferências.', password: 'A palavra-passe deve ter pelo menos 10 caracteres e as confirmações devem coincidir.',
-    confirmacao: 'Escreva ELIMINAR para confirmar o pedido.', motivo: 'Indique um motivo entre 10 e 1000 caracteres.', pedido: 'Não foi possível enviar o pedido ao administrador.',
-    estado: 'Não foi possível alterar o estado da conta.', conversao: 'Não foi possível converter a conta. Verifique os dados e tente novamente.',
+    confirmacao: 'Escreva exactamente ELIMINAR para confirmar.', motivo: 'Indique um motivo entre 10 e 1000 caracteres.', pedido: 'Não foi possível enviar o pedido ao administrador.',
+    estado: 'Não foi possível alterar o estado da conta.', storage: 'Não foi possível remover todos os ficheiros associados. A conta continua pendente de eliminação; tente novamente ou contacte o administrador.', conversao: 'Não foi possível converter a conta. Verifique os dados e tente novamente.',
   }
   const error = typeof params.erro === 'string' ? messages[params.erro] : null
   return <section className="space-y-5">
@@ -85,9 +85,9 @@ export default async function ContaConfiguracoesPage({ searchParams }: { searchP
     </section>
 
     <section id="apagar-conta" className="space-y-3 rounded-2xl border border-red-300 bg-white p-5 dark:border-red-900 dark:bg-slate-900">
-      <div><h2 className="font-semibold text-red-700 dark:text-red-300">Zona de perigo</h2><p className="text-sm text-slate-600 dark:text-slate-300">A eliminação é permanente e não pode ser desfeita. Primeiro crie o pedido e depois confirme escrevendo ELIMINAR.</p></div>
-      {status !== 'pending_deletion' && status !== 'deleted' && <form action={pedirEliminacaoPropria}><button className="inline-flex min-h-11 items-center rounded-xl border border-red-300 px-4 text-sm font-semibold text-red-700 hover:bg-red-50 dark:border-red-900 dark:text-red-300 dark:hover:bg-red-950/30">Pedir eliminação da conta</button></form>}
-      {status === 'pending_deletion' && <form action={confirmarEliminacaoPropria} className="space-y-3"><label className="block space-y-1.5 text-sm font-medium">Escreva ELIMINAR para confirmar<input name="confirmacao" required autoComplete="off" className="min-h-11 w-full rounded-xl border border-red-300 bg-white px-3 dark:border-red-900 dark:bg-slate-950" /></label><button className="inline-flex min-h-11 items-center rounded-xl bg-red-700 px-4 text-sm font-semibold text-white hover:bg-red-800">Eliminar definitivamente</button></form>}
+      <div><h2 className="font-semibold text-red-700 dark:text-red-300">Zona de perigo</h2><p className="text-sm text-slate-600 dark:text-slate-300">A eliminação é permanente e não pode ser desfeita. Primeiro peça a eliminação e depois confirme escrevendo exactamente ELIMINAR. Os ficheiros, perfis e conteúdos associados serão removidos; as avaliações serão preservadas, sem identificação da conta eliminada.</p></div>
+      {status !== 'pending_deletion' && status !== 'deleted' && <form action={pedirEliminacaoPropria}><button className="inline-flex min-h-11 items-center rounded-xl border border-red-300 px-4 text-sm font-semibold text-red-700 hover:bg-red-50 dark:border-red-900 dark:text-red-300 dark:hover:bg-red-950/30">Eliminar minha conta</button></form>}
+      {status === 'pending_deletion' && <form action={confirmarEliminacaoPropria} className="space-y-3"><label className="block space-y-1.5 text-sm font-medium">Escreva ELIMINAR para confirmar<input name="confirmacao" required autoComplete="off" className="min-h-11 w-full rounded-xl border border-red-300 bg-white px-3 dark:border-red-900 dark:bg-slate-950" /></label><button className="inline-flex min-h-11 items-center rounded-xl bg-red-700 px-4 text-sm font-semibold text-white hover:bg-red-800">Confirmar eliminação permanente</button></form>}
       {status === 'deleted' && <p className="text-sm text-red-700 dark:text-red-300">Esta conta foi eliminada e não pode ser restaurada.</p>}
     </section>
   </section>
