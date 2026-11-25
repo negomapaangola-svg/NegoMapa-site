@@ -1,5 +1,6 @@
 -- Eliminação permanente e completa da conta própria.
 -- Mantém avaliações e auditoria; não altera RLS nem políticas de leitura pública.
+-- O estado 'deleted' e a auditoria são registados antes da remoção de auth.users.
 begin;
 
 alter table public.avaliacoes alter column user_id drop not null;
