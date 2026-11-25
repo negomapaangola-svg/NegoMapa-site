@@ -130,7 +130,10 @@ begin
   delete from public.pedidos_servico p where p.cliente_id = v_user
     or p.profissional_id = any(v_professional_ids) or p.servico_id = any(v_service_ids);
 
-  delete from public.mensagem_anexos a where a.remetente_id = v_user or a.conversa_id = any(v_conversation_ids);
+  if to_regclass('public.mensagem_anexos') is not null then
+    execute 'delete from public.mensagem_anexos where remetente_id = $1 or conversa_id = any($2)'
+      using v_user, v_conversation_ids;
+  end if;
   delete from public.mensagens m where m.remetente_id = v_user or m.conversa_id = any(v_conversation_ids);
   delete from public.conversas c where c.id = any(v_conversation_ids);
 
