@@ -83,33 +83,39 @@ export async function criarEmpresaPendente(dados: DadosEmpresaPendente) {
   if ((dados.bairro ?? '').length > 120 || (dados.descricao ?? '').length > 2000 || (dados.website ?? '').length > 500 ||
       (dados.nif ?? '').length > 40) return { success: false, error: 'Um ou mais campos excedem o limite permitido.' }
 
-  const { error } = await supabase.from('companies').insert({
-    user_id: user.id,
-    name: nome,
-    slug,
-    sector: setor,
-    province: provincia,
-    city: municipio,
-    bairro: dados.bairro?.trim() || null,
-    description: dados.descricao?.trim() || null,
-    phone: telefone,
-    whatsapp,
-    email,
-    website: dados.website?.trim() || null,
-    logo_url: dados.logoPath || null,
-    nif: dados.legalizada ? (dados.nif?.trim() || null) : null,
-    estado_legalizacao: dados.legalizada ? 'legalizada' : null,
-    documento_legalizacao_path: dados.legalizada ? (dados.documentoPath || null) : null,
-    is_approved: false,
+  const { data, error } = await supabase.rpc('criar_empresa_cliente', {
+    p_dados: {
+      nome,
+      slug,
+      setor,
+      provincia,
+      municipio,
+      bairro: dados.bairro?.trim() || null,
+      descricao: dados.descricao?.trim() || null,
+      telefone,
+      whatsapp,
+      email,
+      website: dados.website?.trim() || null,
+      logoPath: dados.logoPath || null,
+      nif: dados.legalizada ? (dados.nif?.trim() || null) : null,
+      legalizada: Boolean(dados.legalizada),
+      documentoPath: dados.legalizada ? (dados.documentoPath || null) : null,
+    },
   })
+
   if (error) {
+    if (error.message?.includes('já tem um perfil profissional ou empresarial associado')) {
+      return { success: false, error: 'Esta conta já tem um perfil profissional ou empresarial associado.' }
+    }
     if (error.code === '23505') return { success: false, error: 'Já existe um registo semelhante ou uma empresa associada a esta conta.' }
     console.error('Erro ao criar empresa pendente. Código:', error.code)
     return { success: false, error: 'Não foi possível registar a empresa. Verifique os dados e tente novamente.' }
   }
+
   revalidatePath('/perfil')
   revalidatePath('/cadastrar-empresa')
-  return { success: true }
+  revalidatePath('/conta')
+  return { success: true, companyId: data }
 }
 
 export async function converterContaCliente(formData: FormData) {
