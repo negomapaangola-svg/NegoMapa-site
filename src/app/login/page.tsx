@@ -25,11 +25,11 @@ function GoogleIcon() {
       />
       <path
         fill="#FBBC05"
-        d="M5.27 14.29A7.2 7.2 0 0 1 4.89 12c0-.79.14-1.56.38-2.29V6.62H1.29a11.97 11.97 0 0 0 0 10.76l3.98-3.09z"
+        d="M5.27 14.29c0-1.56.38-3.04 1.06-4.34L2.36 5.9A11.97 11.97 0 0 0 1.29 12c0 2.09.54 4.06 1.48 5.78l3.98-3.09c-.31-.89-.48-1.85-.48-2.85z"
       />
       <path
         fill="#EA4335"
-        d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.69 1.29 6.62l3.98 3.09C6.22 6.86 8.87 4.75 12 4.75z"
+        d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.29 15.24 0 12 0 7.31 0 3.26 2.69 1.29 6.62l3.98 3.09C6.22 6.86 8.87 4.75 12 4.75z"
       />
     </svg>
   )
@@ -104,8 +104,8 @@ function LoginForm() {
       </p>
 
       {searchParams.get("erro") === "conta-desactivada" && !error && (
-        <div role="alert" className="mb-4 rounded-[4px] bg-red-100 p-3 text-sm text-red-800 dark:bg-red-900 dark:text-red-200">
-          Esta conta está desactivada. Contacte a administração da plataforma.
+        <div role="alert" className="mb-4 rounded-[4px] bg-amber-100 p-3 text-sm text-amber-900 dark:bg-amber-900 dark:text-amber-100">
+          A sua conta está desativada. Pode reativá-la na sua área de conta.
         </div>
       )}
 

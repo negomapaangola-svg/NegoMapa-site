@@ -52,8 +52,7 @@ export async function loginAction(formData: FormData) {
   }
 
   if (status === 'pending_deletion') {
-    await supabase.auth.signOut({ scope: 'local' })
-    return { error: 'Esta conta tem uma eliminação pendente. Entre nas configurações para confirmar ou cancelar.' }
+    redirect('/conta/configuracoes?pedido=1')
   }
 
   if (status === 'deleted') {
