@@ -204,6 +204,8 @@ begin
   delete from public.companies c where c.id = any(v_company_ids);
   delete from public.profissionais p where p.id = any(v_professional_ids);
 
+  delete from public.profiles p where p.id = v_user;
+
   delete from auth.users u where u.id = v_user;
   if not found then raise exception 'Não foi possível remover o utilizador de autenticação' using errcode = 'P0002'; end if;
 
