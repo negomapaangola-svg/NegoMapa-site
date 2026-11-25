@@ -47,7 +47,6 @@ declare
   v_product_ids uuid[] := array[]::uuid[];
   v_vacancy_ids uuid[] := array[]::uuid[];
   v_conversation_ids uuid[] := array[]::uuid[];
-  v_prefixes text[];
   v_objects jsonb;
 begin
   if v_user is null or exists (select 1 from public.admin_users a where a.user_id = v_user) then
@@ -66,28 +65,19 @@ begin
   from public.servicos s
   where s.profissional_id = any(v_professional_ids) or s.company_id = any(v_company_ids);
   select coalesce(array_agg(p.id), array[]::uuid[]) into v_product_ids
-  from public.produtos p where p.company_id = any(v_company_ids) or p.criado_por = v_user;
+  from public.produtos p where p.company_id = any(v_company_ids);
   select coalesce(array_agg(v.id), array[]::uuid[]) into v_vacancy_ids
   from public.vagas v where v.company_id = any(v_company_ids);
   select coalesce(array_agg(c.id), array[]::uuid[]) into v_conversation_ids
   from public.conversas c
   where c.cliente_id = v_user or c.profissional_id = any(v_professional_ids) or c.empresa_id = any(v_company_ids);
 
-  v_prefixes := array[v_user::text]
-    || coalesce((select array_agg(x::text) from unnest(v_professional_ids) x), array[]::text[])
-    || coalesce((select array_agg(x::text) from unnest(v_company_ids) x), array[]::text[])
-    || coalesce((select array_agg(x::text) from unnest(v_service_ids) x), array[]::text[])
-    || coalesce((select array_agg(x::text) from unnest(v_product_ids) x), array[]::text[])
-    || coalesce((select array_agg(x::text) from unnest(v_vacancy_ids) x), array[]::text[])
-    || coalesce((select array_agg(x::text) from unnest(v_conversation_ids) x), array[]::text[]);
-
   select coalesce(jsonb_agg(jsonb_build_object('bucket_id', o.bucket_id, 'name', o.name)
       order by o.bucket_id, o.name), '[]'::jsonb)
     into v_objects
   from storage.objects o
   where o.owner_id = v_user::text
-     or o.owner = v_user
-     or split_part(o.name, '/', 1) = any(v_prefixes);
+     or o.owner = v_user;
 
   return jsonb_build_object('objects', v_objects);
 end;
@@ -140,7 +130,7 @@ begin
   from public.servicos s
   where s.profissional_id = any(v_professional_ids) or s.company_id = any(v_company_ids);
   select coalesce(array_agg(p.id), array[]::uuid[]) into v_product_ids
-  from public.produtos p where p.company_id = any(v_company_ids) or p.criado_por = v_user;
+  from public.produtos p where p.company_id = any(v_company_ids);
   select coalesce(array_agg(v.id), array[]::uuid[]) into v_vacancy_ids
   from public.vagas v where v.company_id = any(v_company_ids);
   select coalesce(array_agg(c.id), array[]::uuid[]) into v_conversation_ids
@@ -168,9 +158,7 @@ begin
        'vacancies', cardinality(v_vacancy_ids)));
 
   delete from public.denuncias d
-  where d.user_id = v_user or d.company_id = any(v_company_ids)
-     or d.profissional_id = any(v_professional_ids)
-     or d.servico_id = any(v_service_ids) or d.vaga_id = any(v_vacancy_ids);
+  where d.user_id = v_user;
 
   delete from public.candidaturas c where c.user_id = v_user or c.vaga_id = any(v_vacancy_ids);
 
@@ -191,7 +179,7 @@ begin
   delete from public.admin_messages m where m.id in (select id from mensagens_admin);
 
   delete from public.notificacoes n
-  where n.user_id = v_user or n.referencia_id = any(v_related_ids);
+  where n.user_id = v_user;
 
   delete from public.preferencias_notificacao p where p.user_id = v_user;
   delete from public.preferencias_cliente p where p.user_id = v_user;
