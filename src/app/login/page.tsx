@@ -35,9 +35,39 @@ function GoogleIcon() {
   )
 }
 
+function EyeIcon({ aberto }: { aberto: boolean }) {
+  return (
+    <svg
+      className="h-5 w-5"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {aberto ? (
+        <>
+          <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" />
+          <circle cx="12" cy="12" r="3" />
+        </>
+      ) : (
+        <>
+          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-10-8-10-8a18.45 18.45 0 0 1 5.06-5.94" />
+          <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 10 8 10 8a18.5 18.5 0 0 1-2.16 3.19" />
+          <path d="M14.12 14.12A3 3 0 1 1 9.88 9.88" />
+          <path d="m2 2 20 20" />
+        </>
+      )}
+    </svg>
+  )
+}
+
 function LoginForm() {
   const [email, setEmail] = React.useState("")
   const [password, setPassword] = React.useState("")
+  const [mostrarSenha, setMostrarSenha] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
   const [isLoading, setIsLoading] = React.useState(false)
   const [isGoogleLoading, setIsGoogleLoading] = React.useState(false)
@@ -95,8 +125,8 @@ function LoginForm() {
   }
 
   return (
-    <div className="max-w-md w-full bg-white rounded-[4px] p-8 shadow dark:bg-neutral-800 border border-card-border">
-      <h2 className="text-2xl font-bold text-center mb-2 text-ink dark:text-cream">
+    <div className="w-full max-w-2xl bg-white rounded-[4px] p-6 sm:p-10 shadow dark:bg-neutral-800 border border-card-border">
+      <h2 className="text-2xl sm:text-3xl font-bold text-center mb-2 text-ink dark:text-cream">
         Entrar
       </h2>
       <p className="text-center text-neutral-600 dark:text-cream-text mb-6">
@@ -149,14 +179,26 @@ function LoginForm() {
           <label className="block text-sm font-medium text-ink dark:text-cream mb-2">
             Senha
           </label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-3 py-2 border border-card-border rounded-[4px] shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-neutral-700 dark:text-cream"
-            required
-            disabled={isLoading}
-          />
+          <div className="relative">
+            <input
+              type={mostrarSenha ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-3 py-2 pr-11 border border-card-border rounded-[4px] shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-neutral-700 dark:text-cream"
+              required
+              disabled={isLoading}
+            />
+            <button
+              type="button"
+              onClick={() => setMostrarSenha((valor) => !valor)}
+              aria-label={mostrarSenha ? "Ocultar senha" : "Mostrar senha"}
+              aria-pressed={mostrarSenha}
+              className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex h-8 w-8 items-center justify-center rounded-[4px] text-neutral-500 transition-colors hover:text-orange-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:text-cream-text dark:hover:text-orange-400"
+              disabled={isLoading}
+            >
+              <EyeIcon aberto={mostrarSenha} />
+            </button>
+          </div>
         </div>
 
         <Button type="submit" className="w-full" disabled={isLoading}>
@@ -214,8 +256,8 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen p-8 bg-cream dark:bg-navy-dark flex items-center justify-center">
-      <React.Suspense fallback={<div className="max-w-md w-full bg-white rounded-[4px] p-8 shadow dark:bg-neutral-800 border border-card-border animate-pulse"><div className="h-8 bg-neutral-200 dark:bg-neutral-700 rounded w-3/4 mx-auto mb-6"></div><div className="space-y-4"><div className="h-10 bg-neutral-200 dark:bg-neutral-700 rounded"></div><div className="h-10 bg-neutral-200 dark:bg-neutral-700 rounded"></div><div className="h-12 bg-neutral-200 dark:bg-neutral-700 rounded"></div></div></div>}>
+    <div className="min-h-screen p-4 sm:p-8 bg-cream dark:bg-navy-dark flex items-center justify-center">
+      <React.Suspense fallback={<div className="w-full max-w-2xl bg-white rounded-[4px] p-6 sm:p-10 shadow dark:bg-neutral-800 border border-card-border animate-pulse"><div className="h-8 bg-neutral-200 dark:bg-neutral-700 rounded w-3/4 mx-auto mb-6"></div><div className="space-y-4"><div className="h-10 bg-neutral-200 dark:bg-neutral-700 rounded"></div><div className="h-10 bg-neutral-200 dark:bg-neutral-700 rounded"></div><div className="h-12 bg-neutral-200 dark:bg-neutral-700 rounded"></div></div></div>}>
         <LoginForm />
       </React.Suspense>
     </div>
