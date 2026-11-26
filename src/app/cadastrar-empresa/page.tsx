@@ -224,6 +224,8 @@ export default function CadastrarEmpresaPage() {
         provincia: d.provincia,
         municipio: d.municipio,
         bairro: d.bairro || null,
+        latitudeAproximada: d.latitudeAproximada,
+        longitudeAproximada: d.longitudeAproximada,
         descricao: d.descricao || null,
         telefone: d.telefone,
         whatsapp: d.mesmoNumeroWhatsapp ? d.telefone : d.whatsapp,
