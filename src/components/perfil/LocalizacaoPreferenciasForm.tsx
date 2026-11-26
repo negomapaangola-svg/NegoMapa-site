@@ -19,11 +19,13 @@ type Props = {
   consentimentoActualizadoEm: string | null
   categorias: Categoria[]
   preferenciasIniciais: string[]
+  /** Quando true, a província é obrigatória (usado em /cadastrar-cliente). */
+  obrigatoria?: boolean
 }
 
 export function LocalizacaoPreferenciasForm({
   provinciaInicial, municipioInicial, bairroInicial, consentimento,
-  consentimentoActualizadoEm, categorias, preferenciasIniciais,
+  consentimentoActualizadoEm, categorias, preferenciasIniciais, obrigatoria = false,
 }: Props) {
   const [provincia, setProvincia] = useState(provinciaInicial)
   const [municipio, setMunicipio] = useState(municipioInicial)
@@ -126,7 +128,7 @@ export function LocalizacaoPreferenciasForm({
         <p className="mt-1 text-sm text-neutral-600 dark:text-cream-text">Estes dados são privados e servem apenas para ordenar resultados por província e município.</p>
         <form onSubmit={guardarLocal} className="mt-4 grid gap-4 sm:grid-cols-2">
           <label className="text-sm font-medium">Província
-            <select value={provincia} onChange={(event) => setProvincia(event.target.value)} className="mt-1 w-full rounded-xl border border-card-border bg-white px-3 py-3 dark:bg-neutral-900">
+            <select value={provincia} required={obrigatoria} onChange={(event) => setProvincia(event.target.value)} className="mt-1 w-full rounded-xl border border-card-border bg-white px-3 py-3 dark:bg-neutral-900">
               <option value="">Seleccionar província</option>
               {PROVINCIAS.map((item) => <option key={item} value={item}>{item}</option>)}
             </select>
