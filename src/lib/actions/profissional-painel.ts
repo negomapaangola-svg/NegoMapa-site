@@ -205,7 +205,17 @@ export async function criarPerfilProfissional(dados: DadosCadastroProfissional):
     return { success: false, error: 'Não foi possível guardar o cadastro. Tente novamente.' }
   }
 
+  const { error: pedidoError } = await supabase.rpc('request_account_type_change', {
+    p_requested_type: 'profissional',
+    p_display_name: nome,
+  })
+  if (pedidoError) {
+    console.error('Perfil profissional criado, mas o pedido de mudança de tipo falhou. Código:', pedidoError.code)
+    return { success: false, error: 'O perfil ficou pendente, mas não foi possível enviar o pedido de mudança de tipo. Tente novamente nas configurações da conta.' }
+  }
+
   revalidatePath('/cadastrar-profissional')
   revalidatePath('/profissional/painel')
+  revalidatePath('/conta/configuracoes')
   return { success: true }
 }
