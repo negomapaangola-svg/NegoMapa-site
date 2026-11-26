@@ -14,6 +14,12 @@ export default async function ContaPerfilPage({searchParams}:{searchParams:Promi
  const [data,params]=await Promise.all([getContaSnapshot(),searchParams]); if(!data)return null
  const supabase=await createSupabaseServerClient()
  const {data:categorias}=await supabase.from('categorias').select('id,nome').eq('ativo',true).order('nome')
+ // Registos de profissional/empresa pendentes existem enquanto account_type é cliente; o snapshot só os carrega após aprovação.
+ const utilizadorId=(await supabase.auth.getUser()).data.user?.id ?? null
+ const profPendente=utilizadorId?(await supabase.from('profissionais').select('estado').eq('user_id',utilizadorId).maybeSingle()).data:null
+ const empPendente=utilizadorId?(await supabase.from('companies').select('is_approved,estado').eq('user_id',utilizadorId).maybeSingle()).data:null
+ const contaPendente=(profPendente!=null&&(profPendente.estado??'pendente')==='pendente')||(empPendente!=null&&!empPendente.is_approved&&(empPendente.estado??'pendente')==='pendente')
+ const tipoPendente:'profissional'|'empresa'=profPendente?'profissional':'empresa'
  const p=data.professional ?? ({} as NonNullable<typeof data.professional>), c=data.company ?? ({} as NonNullable<typeof data.company>), pro=data.accountType==='profissional', emp=data.accountType==='empresa'
  const name=pro?p.nome:emp?c.name:data.profile.nome
  let avatar=pro?p.avatar_url:emp?c.logo_url:data.profile.avatar_url
@@ -54,13 +60,11 @@ export default async function ContaPerfilPage({searchParams}:{searchParams:Promi
  const progress = totalRequired ? Math.round((completedRequired / totalRequired) * 100) : 100
  const profileCompleted = Boolean(profileCompletedAt) && missingFields.length === 0
  const status=pro?(p.estado??'Pendente'):emp?(c.is_approved?'Aprovada':c.estado??'Pendente'):(data.profile.is_active===false?'Inactiva':'Activa')
- // Profissional/empresa ainda não aprovados: mostram o bloqueio de pendente (sem publicação).
- const contaPendente=(pro&&(p.estado??'pendente')==='pendente')||(emp&&!c.is_approved&&(c.estado??'pendente')==='pendente')
  const errorMessages:Record<string,string>={complete:'Não foi possível concluir. Verifique os campos obrigatórios assinalados e tente novamente.',nome:'O nome deve ter entre 2 e 120 caracteres.',contacto:'Verifique os contactos.',avatar:'É obrigatória uma imagem válida no armazenamento NegóMapa.',portfolio:'O portfólio deve ser uma lista JSON válida.',guardar:'Não foi possível guardar. Verifique as permissões da conta.',detalhes:'Não foi possível guardar os campos complementares.','sem-perfil':'Não existe perfil associado a esta conta.','conta-inactiva':'Esta conta está inactiva e não pode alterar os dados.'}
  const error=typeof params.erro==='string'?errorMessages[params.erro]:null
  return <section className="space-y-6">
   <header><h1 className="text-2xl font-semibold tracking-tight">Conta</h1><p className="mt-1 text-sm text-slate-500">Gira os seus dados privados num único lugar.</p></header>
-  {contaPendente&&<EstadoPendente tipo={pro?'profissional':'empresa'}/>}
+  {contaPendente&&<EstadoPendente tipo={tipoPendente}/>}
   {error&&<p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">{error}</p>}
   {params.salvo&&<p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">Alterações guardadas com sucesso.</p>}
   {params.concluido&&<p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">Perfil concluído com sucesso. Continua pendente de aprovação pela equipa NegóMapa.</p>}
