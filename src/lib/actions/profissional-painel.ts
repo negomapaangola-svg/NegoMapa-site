@@ -4,6 +4,7 @@ import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { revalidatePath } from 'next/cache'
 import { createHash } from 'node:crypto'
 import { isAdmin } from '@/lib/auth'
+import { PROVINCIAS_ANGOLA, municipiosDeProvincia } from '@/lib/listas-selecao'
 
 export type PerfilProfissionalProprio = {
   id: string
@@ -129,8 +130,10 @@ export async function criarPerfilProfissional(dados: DadosCadastroProfissional):
   const especialidadesTexto = typeof dados.especialidades === 'string' ? dados.especialidades : ''
 
   if (nome.length < 2 || nome.length > 120) return { success: false, error: 'Indique um nome entre 2 e 120 caracteres.' }
-  if (!provincia || provincia.length > 80) return { success: false, error: 'Seleccione uma província válida.' }
+  if (!(PROVINCIAS_ANGOLA as readonly string[]).includes(provincia) || provincia.length > 80) return { success: false, error: 'Seleccione uma província válida.' }
   if (!municipio || municipio.length > 100) return { success: false, error: 'Indique um município válido.' }
+  const municipiosPermitidos = municipiosDeProvincia(provincia)
+  if (municipiosPermitidos && !municipiosPermitidos.includes(municipio)) return { success: false, error: 'Seleccione um município válido para a província indicada.' }
   if (bairro.length > 120) return { success: false, error: 'O bairro não pode exceder 120 caracteres.' }
   if ((latitude === null) !== (longitude === null) ||
       (latitude !== null && (!Number.isFinite(latitude) || latitude < -90 || latitude > 90)) ||
