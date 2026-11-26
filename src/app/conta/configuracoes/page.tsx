@@ -21,8 +21,8 @@ export default async function ContaConfiguracoesPage({ searchParams }: { searchP
     nome: 'Verifique o nome introduzido.', contacto: 'Verifique os contactos.', avatar: 'É necessária uma imagem válida do armazenamento NegóMapa.',
     notificacoes: 'Não foi possível guardar as preferências.', password: 'A palavra-passe deve ter pelo menos 10 caracteres e as confirmações devem coincidir.',
     confirmacao: 'Escreva ELIMINAR para confirmar o pedido.', motivo: 'Indique um motivo entre 10 e 1000 caracteres.', pedido: 'Não foi possível enviar o pedido ao administrador.',
-    estado: 'Não foi possível alterar o estado da conta.', conversao: 'Não foi possível converter a conta. Verifique os dados e tente novamente.',
-    conversao_indisponivel: 'A mudança de tipo de conta ainda não está disponível. A sua conta continua como cliente.',
+    estado: 'Não foi possível alterar o estado da conta.', conversao: 'Não foi possível enviar o pedido de mudança de tipo. Verifique os dados e tente novamente.',
+    pedido_tipo: 'Não foi possível enviar o pedido. Verifique se já existe um pedido pendente.',
   }
   const error = typeof params.erro === 'string' ? messages[params.erro] : null
   return <section className="space-y-5">
@@ -31,6 +31,7 @@ export default async function ContaConfiguracoesPage({ searchParams }: { searchP
     {params.salvo && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200">Preferências guardadas.</p>}
     {params.password && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200">Palavra-passe actualizada.</p>}
     {params.pedido && <p role="status" className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">Pedido de eliminação criado. Confirme abaixo para eliminar definitivamente.</p>}
+    {params.pedido_tipo === 'criado' && <p role="status" className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">Pedido de mudança de tipo enviado. A sua conta continua como cliente até à aprovação do administrador.</p>}
 
     <section id="localizacao" className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
       <div><h2 className="font-semibold">Localização</h2><p className="text-sm text-slate-500">Actualize a província, município e bairro na secção de conta. A localização GPS é opcional e depende do seu consentimento.</p></div>
@@ -41,7 +42,7 @@ export default async function ContaConfiguracoesPage({ searchParams }: { searchP
 
     {accountType === 'cliente' && (
       <section id="conversao-conta" className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
-        <div><h2 className="font-semibold">Mudar de conta</h2><p className="text-sm text-slate-500">Como cliente, pode passar a profissional ou empresa. Após a conversão, deixa de ser cliente e deverá completar o novo perfil.</p></div>
+        <div><h2 className="font-semibold">Mudar de conta</h2><p className="text-sm text-slate-500">Como cliente, pode pedir a mudança para profissional ou empresa. A sua conta só muda depois da aprovação administrativa; o perfil profissional ou empresarial continua sujeito à respectiva avaliação.</p></div>
         <form action={converterContaCliente} className="space-y-3">
           <label className="block space-y-1.5 text-sm font-medium">Nome de apresentação<input name="nome" required minLength={2} maxLength={160} className="mt-1 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 dark:border-slate-700 dark:bg-slate-950" /></label>
           <fieldset className="space-y-2">
@@ -49,7 +50,7 @@ export default async function ContaConfiguracoesPage({ searchParams }: { searchP
             <label className="flex min-h-11 items-center gap-3 text-sm"><input type="radio" name="target_role" value="profissional" required className="h-5 w-5 accent-orange-700" /><span>Profissional</span></label>
             <label className="flex min-h-11 items-center gap-3 text-sm"><input type="radio" name="target_role" value="empresa" required className="h-5 w-5 accent-orange-700" /><span>Empresa</span></label>
           </fieldset>
-          <button className="inline-flex min-h-11 items-center rounded-xl bg-orange-700 px-4 text-sm font-semibold text-white hover:bg-orange-800">Mudar de conta</button>
+          <button className="inline-flex min-h-11 items-center rounded-xl bg-orange-700 px-4 text-sm font-semibold text-white hover:bg-orange-800">Enviar pedido de mudança</button>
         </form>
       </section>
     )}
