@@ -78,13 +78,16 @@ export async function actualizarLocalizacaoCliente(input: { provincia: unknown; 
     const provincia = typeof input?.provincia === 'string' ? input.provincia.trim() : '';
     const municipio = typeof input?.municipio === 'string' ? input.municipio.trim() : '';
     const bairro = typeof input?.bairro === 'string' ? input.bairro.trim() : '';
-    if ((provincia && !(PROVINCIAS as readonly string[]).includes(provincia)) || municipio.length > 100 || bairro.length > 100) {
-      return { ok: false, message: 'A localização excede os valores permitidos.' };
+    if (!provincia || !(PROVINCIAS as readonly string[]).includes(provincia) ||
+      !municipio || municipio.length > 100 || bairro.length > 100) {
+      return { ok: false, message: 'Seleccione uma província e indique um município válidos.' };
     }
     const { data: perfil, error: perfilError } = await supabase.from('profiles').select('account_type').eq('id', user.id).maybeSingle();
     if (perfilError || perfil?.account_type !== 'cliente') return { ok: false, message: 'Esta opção está disponível apenas para contas de cliente.' };
     const { data: actualizado, error } = await supabase.from('profiles').update({
-      localizacao_provincia: provincia || null, localizacao_municipio: municipio || null, localizacao_bairro: bairro || null,
+      localizacao_provincia: provincia, localizacao_municipio: municipio, localizacao_bairro: bairro || null,
+      latitude_aproximada: null, longitude_aproximada: null,
+      consentimento_localizacao: false, consentimento_actualizado_em: null,
     }).eq('id', user.id).select('id').maybeSingle();
     if (error || !actualizado) {
       if (error) console.error('Erro ao guardar localização do cliente. Código:', error.code);
