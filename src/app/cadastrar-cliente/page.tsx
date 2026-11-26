@@ -25,7 +25,7 @@ export default async function CadastrarClientePage() {
   const supabase = await createSupabaseServerClient()
   const { data: perfil, error } = await supabase
     .from('profiles')
-    .select('account_type,is_active,localizacao_provincia,localizacao_municipio,localizacao_bairro,consentimento_localizacao,consentimento_actualizado_em')
+    .select('account_type,is_active,localizacao_provincia,localizacao_municipio,localizacao_bairro,latitude_aproximada,longitude_aproximada,consentimento_localizacao,consentimento_actualizado_em')
     .eq('id', user.id)
     .maybeSingle()
 
@@ -55,6 +55,8 @@ export default async function CadastrarClientePage() {
               provinciaInicial={perfil.localizacao_provincia ?? ''}
               municipioInicial={perfil.localizacao_municipio ?? ''}
               bairroInicial={perfil.localizacao_bairro ?? ''}
+              latitudeInicial={perfil.latitude_aproximada ?? null}
+              longitudeInicial={perfil.longitude_aproximada ?? null}
               consentimento={perfil.consentimento_localizacao === true}
               consentimentoActualizadoEm={perfil.consentimento_actualizado_em ?? null}
               categorias={categorias ?? []}
