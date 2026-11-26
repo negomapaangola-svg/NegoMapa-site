@@ -2,7 +2,7 @@
 
 import type { StepDefinition } from '@/components/forms/multi-step/types'
 import { TextField, CheckboxField } from '@/components/forms/multi-step/FormFields'
-import { SelectSearchField, RadioGroupField, FileField } from '@/components/forms/multi-step/Fields'
+import { SelectSearchField, SelectField, RadioGroupField, FileField } from '@/components/forms/multi-step/Fields'
 import { Button } from '@/components/ui/Button'
 import { SETORES_EMPRESA, PROVINCIAS, municipiosDa, FAIXAS_PRECO_DESDE } from '@/lib/listas-selecao'
 

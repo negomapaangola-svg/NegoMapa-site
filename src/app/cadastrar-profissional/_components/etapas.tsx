@@ -1,4 +1,4 @@
-import { SelectSearchField, RadioGroupField } from "@/components/forms/multi-step/Fields"
+import { SelectSearchField, SelectField, RadioGroupField } from "@/components/forms/multi-step/Fields"
 import { TextField, CheckboxField } from "@/components/forms/multi-step/FormFields"
 import type { StepDefinition } from "@/components/forms/multi-step/types"
 import {
