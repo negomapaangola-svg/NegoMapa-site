@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { PROVINCIAS } from '@/lib/listas-selecao'
+import { PROVINCIAS } from '@/components/home/constants'
 
 type Props = {
   latitude: number | null
