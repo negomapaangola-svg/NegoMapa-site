@@ -21,8 +21,6 @@ type Props = {
   consentimentoActualizadoEm: string | null
   categorias: Categoria[]
   preferenciasIniciais: string[]
-  /** Quando true, a província é obrigatória (usado em /cadastrar-cliente). */
-  obrigatoria?: boolean
 }
 
 export function LocalizacaoPreferenciasForm({
