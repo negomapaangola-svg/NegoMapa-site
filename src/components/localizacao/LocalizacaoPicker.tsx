@@ -12,12 +12,13 @@ type Props = {
   onProvinciaChange?: (value: string) => void
   onMunicipioChange?: (value: string) => void
   modo?: 'cliente' | 'complemento'
+  onOptionChange?: (value: 'automatica' | 'manual') => void
 }
 
 export function LocalizacaoPicker({
   latitude, longitude, onCoordinatesChange,
   provincia = '', municipio = '', onProvinciaChange, onMunicipioChange,
-  modo = 'complemento',
+  modo = 'complemento', onOptionChange,
 }: Props) {
   const [opcao, setOpcao] = useState<'automatica' | 'manual'>(
     provincia || municipio ? 'manual' : 'automatica',
@@ -57,11 +58,11 @@ export function LocalizacaoPicker({
           <h3 className="font-semibold text-ink dark:text-cream">Como pretende indicar a localização?</h3>
           <div className="mt-3 flex flex-wrap gap-4 text-sm">
             <label className="flex items-center gap-2">
-              <input type="radio" name="localizacao-opcao" checked={opcao === 'automatica'} onChange={() => setOpcao('automatica')} />
+              <input type="radio" name="localizacao-opcao" checked={opcao === 'automatica'} onChange={() => { setOpcao('automatica'); onOptionChange?.('automatica') }} />
               Automática (aproximada)
             </label>
             <label className="flex items-center gap-2">
-              <input type="radio" name="localizacao-opcao" checked={opcao === 'manual'} onChange={() => setOpcao('manual')} />
+              <input type="radio" name="localizacao-opcao" checked={opcao === 'manual'} onChange={() => { setOpcao('manual'); onOptionChange?.('manual') }} />
               Manual
             </label>
           </div>
