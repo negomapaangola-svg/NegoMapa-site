@@ -160,15 +160,47 @@ export async function escolherTipoConta(tipo: unknown) {
       return { ok: false, message: 'Tipo de conta inválido.' }
     }
 
-    // Profissional e empresa só mudam de tipo após aprovação administrativa (fase 4).
-    // Até lá, esta acção não altera account_type.
-    if (tipo !== 'cliente') {
-      return { ok: false, message: 'O cadastro de profissional ou empresa passa por aprovação administrativa e ainda não está disponível. A sua conta continua como cliente.' }
+    const { supabase, user } = await sessao()
+
+    // Pedidos de profissional/empresa não alteram profiles.account_type.
+    // A alteração só é feita pela RPC administrativa depois da aprovação.
+    if (tipo === 'profissional' || tipo === 'empresa') {
+      const { data: perfil, error: perfilError } = await supabase
+        .from('profiles')
+        .select('account_type,nome')
+        .eq('id', user.id)
+        .maybeSingle()
+
+      if (perfilError || !perfil) {
+        return { ok: false, message: 'Não foi possível verificar a sua conta.' }
+      }
+      if (perfil.account_type !== 'cliente') {
+        return { ok: false, message: 'Apenas contas de cliente podem pedir mudança de tipo.' }
+      }
+
+      const nome = typeof perfil.nome === 'string' ? perfil.nome.trim() : ''
+      const nomePedido = nome.length >= 2 ? nome : (user.email?.split('@')[0] ?? '')
+      if (nomePedido.length < 2 || nomePedido.length > 160) {
+        return { ok: false, message: 'Actualize primeiro o seu nome no perfil para pedir a mudança.' }
+      }
+
+      const { data, error } = await supabase.rpc('request_account_type_change', {
+        p_requested_type: tipo,
+        p_display_name: nomePedido,
+      })
+      if (error || !data) {
+        console.error('Erro ao criar pedido de mudança de tipo. Código:', error?.code)
+        return { ok: false, message: 'Não foi possível enviar o pedido. Verifique se já existe um pedido pendente.' }
+      }
+
+      revalidatePath('/perfil')
+      revalidatePath('/conta')
+      revalidatePath('/conta/configuracoes')
+      revalidatePath('/admin')
+      return { ok: true, message: 'Pedido enviado. A sua conta continua como cliente até à aprovação administrativa.' }
     }
 
-    // A sessão é sempre validada com o cliente autenticado. A chave privilegiada
-    // só é lida e utilizada neste módulo server-only, nunca enviada ao browser.
-    const { user } = await sessao()
+    // A escolha inicial de cliente mantém-se directa; não é uma conversão de papel.
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY
     if (!url || !key) {
@@ -179,44 +211,36 @@ export async function escolherTipoConta(tipo: unknown) {
       auth: { autoRefreshToken: false, persistSession: false },
     })
 
-    const { data: registoAdmin, error: erroAdmin } = await admin.from('admin_users').select('user_id').eq('user_id', user.id).maybeSingle()
-    if (erroAdmin || registoAdmin) return { ok: false, message: 'Contas administrativas não podem escolher um papel de utilizador.' }
+    const { data: registoAdmin, error: erroAdmin } = await admin
+      .from('admin_users').select('user_id').eq('user_id', user.id).maybeSingle()
+    if (erroAdmin || registoAdmin) {
+      return { ok: false, message: 'Contas administrativas não podem escolher um papel de utilizador.' }
+    }
 
     const { data: perfil, error: leituraError } = await admin
-      .from('profiles')
-      .select('account_type')
-      .eq('id', user.id)
-      .maybeSingle()
+      .from('profiles').select('account_type').eq('id', user.id).maybeSingle()
 
     if (leituraError) {
       console.error('Erro ao verificar o tipo de conta. Código:', leituraError.code)
       return { ok: false, message: 'Não foi possível verificar a conta.' }
     }
+    if (perfil?.account_type === 'cliente') {
+      return { ok: true, message: 'A sua conta já está configurada como cliente.' }
+    }
     if (perfil?.account_type !== null && perfil?.account_type !== undefined) {
-      return { ok: false, message: 'O tipo de conta já foi escolhido e não pode ser alterado nesta fase.' }
+      return { ok: false, message: 'O tipo de conta já foi escolhido e não pode ser alterado sem aprovação.' }
     }
 
     if (perfil) {
-      // A condição account_type IS NULL torna a operação de escolha única:
-      // pedidos concorrentes não conseguem substituir uma escolha já gravada.
       const { data, error: updateError } = await admin
-        .from('profiles')
-        .update({ account_type: tipo })
-        .eq('id', user.id)
-        .is('account_type', null)
-        .select('id')
-        .maybeSingle()
-
+        .from('profiles').update({ account_type: 'cliente' })
+        .eq('id', user.id).is('account_type', null).select('id').maybeSingle()
       if (updateError || !data) {
         return { ok: false, message: 'A escolha já foi efectuada ou não pôde ser guardada.' }
       }
     } else {
-      // O perfil é criado apenas quando está ausente. Uma colisão concorrente
-      // falha sem substituir o registo que outro pedido possa ter criado.
       const { error: insertError } = await admin
-        .from('profiles')
-        .insert({ id: user.id, account_type: tipo })
-
+        .from('profiles').insert({ id: user.id, account_type: 'cliente' })
       if (insertError) {
         console.error('Erro ao criar perfil pessoal. Código:', insertError.code)
         return { ok: false, message: 'Não foi possível criar o perfil pessoal. Actualize a página e tente novamente.' }
