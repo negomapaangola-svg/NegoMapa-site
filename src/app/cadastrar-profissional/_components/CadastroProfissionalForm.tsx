@@ -45,6 +45,8 @@ export function CadastroProfissionalForm({ categorias }: { categorias: ReadonlyA
               provincia: data.provincia,
               municipio: data.municipio,
               bairro: data.bairro,
+              latitudeAproximada: data.latitudeAproximada,
+              longitudeAproximada: data.longitudeAproximada,
               categoriaId: data.categoriaId,
               especialidades: data.especialidades,
               descricao: data.descricao,
