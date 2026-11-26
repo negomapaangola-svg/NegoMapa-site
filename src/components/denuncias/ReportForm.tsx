@@ -123,7 +123,7 @@ export function ReportForm({ alvo, userId, className, triggerLabel = 'Denunciar'
               <h2 className="text-lg font-semibold text-ink dark:text-cream">Denunciar</h2>
               <button
                 onClick={() => { setAberto(false); setEstado('idle'); setErro(''); }}
-                className="text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
+                className="text-neutral-500 hover:text-neutral-700 dark:text-neutral-300 dark:hover:text-neutral-100"
               >
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
