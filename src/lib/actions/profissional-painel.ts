@@ -59,6 +59,8 @@ export type DadosCadastroProfissional = {
   provincia: string
   municipio: string
   bairro: string
+  latitudeAproximada?: unknown
+  longitudeAproximada?: unknown
   categoriaId: string
   especialidades: string
   descricao: string
@@ -116,6 +118,8 @@ export async function criarPerfilProfissional(dados: DadosCadastroProfissional):
   const provincia = typeof dados.provincia === 'string' ? dados.provincia.trim() : ''
   const municipio = typeof dados.municipio === 'string' ? dados.municipio.trim() : ''
   const bairro = typeof dados.bairro === 'string' ? dados.bairro.trim() : ''
+  const latitude = dados.latitudeAproximada == null ? null : Number(dados.latitudeAproximada)
+  const longitude = dados.longitudeAproximada == null ? null : Number(dados.longitudeAproximada)
   const telefone = typeof dados.telefone === 'string' ? dados.telefone.trim() : ''
   const whatsapp = typeof dados.whatsapp === 'string' ? dados.whatsapp.trim() : ''
   const descricao = typeof dados.descricao === 'string' ? dados.descricao.trim() : ''
@@ -128,6 +132,11 @@ export async function criarPerfilProfissional(dados: DadosCadastroProfissional):
   if (!provincia || provincia.length > 80) return { success: false, error: 'Seleccione uma província válida.' }
   if (!municipio || municipio.length > 100) return { success: false, error: 'Indique um município válido.' }
   if (bairro.length > 120) return { success: false, error: 'O bairro não pode exceder 120 caracteres.' }
+  if ((latitude === null) !== (longitude === null) ||
+      (latitude !== null && (!Number.isFinite(latitude) || latitude < -90 || latitude > 90)) ||
+      (longitude !== null && (!Number.isFinite(longitude) || longitude < -180 || longitude > 180))) {
+    return { success: false, error: 'A geolocalização aproximada é inválida.' }
+  }
   if (!UUID_CATEGORIA.test(dados.categoriaId ?? '')) return { success: false, error: 'Seleccione uma categoria válida.' }
   if (!EXPERIENCIAS_VALIDAS.includes(experiencia)) return { success: false, error: 'Seleccione uma faixa de experiência válida.' }
   if (!telefone && !whatsapp) return { success: false, error: 'Indique pelo menos um contacto: telefone ou WhatsApp.' }
@@ -170,6 +179,8 @@ export async function criarPerfilProfissional(dados: DadosCadastroProfissional):
     provincia,
     municipio,
     bairro: bairro || null,
+    latitude_aproximada: latitude === null ? null : Math.round(latitude * 100) / 100,
+    longitude_aproximada: longitude === null ? null : Math.round(longitude * 100) / 100,
     categoria_id: categoria.id,
     especialidades,
     bio: descricao || null,
