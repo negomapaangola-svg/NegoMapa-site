@@ -130,8 +130,9 @@ export async function criarPerfilProfissional(dados: DadosCadastroProfissional):
   if (bairro.length > 120) return { success: false, error: 'O bairro não pode exceder 120 caracteres.' }
   if (!UUID_CATEGORIA.test(dados.categoriaId ?? '')) return { success: false, error: 'Seleccione uma categoria válida.' }
   if (!EXPERIENCIAS_VALIDAS.includes(experiencia)) return { success: false, error: 'Seleccione uma faixa de experiência válida.' }
-  if (telefone.length < 5 || telefone.length > 32) return { success: false, error: 'Indique um telefone válido.' }
-  if (whatsapp.length < 5 || whatsapp.length > 32) return { success: false, error: 'Indique um WhatsApp válido.' }
+  if (!telefone && !whatsapp) return { success: false, error: 'Indique pelo menos um contacto: telefone ou WhatsApp.' }
+  if (telefone && (telefone.length < 5 || telefone.length > 32)) return { success: false, error: 'Indique um telefone válido.' }
+  if (whatsapp && (whatsapp.length < 5 || whatsapp.length > 32)) return { success: false, error: 'Indique um WhatsApp válido.' }
   if (descricao.length > 2000) return { success: false, error: 'A descrição não pode exceder 2.000 caracteres.' }
   if (disponibilidade && !DISPONIBILIDADES_VALIDAS.includes(disponibilidade)) return { success: false, error: 'Seleccione uma disponibilidade válida.' }
   if (precoFaixa && (!/^\d+(?:\.\d+)?$/.test(precoFaixa) || Number(precoFaixa) < 0)) return { success: false, error: 'Seleccione uma faixa de preço válida.' }
@@ -175,8 +176,8 @@ export async function criarPerfilProfissional(dados: DadosCadastroProfissional):
     experiencia_faixa: experiencia,
     faixa_preco_desde: precoFaixa || null,
     disponibilidade: disponibilidade || null,
-    telefone,
-    whatsapp,
+    telefone: telefone || null,
+    whatsapp: whatsapp || null,
     estado: 'pendente',
   })
 

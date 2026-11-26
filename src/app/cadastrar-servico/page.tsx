@@ -26,7 +26,18 @@ async function getProfile() {
 export default async function CadastrarServicoPage() {
   if (await isAdmin()) redirect('/admin')
   const contexto = await obterContextoUtilizador()
-  if (contexto.empresa) redirect('/empresa/painel')
+  if (contexto.empresaAprovada) redirect('/empresa/painel')
+  if (contexto.empresa) {
+    return (
+      <MainLayout>
+        <section className="min-h-[60vh] bg-cream px-4 py-12 dark:bg-navy-dark">
+          <div className="mx-auto max-w-2xl">
+            <EstadoPendente tipo="empresa" />
+          </div>
+        </section>
+      </MainLayout>
+    )
+  }
   if (contexto.accountType && contexto.accountType !== 'cliente' && !contexto.profissional) redirect('/')
   const supabase = await createSupabaseServerClient()
 

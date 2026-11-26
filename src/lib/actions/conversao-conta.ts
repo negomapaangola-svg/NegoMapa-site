@@ -76,7 +76,9 @@ export async function criarEmpresaPendente(dados: DadosEmpresaPendente) {
   const email = typeof dados.email === 'string' ? dados.email.trim().toLowerCase() : ''
   if (nome.length < 2 || nome.length > 160 || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) || slug.length > 190 ||
       !setor || setor.length > 100 || !provincia || provincia.length > 80 || !municipio || municipio.length > 100 ||
-      telefone.length < 5 || telefone.length > 32 || whatsapp.length < 5 || whatsapp.length > 32 ||
+      (!telefone && !whatsapp) ||
+      (telefone && (telefone.length < 5 || telefone.length > 32)) ||
+      (whatsapp && (whatsapp.length < 5 || whatsapp.length > 32)) ||
       email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
     return { success: false, error: 'Verifique os campos obrigatórios do registo.' }
   }
@@ -92,8 +94,8 @@ export async function criarEmpresaPendente(dados: DadosEmpresaPendente) {
     city: municipio,
     bairro: dados.bairro?.trim() || null,
     description: dados.descricao?.trim() || null,
-    phone: telefone,
-    whatsapp,
+    phone: telefone || null,
+    whatsapp: whatsapp || null,
     email,
     website: dados.website?.trim() || null,
     logo_url: dados.logoPath || null,
