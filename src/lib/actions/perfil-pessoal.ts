@@ -236,8 +236,11 @@ export async function escolherTipoConta(tipo: unknown) {
 export async function guardarLocalizacaoGpsCliente(input: { latitude: unknown; longitude: unknown }) {
   try {
     const { supabase, user } = await sessao();
-    const latitude = Number(input?.latitude);
-    const longitude = Number(input?.longitude);
+    if (typeof input?.latitude !== 'number' || typeof input?.longitude !== 'number') {
+      return { ok: false, message: 'A localização recebida não é válida.' };
+    }
+    const latitude = input.latitude;
+    const longitude = input.longitude;
     if (!Number.isFinite(latitude) || !Number.isFinite(longitude) ||
       latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
       return { ok: false, message: 'A localização recebida não é válida.' };
