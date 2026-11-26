@@ -5,6 +5,9 @@ on:
     branches:
       - main
   workflow_dispatch:
+  push:
+    branches:
+      - feat/fluxo-contas-fase1
 
 permissions:
   contents: read
