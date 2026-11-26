@@ -4,6 +4,7 @@ import type { StepDefinition } from '@/components/forms/multi-step/types'
 import { TextField, CheckboxField } from '@/components/forms/multi-step/FormFields'
 import { SelectSearchField, SelectField, RadioGroupField, FileField } from '@/components/forms/multi-step/Fields'
 import { Button } from '@/components/ui/Button'
+import { LocalizacaoPicker } from '@/components/localizacao/LocalizacaoPicker'
 import { SETORES_EMPRESA, PROVINCIAS, municipiosDa, FAIXAS_PRECO_DESDE } from '@/lib/listas-selecao'
 
 export type DadosEmpresa = {
@@ -13,6 +14,8 @@ export type DadosEmpresa = {
   provincia: string
   municipio: string
   bairro: string
+  latitudeAproximada: number | null
+  longitudeAproximada: number | null
   descricao: string
   categorias: string[]
   faixaPreco: string
@@ -34,6 +37,8 @@ export const dadosVazios: DadosEmpresa = {
   provincia: '',
   municipio: '',
   bairro: '',
+  latitudeAproximada: null,
+  longitudeAproximada: null,
   descricao: '',
   categorias: [],
   faixaPreco: '',
@@ -111,6 +116,15 @@ export function buildEtapas(categorias: ReadonlyArray<CategoriaOpcao>): Readonly
             error={errors.municipio}
           />
           <TextField id="bairro" label="Zona ou bairro" value={data.bairro} onChange={(v) => setField('bairro', v)} hint="Opcional." />
+          <LocalizacaoPicker
+            latitude={data.latitudeAproximada}
+            longitude={data.longitudeAproximada}
+            onCoordinatesChange={(lat, lon) => {
+              setField('latitudeAproximada', lat)
+              setField('longitudeAproximada', lon)
+            }}
+            modo="complemento"
+          />
         </>
       ),
     },
