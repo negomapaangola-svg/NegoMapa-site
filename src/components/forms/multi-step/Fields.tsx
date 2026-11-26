@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { FieldShell } from './FormFields'
 
@@ -96,6 +96,10 @@ export function SelectSearchField({
   const selectedLabel = lista.find((option) => option.value === value)?.label ?? value
   const [query, setQuery] = useState(selectedLabel)
 
+  useEffect(() => {
+    setQuery(selectedLabel)
+  }, [selectedLabel])
+
   return (
     <FieldShell id={id} label={label} required={required} error={error} hint={hint}>
       <input
@@ -116,6 +120,7 @@ export function SelectSearchField({
           const match = lista.find((option) => option.label.toLocaleLowerCase() === next.trim().toLocaleLowerCase())
           if (match) onChange(match.value)
           else if (allowCustomValue) onChange(next)
+          else onChange('')
         }}
         onBlur={() => {
           if (!allowCustomValue && !lista.some((option) => option.label.toLocaleLowerCase() === query.trim().toLocaleLowerCase())) {

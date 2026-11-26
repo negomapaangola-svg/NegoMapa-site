@@ -27,7 +27,23 @@ export default async function CadastrarServicoPage() {
   if (await isAdmin()) redirect('/admin')
   const contexto = await obterContextoUtilizador()
   if (contexto.empresaAprovada) redirect('/empresa/painel')
-  if (contexto.empresa) {
+  const supabase = await createSupabaseServerClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    redirect('/login?redirectTo=/cadastrar-servico')
+  }
+
+  // O papel continua "cliente" enquanto a empresa aguarda aprovação.
+  // Consultar o registo pendente independentemente de profiles.account_type.
+  const { data: empresaPendente } = await supabase
+    .from('companies')
+    .select('is_approved,estado')
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  if (empresaPendente && empresaPendente.is_approved !== true && (empresaPendente.estado ?? 'pendente') === 'pendente') {
     return (
       <MainLayout>
         <section className="min-h-[60vh] bg-cream px-4 py-12 dark:bg-navy-dark">
@@ -38,14 +54,9 @@ export default async function CadastrarServicoPage() {
       </MainLayout>
     )
   }
+
+  if (contexto.empresa) redirect('/empresa/painel')
   if (contexto.accountType && contexto.accountType !== 'cliente' && !contexto.profissional) redirect('/')
-  const supabase = await createSupabaseServerClient()
-
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect('/login?redirectTo=/cadastrar-servico')
-  }
 
   const [profile, categorias] = await Promise.all([getProfile(), getCategories()])
 
