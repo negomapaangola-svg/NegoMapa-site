@@ -264,9 +264,14 @@ begin
     select id into v_profile_id
     from public.profissionais
     where user_id = v_request.user_id
+      and estado in ('pendente', 'aprovado')
     for update;
 
-    if not found then
+    if not found and exists (
+      select 1 from public.profissionais where user_id = v_request.user_id
+    ) then
+      raise exception 'O perfil profissional associado está rejeitado ou suspenso' using errcode = '22023';
+    elsif not found then
       insert into public.profissionais (user_id, nome, slug, estado)
       values (v_request.user_id, v_request.display_name, v_slug, 'pendente')
       returning id into v_profile_id;
@@ -279,9 +284,14 @@ begin
     select id into v_profile_id
     from public.companies
     where user_id = v_request.user_id
+      and coalesce(estado, 'pendente') in ('pendente', 'aprovado')
     for update;
 
-    if not found then
+    if not found and exists (
+      select 1 from public.companies where user_id = v_request.user_id
+    ) then
+      raise exception 'O perfil empresarial associado está rejeitado ou suspenso' using errcode = '22023';
+    elsif not found then
       insert into public.companies
         (user_id, name, slug, sector, province, city, is_approved)
       values
