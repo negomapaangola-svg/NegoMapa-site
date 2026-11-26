@@ -27,7 +27,7 @@ type Props = {
 
 export function LocalizacaoPreferenciasForm({
   provinciaInicial, municipioInicial, bairroInicial, latitudeInicial = null, longitudeInicial = null, consentimento,
-  consentimentoActualizadoEm, categorias, preferenciasIniciais, obrigatoria = false,
+  consentimentoActualizadoEm, categorias, preferenciasIniciais,
 }: Props) {
   const [provincia, setProvincia] = useState(provinciaInicial)
   const [municipio, setMunicipio] = useState(municipioInicial)
@@ -57,6 +57,11 @@ export function LocalizacaoPreferenciasForm({
       if (resultado.ok && opcaoLocalizacao === 'automatica') {
         setConsentimentoActual(true)
         setDataConsentimentoEstado(new Date().toISOString())
+      } else if (resultado.ok) {
+        setConsentimentoActual(false)
+        setDataConsentimentoEstado(null)
+        setLatitude(null)
+        setLongitude(null)
       }
       setMensagemLocal(resultado.message)
       setOkLocal(resultado.ok)
@@ -71,6 +76,8 @@ export function LocalizacaoPreferenciasForm({
         setProvincia('')
         setMunicipio('')
         setBairro('')
+        setLatitude(null)
+        setLongitude(null)
         setConsentimentoActual(false)
         setDataConsentimentoEstado(null)
       }
