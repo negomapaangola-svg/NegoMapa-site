@@ -121,8 +121,19 @@ export async function criarEmpresaPendente(dados: DadosEmpresaPendente) {
     console.error('Erro ao criar empresa pendente. Código:', error.code)
     return { success: false, error: 'Não foi possível registar a empresa. Verifique os dados e tente novamente.' }
   }
+
+  const { error: pedidoError } = await supabase.rpc('request_account_type_change', {
+    p_requested_type: 'empresa',
+    p_display_name: nome,
+  })
+  if (pedidoError) {
+    console.error('Empresa criada, mas o pedido de mudança de tipo falhou. Código:', pedidoError.code)
+    return { success: false, error: 'A empresa ficou pendente, mas não foi possível enviar o pedido de mudança de tipo. Tente novamente nas configurações da conta.' }
+  }
+
   revalidatePath('/perfil')
   revalidatePath('/cadastrar-empresa')
+  revalidatePath('/conta/configuracoes')
   return { success: true }
 }
 
