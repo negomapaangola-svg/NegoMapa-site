@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { FieldShell } from './FormFields'
 
@@ -58,6 +59,79 @@ export function SelectField({
           </option>
         ))}
       </select>
+    </FieldShell>
+  )
+}
+
+
+interface SelectSearchFieldProps {
+  id: string
+  label: string
+  value: string
+  onChange: (value: string) => void
+  options: ReadonlyArray<string> | ReadonlyArray<OpcaoSelect>
+  placeholder?: string
+  required?: boolean
+  disabled?: boolean
+  error?: string
+  hint?: string
+  allowCustomValue?: boolean
+}
+
+/** Campo pesquisável com datalist nativo; permite texto livre quando configurado. */
+export function SelectSearchField({
+  id,
+  label,
+  value,
+  onChange,
+  options,
+  placeholder = 'Pesquisar ou seleccionar...',
+  required = false,
+  disabled = false,
+  error,
+  hint,
+  allowCustomValue = false,
+}: SelectSearchFieldProps) {
+  const lista: OpcaoSelect[] = options.map((o) => (typeof o === 'string' ? { value: o, label: o } : o))
+  const selectedLabel = lista.find((option) => option.value === value)?.label ?? value
+  const [query, setQuery] = useState(selectedLabel)
+
+  useEffect(() => {
+    setQuery(selectedLabel)
+  }, [selectedLabel])
+
+  return (
+    <FieldShell id={id} label={label} required={required} error={error} hint={hint}>
+      <input
+        id={id}
+        name={id}
+        type="text"
+        list={`${id}-opcoes`}
+        value={query}
+        placeholder={placeholder}
+        required={required}
+        disabled={disabled}
+        aria-required={required}
+        aria-invalid={Boolean(error)}
+        autoComplete="off"
+        onChange={(event) => {
+          const next = event.target.value
+          setQuery(next)
+          const match = lista.find((option) => option.label.toLocaleLowerCase() === next.trim().toLocaleLowerCase())
+          if (match) onChange(match.value)
+          else if (allowCustomValue) onChange(next)
+          else onChange('')
+        }}
+        onBlur={() => {
+          if (!allowCustomValue && !lista.some((option) => option.label.toLocaleLowerCase() === query.trim().toLocaleLowerCase())) {
+            setQuery(selectedLabel)
+          }
+        }}
+        className={cn(controlo, error ? 'border-red-600' : 'border-card-border dark:border-neutral-700')}
+      />
+      <datalist id={`${id}-opcoes`}>
+        {lista.map((option) => <option key={option.value} value={option.label} />)}
+      </datalist>
     </FieldShell>
   )
 }
