@@ -1,4 +1,5 @@
 import { ImageFields } from '@/components/images/ImageFields'
+import { EstadoPendente } from '@/components/conta/EstadoPendente'
 import type { Metadata } from 'next'
 import { getContaSnapshot, guardarPerfilConta } from '@/lib/actions/conta'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
@@ -53,10 +54,13 @@ export default async function ContaPerfilPage({searchParams}:{searchParams:Promi
  const progress = totalRequired ? Math.round((completedRequired / totalRequired) * 100) : 100
  const profileCompleted = Boolean(profileCompletedAt) && missingFields.length === 0
  const status=pro?(p.estado??'Pendente'):emp?(c.is_approved?'Aprovada':c.estado??'Pendente'):(data.profile.is_active===false?'Inactiva':'Activa')
+ // Profissional/empresa ainda não aprovados: mostram o bloqueio de pendente (sem publicação).
+ const contaPendente=(pro&&(p.estado??'pendente')==='pendente')||(emp&&!c.is_approved&&(c.estado??'pendente')==='pendente')
  const errorMessages:Record<string,string>={complete:'Não foi possível concluir. Verifique os campos obrigatórios assinalados e tente novamente.',nome:'O nome deve ter entre 2 e 120 caracteres.',contacto:'Verifique os contactos.',avatar:'É obrigatória uma imagem válida no armazenamento NegóMapa.',portfolio:'O portfólio deve ser uma lista JSON válida.',guardar:'Não foi possível guardar. Verifique as permissões da conta.',detalhes:'Não foi possível guardar os campos complementares.','sem-perfil':'Não existe perfil associado a esta conta.','conta-inactiva':'Esta conta está inactiva e não pode alterar os dados.'}
  const error=typeof params.erro==='string'?errorMessages[params.erro]:null
  return <section className="space-y-6">
   <header><h1 className="text-2xl font-semibold tracking-tight">Conta</h1><p className="mt-1 text-sm text-slate-500">Gira os seus dados privados num único lugar.</p></header>
+  {contaPendente&&<EstadoPendente tipo={pro?'profissional':'empresa'}/>}
   {error&&<p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">{error}</p>}
   {params.salvo&&<p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">Alterações guardadas com sucesso.</p>}
   {params.concluido&&<p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">Perfil concluído com sucesso. Continua pendente de aprovação pela equipa NegóMapa.</p>}
