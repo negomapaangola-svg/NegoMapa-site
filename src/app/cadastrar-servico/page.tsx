@@ -4,6 +4,7 @@ import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { isAdmin } from '@/lib/auth'
 import { obterContextoUtilizador } from '@/lib/permissoes'
 import { MainLayout } from '@/components/layout/MainLayout'
+import { EstadoPendente } from '@/components/conta/EstadoPendente'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card'
 import { ProfileForm } from './_components/ProfileForm'
 import { ServiceForm } from './_components/ServiceForm'
@@ -50,6 +51,18 @@ export default async function CadastrarServicoPage() {
     return (
       <MainLayout>
         <ProfileSuspendedPage profile={profile} />
+      </MainLayout>
+    )
+  }
+
+  if (profile.estado === 'pendente') {
+    return (
+      <MainLayout>
+        <section className="min-h-[60vh] bg-cream px-4 py-12 dark:bg-navy-dark">
+          <div className="mx-auto max-w-2xl">
+            <EstadoPendente tipo="profissional" />
+          </div>
+        </section>
       </MainLayout>
     )
   }
