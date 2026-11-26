@@ -13,6 +13,8 @@ export type DadosEmpresaPendente = {
   provincia: string
   municipio: string
   bairro?: string | null
+  latitudeAproximada?: unknown
+  longitudeAproximada?: unknown
   descricao?: string | null
   telefone: string
   whatsapp: string
@@ -73,7 +75,14 @@ export async function criarEmpresaPendente(dados: DadosEmpresaPendente) {
   const municipio = typeof dados.municipio === 'string' ? dados.municipio.trim() : ''
   const telefone = typeof dados.telefone === 'string' ? dados.telefone.trim() : ''
   const whatsapp = typeof dados.whatsapp === 'string' ? dados.whatsapp.trim() : ''
+  const latitude = dados.latitudeAproximada == null ? null : Number(dados.latitudeAproximada)
+  const longitude = dados.longitudeAproximada == null ? null : Number(dados.longitudeAproximada)
   const email = typeof dados.email === 'string' ? dados.email.trim().toLowerCase() : ''
+  if ((latitude === null) !== (longitude === null) ||
+      (latitude !== null && (!Number.isFinite(latitude) || latitude < -90 || latitude > 90)) ||
+      (longitude !== null && (!Number.isFinite(longitude) || longitude < -180 || longitude > 180))) {
+    return { success: false, error: 'A geolocalização aproximada é inválida.' }
+  }
   if (nome.length < 2 || nome.length > 160 || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) || slug.length > 190 ||
       !setor || setor.length > 100 || !provincia || provincia.length > 80 || !municipio || municipio.length > 100 ||
       (!telefone && !whatsapp) ||
@@ -93,6 +102,8 @@ export async function criarEmpresaPendente(dados: DadosEmpresaPendente) {
     province: provincia,
     city: municipio,
     bairro: dados.bairro?.trim() || null,
+    latitude_aproximada: latitude === null ? null : Math.round(latitude * 100) / 100,
+    longitude_aproximada: longitude === null ? null : Math.round(longitude * 100) / 100,
     description: dados.descricao?.trim() || null,
     phone: telefone || null,
     whatsapp: whatsapp || null,
