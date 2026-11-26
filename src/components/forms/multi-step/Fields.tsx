@@ -120,7 +120,6 @@ export function SelectSearchField({
           const match = lista.find((option) => option.label.toLocaleLowerCase() === next.trim().toLocaleLowerCase())
           if (match) onChange(match.value)
           else if (allowCustomValue) onChange(next)
-          else onChange('')
         }}
         onBlur={() => {
           if (!allowCustomValue && !lista.some((option) => option.label.toLocaleLowerCase() === query.trim().toLocaleLowerCase())) {
