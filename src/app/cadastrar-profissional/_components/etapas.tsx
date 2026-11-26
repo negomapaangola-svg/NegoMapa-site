@@ -1,4 +1,5 @@
 import { SelectSearchField, SelectField, RadioGroupField } from "@/components/forms/multi-step/Fields"
+import { LocalizacaoPicker } from "@/components/localizacao/LocalizacaoPicker"
 import { TextField, CheckboxField } from "@/components/forms/multi-step/FormFields"
 import type { StepDefinition } from "@/components/forms/multi-step/types"
 import {
@@ -16,6 +17,8 @@ export type DadosProfissional = {
   provincia: string
   municipio: string
   bairro: string
+  latitudeAproximada: number | null
+  longitudeAproximada: number | null
   // Etapa 3
   categoriaId: string
   especialidades: string
@@ -37,6 +40,8 @@ export const dadosVazios: DadosProfissional = {
   provincia: "",
   municipio: "",
   bairro: "",
+  latitudeAproximada: null,
+  longitudeAproximada: null,
   categoriaId: "",
   especialidades: "",
   descricao: "",
@@ -170,6 +175,15 @@ export function buildEtapasProfissional(
               value={data.bairro}
               onChange={(v) => setField("bairro", v)}
               hint="Opcional."
+            />
+            <LocalizacaoPicker
+              latitude={data.latitudeAproximada}
+              longitude={data.longitudeAproximada}
+              onCoordinatesChange={(lat, lon) => {
+                setField("latitudeAproximada", lat)
+                setField("longitudeAproximada", lon)
+              }}
+              modo="complemento"
             />
           </>
         )
