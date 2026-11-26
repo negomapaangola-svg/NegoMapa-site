@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import { FieldShell } from './FormFields'
 
@@ -95,10 +95,6 @@ export function SelectSearchField({
   const lista: OpcaoSelect[] = options.map((o) => (typeof o === 'string' ? { value: o, label: o } : o))
   const selectedLabel = lista.find((option) => option.value === value)?.label ?? value
   const [query, setQuery] = useState(selectedLabel)
-
-  useEffect(() => {
-    setQuery(selectedLabel)
-  }, [selectedLabel])
 
   return (
     <FieldShell id={id} label={label} required={required} error={error} hint={hint}>
