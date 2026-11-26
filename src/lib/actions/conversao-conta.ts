@@ -113,6 +113,10 @@ export async function criarEmpresaPendente(dados: DadosEmpresaPendente) {
 }
 
 export async function converterContaCliente(formData: FormData) {
+  // Fase 1: a mudança de tipo só pode ocorrer após aprovação administrativa (fase 4).
+  // Até lá, a conta continua cliente e nenhuma alteração é feita em profiles.account_type.
+  redirect('/conta/configuracoes?erro=conversao_indisponivel')
+
   const supabase = await createSupabaseServerClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
 

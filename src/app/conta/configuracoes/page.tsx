@@ -22,6 +22,7 @@ export default async function ContaConfiguracoesPage({ searchParams }: { searchP
     notificacoes: 'Não foi possível guardar as preferências.', password: 'A palavra-passe deve ter pelo menos 10 caracteres e as confirmações devem coincidir.',
     confirmacao: 'Escreva ELIMINAR para confirmar o pedido.', motivo: 'Indique um motivo entre 10 e 1000 caracteres.', pedido: 'Não foi possível enviar o pedido ao administrador.',
     estado: 'Não foi possível alterar o estado da conta.', conversao: 'Não foi possível converter a conta. Verifique os dados e tente novamente.',
+    conversao_indisponivel: 'A mudança de tipo de conta ainda não está disponível. A sua conta continua como cliente.',
   }
   const error = typeof params.erro === 'string' ? messages[params.erro] : null
   return <section className="space-y-5">

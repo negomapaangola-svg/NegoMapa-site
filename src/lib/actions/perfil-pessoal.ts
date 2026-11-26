@@ -157,6 +157,12 @@ export async function escolherTipoConta(tipo: unknown) {
       return { ok: false, message: 'Tipo de conta inválido.' }
     }
 
+    // Profissional e empresa só mudam de tipo após aprovação administrativa (fase 4).
+    // Até lá, esta acção não altera account_type.
+    if (tipo !== 'cliente') {
+      return { ok: false, message: 'O cadastro de profissional ou empresa passa por aprovação administrativa e ainda não está disponível. A sua conta continua como cliente.' }
+    }
+
     // A sessão é sempre validada com o cliente autenticado. A chave privilegiada
     // só é lida e utilizada neste módulo server-only, nunca enviada ao browser.
     const { user } = await sessao()
