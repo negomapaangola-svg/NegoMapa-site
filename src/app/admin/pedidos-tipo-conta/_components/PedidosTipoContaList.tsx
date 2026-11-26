@@ -33,15 +33,13 @@ export function PedidosTipoContaList({ pedidos }: { pedidos: PedidoMudancaTipoCo
     })
   }
 
-  if (pedidos.length === 0) {
-    return <p className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">Não existem pedidos pendentes.</p>
-  }
-
   return (
     <div className="space-y-4">
       {mensagem && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200">{mensagem}</p>}
       {erro && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/30 dark:text-red-200">{erro}</p>}
-      {pedidos.map((pedido) => (
+      {pedidos.length === 0
+        ? <p className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">Não existem pedidos pendentes.</p>
+        : pedidos.map((pedido) => (
         <article key={pedido.id} className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
