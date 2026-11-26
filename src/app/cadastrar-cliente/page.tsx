@@ -61,7 +61,6 @@ export default async function CadastrarClientePage() {
               consentimentoActualizadoEm={perfil.consentimento_actualizado_em ?? null}
               categorias={categorias ?? []}
               preferenciasIniciais={(preferencias ?? []).map((p) => p.categoria_id)}
-              obrigatoria
             />
           </Card>
         </div>
