@@ -127,10 +127,6 @@ export async function criarEmpresaPendente(dados: DadosEmpresaPendente) {
 }
 
 export async function converterContaCliente(formData: FormData) {
-  // Fase 1: a mudança de tipo só pode ocorrer após aprovação administrativa (fase 4).
-  // Até lá, a conta continua cliente e nenhuma alteração é feita em profiles.account_type.
-  redirect('/conta/configuracoes?erro=conversao_indisponivel')
-
   const supabase = await createSupabaseServerClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
 
@@ -149,17 +145,18 @@ export async function converterContaCliente(formData: FormData) {
     redirect('/conta/configuracoes?erro=conversao')
   }
 
-  const { data, error } = await supabase.rpc('convert_client_account', {
-    p_target_role: targetRole,
+  const { data, error } = await supabase.rpc('request_account_type_change', {
+    p_requested_type: targetRole,
     p_display_name: displayName,
   })
 
   if (error || !data) {
-    console.error('Erro ao converter conta. Código:', error?.code)
-    redirect('/conta/configuracoes?erro=conversao')
+    console.error('Erro ao criar pedido de mudança de tipo de conta. Código:', error?.code)
+    redirect('/conta/configuracoes?erro=pedido_tipo')
   }
 
   revalidatePath('/conta')
   revalidatePath('/conta/configuracoes')
-  redirect('/conta/perfil')
+  revalidatePath('/admin')
+  redirect('/conta/configuracoes?pedido_tipo=criado')
 }
