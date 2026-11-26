@@ -15,6 +15,8 @@ type Props = {
   provinciaInicial: string
   municipioInicial: string
   bairroInicial: string
+  latitudeInicial?: number | null
+  longitudeInicial?: number | null
   consentimento: boolean
   consentimentoActualizadoEm: string | null
   categorias: Categoria[]
@@ -24,7 +26,7 @@ type Props = {
 }
 
 export function LocalizacaoPreferenciasForm({
-  provinciaInicial, municipioInicial, bairroInicial, consentimento,
+  provinciaInicial, municipioInicial, bairroInicial, latitudeInicial = null, longitudeInicial = null, consentimento,
   consentimentoActualizadoEm, categorias, preferenciasIniciais, obrigatoria = false,
 }: Props) {
   const [provincia, setProvincia] = useState(provinciaInicial)
@@ -38,8 +40,8 @@ export function LocalizacaoPreferenciasForm({
   const [okLocal, setOkLocal] = useState(false)
   const [okPreferencias, setOkPreferencias] = useState(false)
   const [opcaoLocalizacao, setOpcaoLocalizacao] = useState<'automatica' | 'manual'>(provinciaInicial && municipioInicial ? 'manual' : 'automatica')
-  const [latitude, setLatitude] = useState<number | null>(null)
-  const [longitude, setLongitude] = useState<number | null>(null)
+  const [latitude, setLatitude] = useState<number | null>(latitudeInicial)
+  const [longitude, setLongitude] = useState<number | null>(longitudeInicial)
   const [pendenteLocal, iniciarLocal] = useTransition()
   const [pendentePreferencias, iniciarPreferencias] = useTransition()
 
