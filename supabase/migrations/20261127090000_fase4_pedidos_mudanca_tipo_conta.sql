@@ -39,7 +39,7 @@ create unique index if not exists account_type_change_requests_one_pending_per_u
   where status = 'pending';
 
 alter table public.account_type_change_requests enable row level security;
-revoke all on public.account_type_change_requests from public, anon, authenticated;
+revoke all on public.account_type_change_requests from public, anon, authenticated, service_role;
 
 create or replace function public.request_account_type_change(
   p_requested_type text,
@@ -68,7 +68,7 @@ begin
     raise exception 'Contas administrativas não podem pedir mudança de tipo' using errcode = '42501';
   end if;
 
-  if p_requested_type not in ('profissional', 'empresa') then
+  if p_requested_type is null or p_requested_type not in ('profissional', 'empresa') then
     raise exception 'Tipo de conta solicitado inválido' using errcode = '22023';
   end if;
 
@@ -192,7 +192,7 @@ begin
     raise exception 'Acesso negado' using errcode = '42501';
   end if;
 
-  if p_decision not in ('approve', 'reject') then
+  if p_decision is null or p_decision not in ('approve', 'reject') then
     raise exception 'Decisão inválida' using errcode = '22023';
   end if;
 
@@ -293,6 +293,7 @@ begin
   end if;
 
   -- Único ponto deste fluxo que altera o tipo de conta: aprovação administrativa.
+  perform set_config('negomapa.self_service_account', 'on', true);
   update public.profiles
   set account_type = v_request.requested_account_type,
       updated_at = now()
