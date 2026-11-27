@@ -156,8 +156,7 @@ returns jsonb
 language plpgsql
 security definer
 set search_path = ''
-as $
-declare
+as $body$\1declare
   v_user uuid := auth.uid();
   v_profile public.profissionais;
   v_profile_id uuid;
@@ -214,7 +213,8 @@ begin
   v_request := public.request_account_type_change('profissional', v_profile.nome);
   return v_request || jsonb_build_object('profile_id', v_profile_id);
 end;
-$;
+$body$;
+
 
 create or replace function public.create_company_profile_and_request(
   p_profile_data jsonb
@@ -223,8 +223,7 @@ returns jsonb
 language plpgsql
 security definer
 set search_path = ''
-as $
-declare
+as $body$\1declare
   v_user uuid := auth.uid();
   v_profile public.companies;
   v_profile_id uuid;
@@ -281,7 +280,8 @@ begin
   v_request := public.request_account_type_change('empresa', v_profile.name);
   return v_request || jsonb_build_object('profile_id', v_profile_id);
 end;
-$;
+$body$;
+
 
 create or replace function public.admin_list_account_type_change_requests()
 returns table (
@@ -341,7 +341,8 @@ begin
   where r.status in ('approved', 'rejected')
   order by r.reviewed_at desc;
 end;
-$;
+$body$;
+
 
 create or replace function public.admin_review_account_type_change(
   p_request_id uuid,
