@@ -4,10 +4,11 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   avaliarPedidoMudancaTipoConta,
+  type DecisaoMudancaTipoConta,
   type PedidoMudancaTipoConta,
 } from '@/lib/actions/conta-tipo'
 
-export function PedidosTipoContaList({ pedidos }: { pedidos: PedidoMudancaTipoConta[] }) {
+export function PedidosTipoContaList({ pedidos, historico }: { pedidos: PedidoMudancaTipoConta[]; historico: DecisaoMudancaTipoConta[] }) {
   const [motivos, setMotivos] = useState<Record<string, string>>({})
   const [mensagem, setMensagem] = useState('')
   const [erro, setErro] = useState('')
@@ -18,8 +19,8 @@ export function PedidosTipoContaList({ pedidos }: { pedidos: PedidoMudancaTipoCo
     setErro('')
     setMensagem('')
     const motivo = motivos[id] ?? ''
-    if (decisao === 'reject' && motivo.trim().length < 10) {
-      setErro('Para rejeitar, indique um motivo com pelo menos 10 caracteres.')
+    if (motivo.trim().length < 10 || motivo.trim().length > 1000) {
+      setErro('Indique um motivo entre 10 e 1000 caracteres para aprovar ou rejeitar.')
       return
     }
     startTransition(async () => {
@@ -54,11 +55,11 @@ export function PedidosTipoContaList({ pedidos }: { pedidos: PedidoMudancaTipoCo
             </time>
           </div>
           <label className="block space-y-1 text-sm font-medium">
-            Nota administrativa (obrigatória para rejeitar)
+            Motivo da decisão (obrigatório para aprovar ou rejeitar)
             <textarea
               value={motivos[pedido.id] ?? ''}
               onChange={(event) => setMotivos((actual) => ({ ...actual, [pedido.id]: event.target.value }))}
-              maxLength={1000}
+              required\n              minLength={10}\n              maxLength={1000}
               rows={2}
               className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-950"
             />
@@ -73,6 +74,41 @@ export function PedidosTipoContaList({ pedidos }: { pedidos: PedidoMudancaTipoCo
           </div>
         </article>
       ))}
+
+      <section className="space-y-3 pt-6">
+        <div>
+          <h2 className="text-xl font-semibold">Histórico de decisões</h2>
+          <p className="text-sm text-slate-500">Pedidos anteriormente aprovados ou rejeitados, com responsável e justificação.</p>
+        </div>
+        {historico.length === 0 ? (
+          <p className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">Ainda não existem decisões registadas.</p>
+        ) : (
+          <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+            <table className="min-w-full divide-y divide-slate-200 text-left text-sm dark:divide-slate-800">
+              <thead className="bg-slate-50 dark:bg-slate-950">
+                <tr>
+                  <th className="px-4 py-3 font-semibold">Data</th>
+                  <th className="px-4 py-3 font-semibold">Pedido</th>
+                  <th className="px-4 py-3 font-semibold">Decisão</th>
+                  <th className="px-4 py-3 font-semibold">Administrador</th>
+                  <th className="px-4 py-3 font-semibold">Motivo</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+                {historico.map((decisao) => (
+                  <tr key={decisao.id} className="align-top">
+                    <td className="whitespace-nowrap px-4 py-3"><time dateTime={decisao.reviewed_at}>{new Date(decisao.reviewed_at).toLocaleString('pt-AO')}</time></td>
+                    <td className="px-4 py-3">{decisao.display_name}<span className="block text-xs text-slate-500">{decisao.requested_account_type === 'profissional' ? 'Profissional' : 'Empresa'}</span></td>
+                    <td className="px-4 py-3">{decisao.status === 'approved' ? 'Aprovado' : 'Rejeitado'}</td>
+                    <td className="px-4 py-3">{decisao.reviewer_name}</td>
+                    <td className="max-w-sm whitespace-pre-wrap px-4 py-3">{decisao.review_reason}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
     </div>
   )
 }
