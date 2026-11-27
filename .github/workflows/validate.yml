@@ -4,10 +4,12 @@ on:
   pull_request:
     branches:
       - main
+      - feat/fluxo-contas-fase1
   workflow_dispatch:
   push:
     branches:
       - feat/fluxo-contas-fase1
+      - feat/pedidos-mudanca-tipo-conta-fase4
 
 permissions:
   contents: read
