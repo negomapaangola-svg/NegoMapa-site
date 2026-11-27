@@ -1,5 +1,5 @@
 import { Metadata } from 'next'
-import { notFound, redirect } from 'next/navigation'
+import { redirect } from 'next/navigation'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { isAdmin } from '@/lib/auth'
 import { obterContextoUtilizador } from '@/lib/permissoes'
@@ -26,14 +26,9 @@ async function getProfile() {
 export default async function CadastrarServicoPage() {
   if (await isAdmin()) redirect('/admin')
   const contexto = await obterContextoUtilizador()
-  // Empresas aprovadas e activas podem publicar serviços.
-  if (
-    contexto.empresa &&
-    contexto.empresa.is_approved === true &&
-    (contexto.empresa.estado ?? 'aprovado') === 'aprovado' &&
-    contexto.isActive === true
-  ) {
-    const supabase = await createSupabaseServerClient()
+  // Empresas aprovadas e contas activas podem publicar serviços.
+  // empresaAprovada já valida is_approved e estado; contaAtiva valida profiles.is_active.
+  if (contexto.empresaAprovada && contexto.contaAtiva) {
     const categorias = await getCategories()
 
     return (
