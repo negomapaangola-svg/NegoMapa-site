@@ -175,37 +175,38 @@ export async function criarPerfilProfissional(dados: DadosCadastroProfissional):
   }
   if (existente) return { success: false, error: 'Já existe um perfil profissional associado a esta conta.' }
 
-  const { error } = await supabase.from('profissionais').insert({
-    user_id: user.id,
-    nome,
-    slug: slugCadastroProfissional(user.id),
-    provincia,
-    municipio,
-    bairro: bairro || null,
-    latitude_aproximada: latitude === null ? null : Math.round(latitude * 100) / 100,
-    longitude_aproximada: longitude === null ? null : Math.round(longitude * 100) / 100,
-    categoria_id: categoria.id,
-    especialidades,
-    bio: descricao || null,
-    experiencia_faixa: experiencia,
-    faixa_preco_desde: precoFaixa || null,
-    disponibilidade: disponibilidade || null,
-    telefone: telefone || null,
-    whatsapp: whatsapp || null,
-    estado: 'pendente',
+  const { error } = await supabase.rpc('create_professional_profile_and_request', {
+    p_profile_data: {
+      nome,
+      slug: slugCadastroProfissional(user.id),
+      provincia,
+      municipio,
+      bairro: bairro || null,
+      latitude_aproximada: latitude === null ? null : Math.round(latitude * 100) / 100,
+      longitude_aproximada: longitude === null ? null : Math.round(longitude * 100) / 100,
+      categoria_id: categoria.id,
+      especialidades,
+      bio: descricao || null,
+      experiencia_faixa: experiencia,
+      faixa_preco_desde: precoFaixa || null,
+      disponibilidade: disponibilidade || null,
+      telefone: telefone || null,
+      whatsapp: whatsapp || null,
+    },
   })
 
   if (error) {
-    if (error.code === '23505') return { success: false, error: 'Já existe um perfil profissional associado a esta conta.' }
+    if (error.code === '23505') return { success: false, error: 'Já existe um perfil profissional ou pedido associado a esta conta.' }
     if (error.code === '42501') {
-      console.error('Permissão recusada ao criar perfil profissional. Código:', error.code)
+      console.error('Permissão recusada ao criar perfil e pedido profissional. Código:', error.code)
       return { success: false, error: 'Não foi possível guardar o cadastro com as permissões actuais. Contacte o suporte.' }
     }
-    console.error('Erro ao criar perfil profissional. Código:', error.code)
-    return { success: false, error: 'Não foi possível guardar o cadastro. Tente novamente.' }
+    console.error('Erro ao criar perfil profissional e pedido de mudança. Código:', error.code)
+    return { success: false, error: 'Não foi possível guardar o cadastro e o pedido. Tente novamente.' }
   }
 
   revalidatePath('/cadastrar-profissional')
   revalidatePath('/profissional/painel')
+  revalidatePath('/conta/configuracoes')
   return { success: true }
 }

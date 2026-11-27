@@ -97,6 +97,10 @@ export default async function AdminDashboardPage() {
           <Section title="Gestão de contas" description="Ferramentas administrativas para gerir contas sem apagar os respectivos registos.">
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               <MetricCard label="Desactivação segura" value={stats.accountsTotal} detail="Clientes, profissionais e empresas com histórico preservado" href="/admin/contas" action="Eliminar conta" />
+              <Link href="/admin/pedidos-tipo-conta" className="flex min-h-44 flex-col justify-between rounded-xl bg-white p-5 shadow-sm ring-1 ring-black/5 dark:bg-slate-900 dark:ring-white/10 sm:p-6">
+                <div><h3 className="text-sm font-semibold text-slate-600 dark:text-slate-300">Mudança de tipo de conta</h3><p className="mt-3 text-sm text-slate-500 dark:text-slate-400">Consultar e avaliar pedidos de profissional ou empresa.</p></div>
+                <span className="mt-5 inline-flex min-h-10 w-fit items-center rounded-lg bg-orange-700 px-4 py-2 text-sm font-semibold text-white dark:bg-orange-600">Rever pedidos</span>
+              </Link>
             </div>
           </Section>
 
