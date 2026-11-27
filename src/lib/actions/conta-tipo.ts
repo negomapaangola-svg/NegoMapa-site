@@ -14,6 +14,19 @@ export type PedidoMudancaTipoConta = {
   requested_at: string
 }
 
+export type DecisaoMudancaTipoConta = {
+  id: string
+  user_id: string
+  requested_account_type: 'profissional' | 'empresa'
+  display_name: string
+  requested_at: string
+  status: 'approved' | 'rejected'
+  reviewed_at: string
+  reviewed_by: string
+  reviewer_name: string
+  review_reason: string
+}
+
 export async function listarPedidosMudancaTipoConta(): Promise<{
   ok: boolean
   pedidos: PedidoMudancaTipoConta[]
@@ -33,10 +46,29 @@ export async function listarPedidosMudancaTipoConta(): Promise<{
   return { ok: true, pedidos: (data ?? []) as PedidoMudancaTipoConta[] }
 }
 
+export async function listarHistoricoMudancaTipoConta(): Promise<{
+  ok: boolean
+  decisoes: DecisaoMudancaTipoConta[]
+  message?: string
+}> {
+  if (!(await isAdmin())) {
+    return { ok: false, decisoes: [], message: 'Acesso reservado à administração.' }
+  }
+
+  const supabase = await createSupabaseServerClient()
+  const { data, error } = await supabase.rpc('admin_list_account_type_change_history')
+  if (error) {
+    console.error('Erro ao listar histórico de pedidos de mudança. Código:', error.code)
+    return { ok: false, decisoes: [], message: 'Não foi possível carregar o histórico administrativo.' }
+  }
+
+  return { ok: true, decisoes: (data ?? []) as DecisaoMudancaTipoConta[] }
+}
+
 export async function avaliarPedidoMudancaTipoConta(
   requestId: string,
   decisao: 'approve' | 'reject',
-  motivo?: string,
+  motivo: string,
 ): Promise<{ ok: boolean; message: string }> {
   if (!(await isAdmin())) {
     return { ok: false, message: 'Acesso reservado à administração.' }
@@ -46,18 +78,15 @@ export async function avaliarPedidoMudancaTipoConta(
   }
 
   const reason = typeof motivo === 'string' ? motivo.trim() : ''
-  if (decisao === 'reject' && (reason.length < 10 || reason.length > 1000)) {
-    return { ok: false, message: 'Indique um motivo de rejeição entre 10 e 1000 caracteres.' }
-  }
-  if (decisao === 'approve' && reason.length > 1000) {
-    return { ok: false, message: 'O motivo não pode exceder 1000 caracteres.' }
+  if (reason.length < 10 || reason.length > 1000) {
+    return { ok: false, message: 'Indique um motivo entre 10 e 1000 caracteres para aprovar ou rejeitar.' }
   }
 
   const supabase = await createSupabaseServerClient()
   const { data, error } = await supabase.rpc('admin_review_account_type_change', {
     p_request_id: requestId,
     p_decision: decisao,
-    p_reason: reason || null,
+    p_reason: reason,
   })
 
   if (error || !data) {
