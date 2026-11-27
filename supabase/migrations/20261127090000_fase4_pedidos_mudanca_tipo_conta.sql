@@ -169,6 +169,17 @@ begin
   if jsonb_typeof(p_profile_data) is distinct from 'object' then
     raise exception 'Dados do perfil inválidos' using errcode = '22023';
   end if;
+  if exists (
+    select 1 from jsonb_object_keys(p_profile_data) as supplied(key)
+    where supplied.key not in (
+      'nome', 'slug', 'provincia', 'municipio', 'bairro',
+      'latitude_aproximada', 'longitude_aproximada', 'categoria_id',
+      'especialidades', 'bio', 'experiencia_faixa', 'faixa_preco_desde',
+      'disponibilidade', 'telefone', 'whatsapp'
+    )
+  ) then
+    raise exception 'O perfil contém campos não permitidos' using errcode = '22023';
+  end if;
 
   select *
     into v_profile
@@ -236,6 +247,17 @@ begin
   end if;
   if jsonb_typeof(p_profile_data) is distinct from 'object' then
     raise exception 'Dados do perfil inválidos' using errcode = '22023';
+  end if;
+  if exists (
+    select 1 from jsonb_object_keys(p_profile_data) as supplied(key)
+    where supplied.key not in (
+      'name', 'slug', 'sector', 'province', 'city', 'bairro',
+      'latitude_aproximada', 'longitude_aproximada', 'description',
+      'phone', 'whatsapp', 'email', 'website', 'logo_url', 'nif',
+      'estado_legalizacao', 'documento_legalizacao_path'
+    )
+  ) then
+    raise exception 'O perfil empresarial contém campos não permitidos' using errcode = '22023';
   end if;
 
   select *
