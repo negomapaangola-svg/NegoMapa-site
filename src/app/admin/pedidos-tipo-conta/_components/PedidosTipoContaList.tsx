@@ -59,7 +59,9 @@ export function PedidosTipoContaList({ pedidos, historico }: { pedidos: PedidoMu
             <textarea
               value={motivos[pedido.id] ?? ''}
               onChange={(event) => setMotivos((actual) => ({ ...actual, [pedido.id]: event.target.value }))}
-              required\n              minLength={10}\n              maxLength={1000}
+              required
+              minLength={10}
+              maxLength={1000}
               rows={2}
               className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-950"
             />
