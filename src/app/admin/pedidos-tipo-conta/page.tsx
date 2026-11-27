@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { MainLayout } from '@/components/layout/MainLayout'
 import { isAdmin } from '@/lib/auth'
-import { listarPedidosMudancaTipoConta } from '@/lib/actions/conta-tipo'
+import { listarHistoricoMudancaTipoConta, listarPedidosMudancaTipoConta } from '@/lib/actions/conta-tipo'
 import { PedidosTipoContaList } from './_components/PedidosTipoContaList'
 
 export const dynamic = 'force-dynamic'
@@ -15,7 +15,10 @@ export const metadata: Metadata = {
 
 export default async function AdminPedidosTipoContaPage() {
   if (!(await isAdmin())) notFound()
-  const resultado = await listarPedidosMudancaTipoConta()
+  const [resultado, historico] = await Promise.all([
+    listarPedidosMudancaTipoConta(),
+    listarHistoricoMudancaTipoConta(),
+  ])
 
   return (
     <MainLayout>
@@ -29,7 +32,8 @@ export default async function AdminPedidosTipoContaPage() {
             </p>
           </header>
           {!resultado.ok && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/30 dark:text-red-200">{resultado.message}</p>}
-          <PedidosTipoContaList pedidos={resultado.pedidos} />
+          <PedidosTipoContaList pedidos={resultado.pedidos} historico={historico.ok ? historico.decisoes : []} />
+          {!historico.ok && <p role="alert" className="text-sm text-amber-700 dark:text-amber-300">{historico.message}</p>}
         </div>
       </main>
     </MainLayout>
