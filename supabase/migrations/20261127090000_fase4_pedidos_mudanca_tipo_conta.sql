@@ -349,7 +349,7 @@ returns table (
 language plpgsql
 security definer
 set search_path = ''
-as $
+as $body$
 begin
   if auth.uid() is null or not public.is_admin() then
     raise exception 'Acesso negado' using errcode = '42501';
