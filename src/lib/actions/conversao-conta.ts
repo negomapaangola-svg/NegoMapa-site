@@ -95,40 +95,31 @@ export async function criarEmpresaPendente(dados: DadosEmpresaPendente) {
   if ((dados.bairro ?? '').length > 120 || (dados.descricao ?? '').length > 2000 || (dados.website ?? '').length > 500 ||
       (dados.nif ?? '').length > 40) return { success: false, error: 'Um ou mais campos excedem o limite permitido.' }
 
-  const { error } = await supabase.from('companies').insert({
-    user_id: user.id,
-    name: nome,
-    slug,
-    sector: setor,
-    province: provincia,
-    city: municipio,
-    bairro: dados.bairro?.trim() || null,
-    latitude_aproximada: latitude === null ? null : Math.round(latitude * 100) / 100,
-    longitude_aproximada: longitude === null ? null : Math.round(longitude * 100) / 100,
-    description: dados.descricao?.trim() || null,
-    phone: telefone || null,
-    whatsapp: whatsapp || null,
-    email,
-    website: dados.website?.trim() || null,
-    logo_url: dados.logoPath || null,
-    nif: dados.legalizada ? (dados.nif?.trim() || null) : null,
-    estado_legalizacao: dados.legalizada ? 'legalizada' : null,
-    documento_legalizacao_path: dados.legalizada ? (dados.documentoPath || null) : null,
-    is_approved: false,
+  const { error } = await supabase.rpc('create_company_profile_and_request', {
+    p_profile_data: {
+      name: nome,
+      slug,
+      sector: setor,
+      province: provincia,
+      city: municipio,
+      bairro: dados.bairro?.trim() || null,
+      latitude_aproximada: latitude === null ? null : Math.round(latitude * 100) / 100,
+      longitude_aproximada: longitude === null ? null : Math.round(longitude * 100) / 100,
+      description: dados.descricao?.trim() || null,
+      phone: telefone || null,
+      whatsapp: whatsapp || null,
+      email,
+      website: dados.website?.trim() || null,
+      logo_url: dados.logoPath || null,
+      nif: dados.legalizada ? (dados.nif?.trim() || null) : null,
+      estado_legalizacao: dados.legalizada ? 'legalizada' : null,
+      documento_legalizacao_path: dados.legalizada ? (dados.documentoPath || null) : null,
+    },
   })
   if (error) {
-    if (error.code === '23505') return { success: false, error: 'Já existe um registo semelhante ou uma empresa associada a esta conta.' }
-    console.error('Erro ao criar empresa pendente. Código:', error.code)
-    return { success: false, error: 'Não foi possível registar a empresa. Verifique os dados e tente novamente.' }
-  }
-
-  const { error: pedidoError } = await supabase.rpc('request_account_type_change', {
-    p_requested_type: 'empresa',
-    p_display_name: nome,
-  })
-  if (pedidoError) {
-    console.error('Empresa criada, mas o pedido de mudança de tipo falhou. Código:', pedidoError.code)
-    return { success: false, error: 'A empresa ficou pendente, mas não foi possível enviar o pedido de mudança de tipo. Tente novamente nas configurações da conta.' }
+    if (error.code === '23505') return { success: false, error: 'Já existe um registo ou pedido associado a esta conta.' }
+    console.error('Erro ao criar empresa e pedido de mudança de tipo. Código:', error.code)
+    return { success: false, error: 'Não foi possível guardar a empresa e o pedido. Verifique os dados e tente novamente.' }
   }
 
   revalidatePath('/perfil')
