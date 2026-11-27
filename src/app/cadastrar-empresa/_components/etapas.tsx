@@ -2,8 +2,9 @@
 
 import type { StepDefinition } from '@/components/forms/multi-step/types'
 import { TextField, CheckboxField } from '@/components/forms/multi-step/FormFields'
-import { SelectField, RadioGroupField, FileField } from '@/components/forms/multi-step/Fields'
+import { SelectSearchField, SelectField, RadioGroupField, FileField } from '@/components/forms/multi-step/Fields'
 import { Button } from '@/components/ui/Button'
+import { LocalizacaoPicker } from '@/components/localizacao/LocalizacaoPicker'
 import { SETORES_EMPRESA, PROVINCIAS, municipiosDa, FAIXAS_PRECO_DESDE } from '@/lib/listas-selecao'
 
 export type DadosEmpresa = {
@@ -13,6 +14,8 @@ export type DadosEmpresa = {
   provincia: string
   municipio: string
   bairro: string
+  latitudeAproximada: number | null
+  longitudeAproximada: number | null
   descricao: string
   categorias: string[]
   faixaPreco: string
@@ -34,6 +37,8 @@ export const dadosVazios: DadosEmpresa = {
   provincia: '',
   municipio: '',
   bairro: '',
+  latitudeAproximada: null,
+  longitudeAproximada: null,
   descricao: '',
   categorias: [],
   faixaPreco: '',
@@ -77,7 +82,7 @@ export function buildEtapas(categorias: ReadonlyArray<CategoriaOpcao>): Readonly
       render: ({ data, errors, setField }) => (
         <>
           <TextField id="nome" label="Nome da empresa" value={data.nome} onChange={(v) => setField('nome', v)} required error={errors.nome} />
-          <SelectField
+          <SelectSearchField
             id="setor"
             label="Setor"
             value={data.setor}
@@ -86,7 +91,7 @@ export function buildEtapas(categorias: ReadonlyArray<CategoriaOpcao>): Readonly
             required
             error={errors.setor}
           />
-          <SelectField
+          <SelectSearchField
             id="provincia"
             label="Província"
             value={data.provincia}
@@ -98,18 +103,28 @@ export function buildEtapas(categorias: ReadonlyArray<CategoriaOpcao>): Readonly
             required
             error={errors.provincia}
           />
-          <SelectField
+          <SelectSearchField
             id="municipio"
             label="Município"
             value={data.municipio}
             onChange={(v) => setField('municipio', v)}
             options={municipiosDa(data.provincia)}
+            allowCustomValue
             required
             disabled={!data.provincia}
             hint={data.provincia ? undefined : 'Escolha primeiro a província.'}
             error={errors.municipio}
           />
           <TextField id="bairro" label="Zona ou bairro" value={data.bairro} onChange={(v) => setField('bairro', v)} hint="Opcional." />
+          <LocalizacaoPicker
+            latitude={data.latitudeAproximada}
+            longitude={data.longitudeAproximada}
+            onCoordinatesChange={(lat, lon) => {
+              setField('latitudeAproximada', lat)
+              setField('longitudeAproximada', lon)
+            }}
+            modo="complemento"
+          />
         </>
       ),
     },
@@ -181,10 +196,10 @@ export function buildEtapas(categorias: ReadonlyArray<CategoriaOpcao>): Readonly
       id: 'contactos',
       title: 'Contactos',
       description: 'Estes contactos ficam visíveis na página da empresa depois de aprovada.',
-      requiredFields: (d) => ['telefone', 'email', ...(d.mesmoNumeroWhatsapp ? [] : ['whatsapp'])],
+      requiredFields: (d) => ['email', ...(d.telefone.trim() || (!d.mesmoNumeroWhatsapp && d.whatsapp.trim()) ? [] : ['telefone'])],
       render: ({ data, errors, setField }) => (
         <>
-          <TextField id="telefone" label="Telefone" type="tel" value={data.telefone} onChange={(v) => setField('telefone', v)} required error={errors.telefone} />
+          <TextField id="telefone" label="Telefone" type="tel" value={data.telefone} onChange={(v) => setField('telefone', v)} error={errors.telefone} hint="Indique pelo menos um contacto: telefone ou WhatsApp." />
           <CheckboxField
             id="mesmoNumeroWhatsapp"
             label="Usar o mesmo número no WhatsApp"
@@ -198,7 +213,6 @@ export function buildEtapas(categorias: ReadonlyArray<CategoriaOpcao>): Readonly
               type="tel"
               value={data.whatsapp}
               onChange={(v) => setField('whatsapp', v)}
-              required
               error={errors.whatsapp}
             />
           )}

@@ -4,6 +4,7 @@ import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { revalidatePath } from 'next/cache'
 import { createHash } from 'node:crypto'
 import { isAdmin } from '@/lib/auth'
+import { PROVINCIAS_ANGOLA, municipiosDeProvincia } from '@/lib/listas-selecao'
 
 export type PerfilProfissionalProprio = {
   id: string
@@ -59,6 +60,8 @@ export type DadosCadastroProfissional = {
   provincia: string
   municipio: string
   bairro: string
+  latitudeAproximada?: unknown
+  longitudeAproximada?: unknown
   categoriaId: string
   especialidades: string
   descricao: string
@@ -116,6 +119,8 @@ export async function criarPerfilProfissional(dados: DadosCadastroProfissional):
   const provincia = typeof dados.provincia === 'string' ? dados.provincia.trim() : ''
   const municipio = typeof dados.municipio === 'string' ? dados.municipio.trim() : ''
   const bairro = typeof dados.bairro === 'string' ? dados.bairro.trim() : ''
+  const latitude = dados.latitudeAproximada == null ? null : Number(dados.latitudeAproximada)
+  const longitude = dados.longitudeAproximada == null ? null : Number(dados.longitudeAproximada)
   const telefone = typeof dados.telefone === 'string' ? dados.telefone.trim() : ''
   const whatsapp = typeof dados.whatsapp === 'string' ? dados.whatsapp.trim() : ''
   const descricao = typeof dados.descricao === 'string' ? dados.descricao.trim() : ''
@@ -125,13 +130,21 @@ export async function criarPerfilProfissional(dados: DadosCadastroProfissional):
   const especialidadesTexto = typeof dados.especialidades === 'string' ? dados.especialidades : ''
 
   if (nome.length < 2 || nome.length > 120) return { success: false, error: 'Indique um nome entre 2 e 120 caracteres.' }
-  if (!provincia || provincia.length > 80) return { success: false, error: 'Seleccione uma província válida.' }
+  if (!(PROVINCIAS_ANGOLA as readonly string[]).includes(provincia) || provincia.length > 80) return { success: false, error: 'Seleccione uma província válida.' }
   if (!municipio || municipio.length > 100) return { success: false, error: 'Indique um município válido.' }
+  const municipiosPermitidos = municipiosDeProvincia(provincia)
+  if (municipiosPermitidos && !municipiosPermitidos.includes(municipio)) return { success: false, error: 'Seleccione um município válido para a província indicada.' }
   if (bairro.length > 120) return { success: false, error: 'O bairro não pode exceder 120 caracteres.' }
+  if ((latitude === null) !== (longitude === null) ||
+      (latitude !== null && (!Number.isFinite(latitude) || latitude < -90 || latitude > 90)) ||
+      (longitude !== null && (!Number.isFinite(longitude) || longitude < -180 || longitude > 180))) {
+    return { success: false, error: 'A geolocalização aproximada é inválida.' }
+  }
   if (!UUID_CATEGORIA.test(dados.categoriaId ?? '')) return { success: false, error: 'Seleccione uma categoria válida.' }
   if (!EXPERIENCIAS_VALIDAS.includes(experiencia)) return { success: false, error: 'Seleccione uma faixa de experiência válida.' }
-  if (telefone.length < 5 || telefone.length > 32) return { success: false, error: 'Indique um telefone válido.' }
-  if (whatsapp.length < 5 || whatsapp.length > 32) return { success: false, error: 'Indique um WhatsApp válido.' }
+  if (!telefone && !whatsapp) return { success: false, error: 'Indique pelo menos um contacto: telefone ou WhatsApp.' }
+  if (telefone && (telefone.length < 5 || telefone.length > 32)) return { success: false, error: 'Indique um telefone válido.' }
+  if (whatsapp && (whatsapp.length < 5 || whatsapp.length > 32)) return { success: false, error: 'Indique um WhatsApp válido.' }
   if (descricao.length > 2000) return { success: false, error: 'A descrição não pode exceder 2.000 caracteres.' }
   if (disponibilidade && !DISPONIBILIDADES_VALIDAS.includes(disponibilidade)) return { success: false, error: 'Seleccione uma disponibilidade válida.' }
   if (precoFaixa && (!/^\d+(?:\.\d+)?$/.test(precoFaixa) || Number(precoFaixa) < 0)) return { success: false, error: 'Seleccione uma faixa de preço válida.' }
@@ -162,35 +175,38 @@ export async function criarPerfilProfissional(dados: DadosCadastroProfissional):
   }
   if (existente) return { success: false, error: 'Já existe um perfil profissional associado a esta conta.' }
 
-  const { error } = await supabase.from('profissionais').insert({
-    user_id: user.id,
-    nome,
-    slug: slugCadastroProfissional(user.id),
-    provincia,
-    municipio,
-    bairro: bairro || null,
-    categoria_id: categoria.id,
-    especialidades,
-    bio: descricao || null,
-    experiencia_faixa: experiencia,
-    faixa_preco_desde: precoFaixa || null,
-    disponibilidade: disponibilidade || null,
-    telefone,
-    whatsapp,
-    estado: 'pendente',
+  const { error } = await supabase.rpc('create_professional_profile_and_request', {
+    p_profile_data: {
+      nome,
+      slug: slugCadastroProfissional(user.id),
+      provincia,
+      municipio,
+      bairro: bairro || null,
+      latitude_aproximada: latitude === null ? null : Math.round(latitude * 100) / 100,
+      longitude_aproximada: longitude === null ? null : Math.round(longitude * 100) / 100,
+      categoria_id: categoria.id,
+      especialidades,
+      bio: descricao || null,
+      experiencia_faixa: experiencia,
+      faixa_preco_desde: precoFaixa || null,
+      disponibilidade: disponibilidade || null,
+      telefone: telefone || null,
+      whatsapp: whatsapp || null,
+    },
   })
 
   if (error) {
-    if (error.code === '23505') return { success: false, error: 'Já existe um perfil profissional associado a esta conta.' }
+    if (error.code === '23505') return { success: false, error: 'Já existe um perfil profissional ou pedido associado a esta conta.' }
     if (error.code === '42501') {
-      console.error('Permissão recusada ao criar perfil profissional. Código:', error.code)
+      console.error('Permissão recusada ao criar perfil e pedido profissional. Código:', error.code)
       return { success: false, error: 'Não foi possível guardar o cadastro com as permissões actuais. Contacte o suporte.' }
     }
-    console.error('Erro ao criar perfil profissional. Código:', error.code)
-    return { success: false, error: 'Não foi possível guardar o cadastro. Tente novamente.' }
+    console.error('Erro ao criar perfil profissional e pedido de mudança. Código:', error.code)
+    return { success: false, error: 'Não foi possível guardar o cadastro e o pedido. Tente novamente.' }
   }
 
   revalidatePath('/cadastrar-profissional')
   revalidatePath('/profissional/painel')
+  revalidatePath('/conta/configuracoes')
   return { success: true }
 }
