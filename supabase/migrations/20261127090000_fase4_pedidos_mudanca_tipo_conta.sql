@@ -156,7 +156,8 @@ returns jsonb
 language plpgsql
 security definer
 set search_path = ''
-as $body$\1declare
+as $body$
+declare
   v_user uuid := auth.uid();
   v_profile public.profissionais;
   v_profile_id uuid;
@@ -223,7 +224,8 @@ returns jsonb
 language plpgsql
 security definer
 set search_path = ''
-as $body$\1declare
+as $body$
+declare
   v_user uuid := auth.uid();
   v_profile public.companies;
   v_profile_id uuid;
