@@ -25,7 +25,11 @@ create table if not exists public.account_type_change_requests (
     (status in ('approved', 'rejected') and reviewed_at is not null and reviewed_by is not null)
   ),
   constraint account_type_change_review_reason_length check (
-    review_reason is null or char_length(review_reason) <= 1000
+    (status = 'pending' and review_reason is null)
+    or
+    (status in ('approved', 'rejected')
+      and review_reason is not null
+      and char_length(btrim(review_reason)) between 10 and 1000)
   )
 );
 
@@ -142,6 +146,143 @@ begin
 end;
 $$;
 
+
+-- Cada RPC abaixo cria o perfil e o pedido na mesma transacção PostgreSQL.
+-- Qualquer falha na inserção do pedido reverte também a criação do perfil.
+create or replace function public.create_professional_profile_and_request(
+  p_profile_data jsonb
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $
+declare
+  v_user uuid := auth.uid();
+  v_profile public.profissionais;
+  v_profile_id uuid;
+  v_request jsonb;
+begin
+  if v_user is null or public.is_admin() then
+    raise exception 'Sessão inválida ou conta administrativa' using errcode = '42501';
+  end if;
+  if jsonb_typeof(p_profile_data) is distinct from 'object' then
+    raise exception 'Dados do perfil inválidos' using errcode = '22023';
+  end if;
+
+  select *
+    into v_profile
+  from jsonb_populate_record(
+    null::public.profissionais,
+    p_profile_data || jsonb_build_object('user_id', v_user, 'estado', 'pendente')
+  );
+
+  if v_profile.nome is null or char_length(btrim(v_profile.nome)) not between 2 and 120
+     or v_profile.slug is null or char_length(v_profile.slug) not between 1 and 190 then
+    raise exception 'Nome ou identificador do perfil inválido' using errcode = '22023';
+  end if;
+
+  perform 1
+  from public.profiles
+  where id = v_user
+    and account_type = 'cliente'
+    and account_status = 'active'
+  for update;
+  if not found then
+    raise exception 'Apenas contas cliente activas podem criar este perfil' using errcode = '22023';
+  end if;
+
+  if exists (select 1 from public.profissionais where user_id = v_user)
+     or exists (select 1 from public.companies where user_id = v_user) then
+    raise exception 'Esta conta já tem um perfil profissional ou empresarial associado' using errcode = '23505';
+  end if;
+
+  insert into public.profissionais (
+    user_id, nome, slug, provincia, municipio, bairro,
+    latitude_aproximada, longitude_aproximada, categoria_id,
+    especialidades, bio, experiencia_faixa, faixa_preco_desde,
+    disponibilidade, telefone, whatsapp, estado
+  ) values (
+    v_user, btrim(v_profile.nome), v_profile.slug, v_profile.provincia,
+    v_profile.municipio, v_profile.bairro, v_profile.latitude_aproximada,
+    v_profile.longitude_aproximada, v_profile.categoria_id,
+    v_profile.especialidades, v_profile.bio, v_profile.experiencia_faixa,
+    v_profile.faixa_preco_desde, v_profile.disponibilidade,
+    v_profile.telefone, v_profile.whatsapp, 'pendente'
+  ) returning id into v_profile_id;
+
+  v_request := public.request_account_type_change('profissional', v_profile.nome);
+  return v_request || jsonb_build_object('profile_id', v_profile_id);
+end;
+$;
+
+create or replace function public.create_company_profile_and_request(
+  p_profile_data jsonb
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $
+declare
+  v_user uuid := auth.uid();
+  v_profile public.companies;
+  v_profile_id uuid;
+  v_request jsonb;
+begin
+  if v_user is null or public.is_admin() then
+    raise exception 'Sessão inválida ou conta administrativa' using errcode = '42501';
+  end if;
+  if jsonb_typeof(p_profile_data) is distinct from 'object' then
+    raise exception 'Dados do perfil inválidos' using errcode = '22023';
+  end if;
+
+  select *
+    into v_profile
+  from jsonb_populate_record(
+    null::public.companies,
+    p_profile_data || jsonb_build_object('user_id', v_user, 'is_approved', false)
+  );
+
+  if v_profile.name is null or char_length(btrim(v_profile.name)) not between 2 and 160
+     or v_profile.slug is null or char_length(v_profile.slug) not between 1 and 190 then
+    raise exception 'Nome ou identificador da empresa inválido' using errcode = '22023';
+  end if;
+
+  perform 1
+  from public.profiles
+  where id = v_user
+    and account_type = 'cliente'
+    and account_status = 'active'
+  for update;
+  if not found then
+    raise exception 'Apenas contas cliente activas podem criar este perfil' using errcode = '22023';
+  end if;
+
+  if exists (select 1 from public.profissionais where user_id = v_user)
+     or exists (select 1 from public.companies where user_id = v_user) then
+    raise exception 'Esta conta já tem um perfil profissional ou empresarial associado' using errcode = '23505';
+  end if;
+
+  insert into public.companies (
+    user_id, name, slug, sector, province, city, bairro,
+    latitude_aproximada, longitude_aproximada, description,
+    phone, whatsapp, email, website, logo_url, nif,
+    estado_legalizacao, documento_legalizacao_path, is_approved
+  ) values (
+    v_user, btrim(v_profile.name), v_profile.slug, v_profile.sector,
+    v_profile.province, v_profile.city, v_profile.bairro,
+    v_profile.latitude_aproximada, v_profile.longitude_aproximada,
+    v_profile.description, v_profile.phone, v_profile.whatsapp,
+    v_profile.email, v_profile.website, v_profile.logo_url, v_profile.nif,
+    v_profile.estado_legalizacao, v_profile.documento_legalizacao_path, false
+  ) returning id into v_profile_id;
+
+  v_request := public.request_account_type_change('empresa', v_profile.name);
+  return v_request || jsonb_build_object('profile_id', v_profile_id);
+end;
+$;
+
 create or replace function public.admin_list_account_type_change_requests()
 returns table (
   id uuid,
@@ -166,6 +307,41 @@ begin
   order by r.requested_at asc;
 end;
 $$;
+
+
+create or replace function public.admin_list_account_type_change_history()
+returns table (
+  id uuid,
+  user_id uuid,
+  requested_account_type text,
+  display_name text,
+  requested_at timestamptz,
+  status text,
+  reviewed_at timestamptz,
+  reviewed_by uuid,
+  reviewer_name text,
+  review_reason text
+)
+language plpgsql
+security definer
+set search_path = ''
+as $
+begin
+  if auth.uid() is null or not public.is_admin() then
+    raise exception 'Acesso negado' using errcode = '42501';
+  end if;
+
+  return query
+  select r.id, r.user_id, r.requested_account_type, r.display_name,
+         r.requested_at, r.status, r.reviewed_at, r.reviewed_by,
+         coalesce(nullif(btrim(p.nome), ''), r.reviewed_by::text),
+         r.review_reason
+  from public.account_type_change_requests r
+  left join public.profiles p on p.id = r.reviewed_by
+  where r.status in ('approved', 'rejected')
+  order by r.reviewed_at desc;
+end;
+$;
 
 create or replace function public.admin_review_account_type_change(
   p_request_id uuid,
@@ -196,13 +372,10 @@ begin
     raise exception 'Decisão inválida' using errcode = '22023';
   end if;
 
-  if p_decision = 'reject'
-     and (p_reason is null or char_length(btrim(p_reason)) < 10) then
-    raise exception 'Indique um motivo de rejeição com pelo menos 10 caracteres' using errcode = '22023';
-  end if;
-
-  if p_reason is not null and char_length(p_reason) > 1000 then
-    raise exception 'O motivo não pode exceder 1000 caracteres' using errcode = '22023';
+  if p_reason is null
+     or char_length(btrim(p_reason)) < 10
+     or char_length(btrim(p_reason)) > 1000 then
+    raise exception 'Indique um motivo entre 10 e 1000 caracteres para aprovar ou rejeitar' using errcode = '22023';
   end if;
 
   select * into v_request
@@ -313,7 +486,7 @@ begin
   set status = 'approved',
       reviewed_at = now(),
       reviewed_by = v_admin,
-      review_reason = nullif(btrim(coalesce(p_reason, '')), '')
+      review_reason = btrim(p_reason)
   where id = v_request.id;
 
   return jsonb_build_object(
@@ -327,14 +500,26 @@ $$;
 
 revoke all on function public.request_account_type_change(text, text)
   from public, anon;
+revoke all on function public.create_professional_profile_and_request(jsonb)
+  from public, anon;
+revoke all on function public.create_company_profile_and_request(jsonb)
+  from public, anon;
 revoke all on function public.admin_list_account_type_change_requests()
+  from public, anon;
+revoke all on function public.admin_list_account_type_change_history()
   from public, anon;
 revoke all on function public.admin_review_account_type_change(uuid, text, text)
   from public, anon;
 
 grant execute on function public.request_account_type_change(text, text)
   to authenticated;
+grant execute on function public.create_professional_profile_and_request(jsonb)
+  to authenticated;
+grant execute on function public.create_company_profile_and_request(jsonb)
+  to authenticated;
 grant execute on function public.admin_list_account_type_change_requests()
+  to authenticated;
+grant execute on function public.admin_list_account_type_change_history()
   to authenticated;
 grant execute on function public.admin_review_account_type_change(uuid, text, text)
   to authenticated;
