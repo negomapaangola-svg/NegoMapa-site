@@ -401,7 +401,7 @@ export async function guardarPerfilConta(form: FormData): Promise<void> {
   const telefone = field(form, 'telefone')
   const whatsapp = field(form, 'whatsapp')
   if (nome.length < 2 || nome.length > (tipo === 'empresa' ? 160 : 120) || /[<>]/.test(nome)) redirect('/conta/perfil?erro=nome')
-  if (telefone.length > 32 || whatsapp.length > 32) redirect('/conta/perfil?erro=contacto')
+  if (telefone.length > 32 || whatsapp.length > 32 || ((tipo === 'profissional' || tipo === 'empresa') && !telefone && !whatsapp)) redirect('/conta/perfil?erro=contacto')
 
   if (tipo === 'profissional') {
     const avatar = field(form, 'avatar_url')
@@ -418,6 +418,7 @@ export async function guardarPerfilConta(form: FormData): Promise<void> {
     const categoriaId = field(form, 'categoria_id') || null
     const provincia = field(form, 'provincia') || null
     const municipio = field(form, 'municipio') || null
+    if (!provincia || !municipio) redirect('/conta/perfil?erro=localizacao')
     const experiencia = field(form, 'experiencia_faixa') || null
     const bio = field(form, 'bio') || null
     const requiredChanged = owned.nome !== nome || owned.categoria_id !== categoriaId || owned.provincia !== provincia || owned.municipio !== municipio || owned.experiencia_faixa !== experiencia || owned.bio !== bio || owned.telefone !== (telefone || null) || owned.whatsapp !== (whatsapp || null)
@@ -443,6 +444,7 @@ export async function guardarPerfilConta(form: FormData): Promise<void> {
     const sector = field(form, 'sector')
     const province = field(form, 'province')
     const city = field(form, 'city')
+    if (!province || !city) redirect('/conta/perfil?erro=localizacao')
     const description = field(form, 'description')
     const email = field(form, 'email').toLowerCase()
     const requiredChanged = owned.name !== nome || owned.sector !== sector || owned.province !== province || owned.city !== (city || null) || owned.description !== (description || null) || owned.email !== (email || null) || owned.phone !== (telefone || null) || owned.whatsapp !== (whatsapp || null)

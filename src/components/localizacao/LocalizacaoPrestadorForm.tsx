@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { LocalizacaoPicker } from '@/components/localizacao/LocalizacaoPicker'
 import { Button } from '@/components/ui/Button'
 import { guardarLocalizacaoPrestador, removerLocalizacaoPrestador } from '@/lib/actions/proximidade'
 
@@ -10,36 +11,18 @@ export function LocalizacaoPrestadorForm({ tipo, entidadeId }: Props) {
   const [pendente, setPendente] = useState(false)
   const [mensagem, setMensagem] = useState('')
   const [ok, setOk] = useState(false)
+  const [latitude, setLatitude] = useState<number | null>(null)
+  const [longitude, setLongitude] = useState<number | null>(null)
 
-  function obterLocalizacao() {
-    setMensagem('')
-    if (!('geolocation' in navigator)) {
-      setMensagem('Este navegador não disponibiliza localização GPS.')
-      setOk(false)
-      return
-    }
+  async function guardarCoordenadas(lat: number | null, lon: number | null) {
+    setLatitude(lat)
+    setLongitude(lon)
+    if (lat === null || lon === null) return
     setPendente(true)
-    navigator.geolocation.getCurrentPosition(
-      async (posicao) => {
-        const resultado = await guardarLocalizacaoPrestador(
-          tipo,
-          entidadeId,
-          posicao.coords.latitude,
-          posicao.coords.longitude,
-        )
-        setMensagem(resultado.message)
-        setOk(resultado.ok)
-        setPendente(false)
-      },
-      (erro) => {
-        setMensagem(erro.code === erro.PERMISSION_DENIED
-          ? 'A permissão foi recusada. Pode continuar sem localização.'
-          : 'Não foi possível obter a localização. Tente novamente mais tarde.')
-        setOk(false)
-        setPendente(false)
-      },
-      { enableHighAccuracy: false, timeout: 12000, maximumAge: 300000 },
-    )
+    const resultado = await guardarLocalizacaoPrestador(tipo, entidadeId, lat, lon)
+    setMensagem(resultado.message)
+    setOk(resultado.ok)
+    setPendente(false)
   }
 
   async function remover() {
@@ -48,6 +31,10 @@ export function LocalizacaoPrestadorForm({ tipo, entidadeId }: Props) {
     setMensagem(resultado.message)
     setOk(resultado.ok)
     setPendente(false)
+    if (resultado.ok) {
+      setLatitude(null)
+      setLongitude(null)
+    }
   }
 
   return (
@@ -56,10 +43,15 @@ export function LocalizacaoPrestadorForm({ tipo, entidadeId }: Props) {
       <p className="mt-1 text-sm text-neutral-600 dark:text-cream-text">
         Opcional. Indique apenas a localização do estabelecimento ou do local de atendimento — nunca uma morada residencial. Guardamos apenas uma posição arredondada; as coordenadas não são publicadas.
       </p>
+      <div className="mt-3">
+        <LocalizacaoPicker
+          latitude={latitude}
+          longitude={longitude}
+          onCoordinatesChange={guardarCoordenadas}
+          modo="complemento"
+        />
+      </div>
       <div className="mt-3 flex flex-wrap gap-3">
-        <Button type="button" disabled={pendente} loading={pendente} onClick={obterLocalizacao}>
-          Usar localização aproximada do local de atendimento
-        </Button>
         <Button type="button" variant="outline" disabled={pendente} onClick={remover}>
           Remover localização
         </Button>

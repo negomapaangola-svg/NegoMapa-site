@@ -1,4 +1,5 @@
-import { SelectField, RadioGroupField } from "@/components/forms/multi-step/Fields"
+import { SelectSearchField, SelectField, RadioGroupField } from "@/components/forms/multi-step/Fields"
+import { LocalizacaoPicker } from "@/components/localizacao/LocalizacaoPicker"
 import { TextField, CheckboxField } from "@/components/forms/multi-step/FormFields"
 import type { StepDefinition } from "@/components/forms/multi-step/types"
 import {
@@ -16,6 +17,8 @@ export type DadosProfissional = {
   provincia: string
   municipio: string
   bairro: string
+  latitudeAproximada: number | null
+  longitudeAproximada: number | null
   // Etapa 3
   categoriaId: string
   especialidades: string
@@ -37,6 +40,8 @@ export const dadosVazios: DadosProfissional = {
   provincia: "",
   municipio: "",
   bairro: "",
+  latitudeAproximada: null,
+  longitudeAproximada: null,
   categoriaId: "",
   especialidades: "",
   descricao: "",
@@ -125,7 +130,7 @@ export function buildEtapasProfissional(
                   : "PNG, JPG ou WebP. Ainda não é enviada nesta versão."}
               </p>
             </div>
-            <SelectField
+            <SelectSearchField
               id="provincia"
               label="Província"
               value={data.provincia}
@@ -138,7 +143,7 @@ export function buildEtapasProfissional(
               error={errors.provincia}
             />
             {municipios ? (
-              <SelectField
+              <SelectSearchField
                 id="municipio"
                 label="Município"
                 value={data.municipio}
@@ -150,17 +155,17 @@ export function buildEtapasProfissional(
                 error={errors.municipio}
               />
             ) : (
-              <TextField
+              <SelectSearchField
                 id="municipio"
                 label="Município"
                 value={data.municipio}
                 onChange={(v) => setField("municipio", v)}
+                options={[]}
+                allowCustomValue
                 required
-                hint={
-                  data.provincia
-                    ? "Ainda não há lista de municípios para esta província. Escreva o nome."
-                    : "Escolha primeiro a província."
-                }
+                disabled={!data.provincia}
+                placeholder="Escreva o município"
+                hint={data.provincia ? "Escreva o nome do município." : "Escolha primeiro a província."}
                 error={errors.municipio}
               />
             )}
@@ -170,6 +175,15 @@ export function buildEtapasProfissional(
               value={data.bairro}
               onChange={(v) => setField("bairro", v)}
               hint="Opcional."
+            />
+            <LocalizacaoPicker
+              latitude={data.latitudeAproximada}
+              longitude={data.longitudeAproximada}
+              onCoordinatesChange={(lat, lon) => {
+                setField("latitudeAproximada", lat)
+                setField("longitudeAproximada", lon)
+              }}
+              modo="complemento"
             />
           </>
         )
@@ -182,7 +196,7 @@ export function buildEtapasProfissional(
       requiredFields: ["categoriaId", "experiencia"],
       render: ({ data, errors, setField }) => (
         <>
-          <SelectField
+          <SelectSearchField
             id="categoria"
             label="Categoria ou profissão"
             value={data.categoriaId}
@@ -266,7 +280,7 @@ export function buildEtapasProfissional(
       id: "contactos",
       title: "Contactos",
       description: "Estes contactos ficam visíveis para clientes depois de aprovado.",
-      requiredFields: (d) => ["telefone", ...(d.mesmoNumeroWhatsapp ? [] : ["whatsapp"])],
+      requiredFields: (d) => (d.telefone.trim() || (!d.mesmoNumeroWhatsapp && d.whatsapp.trim()) ? [] : ["telefone"]),
       render: ({ data, errors, setField }) => (
         <>
           <TextField
@@ -275,8 +289,8 @@ export function buildEtapasProfissional(
             type="tel"
             value={data.telefone}
             onChange={(v) => setField("telefone", v)}
-            required
             error={errors.telefone}
+            hint="Indique pelo menos um contacto: telefone ou WhatsApp."
             autoComplete="tel"
           />
           <CheckboxField
@@ -292,7 +306,6 @@ export function buildEtapasProfissional(
               type="tel"
               value={data.whatsapp}
               onChange={(v) => setField("whatsapp", v)}
-              required
               error={errors.whatsapp}
             />
           )}

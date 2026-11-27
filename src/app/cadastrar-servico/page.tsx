@@ -1,9 +1,10 @@
 import { Metadata } from 'next'
-import { notFound, redirect } from 'next/navigation'
+import { redirect } from 'next/navigation'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { isAdmin } from '@/lib/auth'
 import { obterContextoUtilizador } from '@/lib/permissoes'
 import { MainLayout } from '@/components/layout/MainLayout'
+import { EstadoPendente } from '@/components/conta/EstadoPendente'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card'
 import { ProfileForm } from './_components/ProfileForm'
 import { ServiceForm } from './_components/ServiceForm'
@@ -25,15 +26,9 @@ async function getProfile() {
 export default async function CadastrarServicoPage() {
   if (await isAdmin()) redirect('/admin')
   const contexto = await obterContextoUtilizador()
-
-  // Empresas aprovadas e activas podem publicar serviços.
-  if (
-    contexto.empresa &&
-    contexto.empresa.is_approved === true &&
-    (contexto.empresa.estado ?? 'aprovado') === 'aprovado' &&
-    contexto.isActive === true
-  ) {
-    const supabase = await createSupabaseServerClient()
+  // Empresas aprovadas e contas activas podem publicar serviços.
+  // empresaAprovada já valida is_approved e estado; contaAtiva valida profiles.is_active.
+  if (contexto.empresaAprovada && contexto.contaAtiva) {
     const categorias = await getCategories()
 
     return (
@@ -43,7 +38,6 @@ export default async function CadastrarServicoPage() {
     )
   }
 
-  if (contexto.accountType && contexto.accountType !== 'cliente' && !contexto.profissional) redirect('/')
   const supabase = await createSupabaseServerClient()
 
   const { data: { user } } = await supabase.auth.getUser()
@@ -51,6 +45,29 @@ export default async function CadastrarServicoPage() {
   if (!user) {
     redirect('/login?redirectTo=/cadastrar-servico')
   }
+
+  // O papel continua "cliente" enquanto a empresa aguarda aprovação.
+  // Consultar o registo pendente independentemente de profiles.account_type.
+  const { data: empresaPendente } = await supabase
+    .from('companies')
+    .select('is_approved,estado')
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  if (empresaPendente && empresaPendente.is_approved !== true && (empresaPendente.estado ?? 'pendente') === 'pendente') {
+    return (
+      <MainLayout>
+        <section className="min-h-[60vh] bg-cream px-4 py-12 dark:bg-navy-dark">
+          <div className="mx-auto max-w-2xl">
+            <EstadoPendente tipo="empresa" />
+          </div>
+        </section>
+      </MainLayout>
+    )
+  }
+
+  if (contexto.empresa) redirect('/empresa/painel')
+  if (contexto.accountType && contexto.accountType !== 'cliente' && !contexto.profissional) redirect('/')
 
   const [profile, categorias] = await Promise.all([getProfile(), getCategories()])
 
@@ -67,6 +84,18 @@ export default async function CadastrarServicoPage() {
     return (
       <MainLayout>
         <ProfileSuspendedPage profile={profile} />
+      </MainLayout>
+    )
+  }
+
+  if (profile.estado === 'pendente') {
+    return (
+      <MainLayout>
+        <section className="min-h-[60vh] bg-cream px-4 py-12 dark:bg-navy-dark">
+          <div className="mx-auto max-w-2xl">
+            <EstadoPendente tipo="profissional" />
+          </div>
+        </section>
       </MainLayout>
     )
   }
@@ -127,7 +156,7 @@ function ProfileSuspendedPage({ profile }: { profile: { estado: string; nome: st
             </p>
             <a
               href="/servicos"
-              className="inline-flex items-center gap-4 py-2 border border-card-border rounded-[4px] bg-white text-ink dark:text-cream hover:bg-cream dark:hover:bg-navy-dark transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 border border-card-border rounded-[4px] bg-white text-ink dark:text-cream hover:bg-cream dark:hover:bg-navy-dark transition-colors"
             >
               <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />

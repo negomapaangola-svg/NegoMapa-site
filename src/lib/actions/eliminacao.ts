@@ -22,21 +22,8 @@ export async function eliminarVaga(vagaId: string, companyId: string): Promise<A
   const company = await obterEmpresaAutorizada(companyId)
   if (!company) return { success: false, error: 'Empresa não encontrada ou sem permissão.' }
 
-  const supabase = await createSupabaseServerClient()
-  const { error } = await supabase
-    .from('vagas')
-    .delete()
-    .eq('id', vagaId)
-    .eq('company_id', company.id)
-
-  if (error) {
-    console.error('Erro ao eliminar vaga:', error)
-    return { success: false, error: 'Não foi possível eliminar a vaga. Tente novamente.' }
-  }
-
-  revalidatePath('/empresa/painel/vagas')
-  revalidatePath('/vagas')
-  return { success: true }
+  // A vaga é um registo histórico: o proprietário deve encerrá-la, nunca eliminá-la.
+  return { success: false, error: 'Não é permitido eliminar vagas. Utilize a opção “Encerrar vaga” para a retirar da pesquisa.' }
 }
 
 export async function eliminarServico(servicoId: string, companyId: string): Promise<ActionResult> {
@@ -98,6 +85,22 @@ export async function eliminarEmpresa(companyId: string): Promise<ActionResult> 
   if (!company) return { success: false, error: 'Empresa não encontrada ou sem permissão.' }
 
   const supabase = await createSupabaseServerClient()
+
+  // Impede que a eliminação da empresa seja usada para contornar a proibição
+  // de eliminar vagas e o histórico associado.
+  const { data: vagasAssociadas, error: vagasError } = await supabase
+    .from('vagas')
+    .select('id')
+    .eq('company_id', company.id)
+
+  if (vagasError) {
+    console.error('Erro ao verificar vagas associadas à empresa:', vagasError)
+    return { success: false, error: 'Não foi possível verificar as vagas da empresa. A operação foi cancelada.' }
+  }
+
+  if ((vagasAssociadas ?? []).length > 0) {
+    return { success: false, error: 'Esta empresa tem vagas associadas. Encerre as vagas antes de solicitar a eliminação da empresa.' }
+  }
 
   const { data: conversas } = await supabase
     .from('conversas')

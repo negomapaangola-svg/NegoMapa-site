@@ -2,7 +2,7 @@
 
 import { useState, useTransition, type FormEvent } from 'react'
 import { Button } from '@/components/ui/Button'
-import { PROVINCIAS } from '@/components/home/constants'
+import { LocalizacaoPicker } from '@/components/localizacao/LocalizacaoPicker'
 import {
   actualizarLocalizacaoCliente,
   removerLocalizacaoCliente,
@@ -15,6 +15,8 @@ type Props = {
   provinciaInicial: string
   municipioInicial: string
   bairroInicial: string
+  latitudeInicial?: number | null
+  longitudeInicial?: number | null
   consentimento: boolean
   consentimentoActualizadoEm: string | null
   categorias: Categoria[]
@@ -22,7 +24,7 @@ type Props = {
 }
 
 export function LocalizacaoPreferenciasForm({
-  provinciaInicial, municipioInicial, bairroInicial, consentimento,
+  provinciaInicial, municipioInicial, bairroInicial, latitudeInicial = null, longitudeInicial = null, consentimento,
   consentimentoActualizadoEm, categorias, preferenciasIniciais,
 }: Props) {
   const [provincia, setProvincia] = useState(provinciaInicial)
@@ -35,7 +37,9 @@ export function LocalizacaoPreferenciasForm({
   const [mensagemPreferencias, setMensagemPreferencias] = useState('')
   const [okLocal, setOkLocal] = useState(false)
   const [okPreferencias, setOkPreferencias] = useState(false)
-  const [gpsPendente, setGpsPendente] = useState(false)
+  const [opcaoLocalizacao, setOpcaoLocalizacao] = useState<'automatica' | 'manual'>(provinciaInicial && municipioInicial ? 'manual' : 'automatica')
+  const [latitude, setLatitude] = useState<number | null>(latitudeInicial)
+  const [longitude, setLongitude] = useState<number | null>(longitudeInicial)
   const [pendenteLocal, iniciarLocal] = useTransition()
   const [pendentePreferencias, iniciarPreferencias] = useTransition()
 
@@ -43,7 +47,20 @@ export function LocalizacaoPreferenciasForm({
     event.preventDefault()
     setMensagemLocal('')
     iniciarLocal(async () => {
-      const resultado = await actualizarLocalizacaoCliente({ provincia, municipio, bairro })
+      const resultado = opcaoLocalizacao === 'automatica'
+        ? (latitude !== null && longitude !== null
+            ? await guardarLocalizacaoGpsCliente({ latitude, longitude })
+            : { ok: false, message: 'Obtenha a localização aproximada antes de guardar.' })
+        : await actualizarLocalizacaoCliente({ provincia, municipio, bairro })
+      if (resultado.ok && opcaoLocalizacao === 'automatica') {
+        setConsentimentoActual(true)
+        setDataConsentimentoEstado(new Date().toISOString())
+      } else if (resultado.ok) {
+        setConsentimentoActual(false)
+        setDataConsentimentoEstado(null)
+        setLatitude(null)
+        setLongitude(null)
+      }
       setMensagemLocal(resultado.message)
       setOkLocal(resultado.ok)
     })
@@ -57,6 +74,8 @@ export function LocalizacaoPreferenciasForm({
         setProvincia('')
         setMunicipio('')
         setBairro('')
+        setLatitude(null)
+        setLongitude(null)
         setConsentimentoActual(false)
         setDataConsentimentoEstado(null)
       }
@@ -65,43 +84,6 @@ export function LocalizacaoPreferenciasForm({
     })
   }
 
-  function usarLocalizacaoGps() {
-    setMensagemLocal('')
-    if (!('geolocation' in navigator)) {
-      setMensagemLocal('Este navegador não disponibiliza localização GPS. Pode continuar sem GPS.')
-      setOkLocal(false)
-      return
-    }
-    setGpsPendente(true)
-    navigator.geolocation.getCurrentPosition(
-      (posicao) => {
-        iniciarLocal(async () => {
-          const resultado = await guardarLocalizacaoGpsCliente({
-            latitude: posicao.coords.latitude,
-            longitude: posicao.coords.longitude,
-          })
-          if (resultado.ok) {
-            setConsentimentoActual(true)
-            setDataConsentimentoEstado(new Date().toISOString())
-          }
-          setMensagemLocal(resultado.message)
-          setOkLocal(resultado.ok)
-          setGpsPendente(false)
-        })
-      },
-      (erro) => {
-        const mensagem = erro.code === erro.PERMISSION_DENIED
-          ? 'A permissão de localização foi recusada. A pesquisa continua disponível sem GPS.'
-          : erro.code === erro.TIMEOUT
-            ? 'A localização demorou demasiado tempo. Tente novamente ou continue sem GPS.'
-            : 'Não foi possível obter a localização. Pode continuar a pesquisar sem GPS.'
-        setMensagemLocal(mensagem)
-        setOkLocal(false)
-        setGpsPendente(false)
-      },
-      { enableHighAccuracy: false, timeout: 12000, maximumAge: 300000 },
-    )
-  }
 
   function alternarCategoria(id: string) {
     setSeleccionadas((actual) => actual.includes(id)
@@ -124,33 +106,29 @@ export function LocalizacaoPreferenciasForm({
       <section aria-labelledby="localizacao-cliente-titulo">
         <h3 id="localizacao-cliente-titulo" className="font-semibold text-ink dark:text-cream">Localização administrativa</h3>
         <p className="mt-1 text-sm text-neutral-600 dark:text-cream-text">Estes dados são privados e servem apenas para ordenar resultados por província e município.</p>
-        <form onSubmit={guardarLocal} className="mt-4 grid gap-4 sm:grid-cols-2">
-          <label className="text-sm font-medium">Província
-            <select value={provincia} onChange={(event) => setProvincia(event.target.value)} className="mt-1 w-full rounded-xl border border-card-border bg-white px-3 py-3 dark:bg-neutral-900">
-              <option value="">Seleccionar província</option>
-              {PROVINCIAS.map((item) => <option key={item} value={item}>{item}</option>)}
-            </select>
-          </label>
-          <label className="text-sm font-medium">Município
-            <input value={municipio} onChange={(event) => setMunicipio(event.target.value)} maxLength={100} placeholder="O seu município" className="mt-1 w-full rounded-xl border border-card-border bg-white px-3 py-3 dark:bg-neutral-900" />
-          </label>
-          <label className="text-sm font-medium sm:col-span-2">Bairro (opcional)
-            <input value={bairro} onChange={(event) => setBairro(event.target.value)} maxLength={100} placeholder="O seu bairro" className="mt-1 w-full rounded-xl border border-card-border bg-white px-3 py-3 dark:bg-neutral-900" />
-          </label>
-          {mensagemLocal && <p role="status" className={okLocal ? 'text-sm text-green-700 dark:text-green-300 sm:col-span-2' : 'text-sm text-red-700 dark:text-red-300 sm:col-span-2'}>{mensagemLocal}</p>}
-          <div className="flex flex-wrap gap-3 sm:col-span-2">
-            <Button type="submit" loading={pendenteLocal} disabled={pendenteLocal || gpsPendente}>Guardar localização</Button>
-            <Button type="button" variant="outline" disabled={pendenteLocal || gpsPendente} onClick={removerLocal}>Remover localização e consentimento</Button>
+        <form onSubmit={guardarLocal} className="mt-4 space-y-4">
+          <LocalizacaoPicker
+            modo="cliente"
+            provincia={provincia}
+            municipio={municipio}
+            onProvinciaChange={setProvincia}
+            onMunicipioChange={setMunicipio}
+            latitude={latitude}
+            longitude={longitude}
+            onCoordinatesChange={(lat, lon) => { setLatitude(lat); setLongitude(lon); setOpcaoLocalizacao('automatica') }}
+            onOptionChange={setOpcaoLocalizacao}
+          />
+          {opcaoLocalizacao === 'manual' && (
+            <label className="block text-sm font-medium">Bairro (opcional)
+              <input value={bairro} onChange={(event) => setBairro(event.target.value)} maxLength={100} placeholder="O seu bairro" className="mt-1 w-full rounded-xl border border-card-border bg-white px-3 py-3 dark:bg-neutral-900" />
+            </label>
+          )}
+          {mensagemLocal && <p role="status" className={okLocal ? 'text-sm text-green-700 dark:text-green-300' : 'text-sm text-red-700 dark:text-red-300'}>{mensagemLocal}</p>}
+          <div className="flex flex-wrap gap-3">
+            <Button type="submit" loading={pendenteLocal} disabled={pendenteLocal}>Guardar localização</Button>
+            <Button type="button" variant="outline" disabled={pendenteLocal} onClick={removerLocal}>Remover localização e consentimento</Button>
           </div>
         </form>
-        <div className="mt-4 rounded-xl border border-card-border bg-white/50 p-4 text-sm dark:bg-white/5">
-          <p><strong>Consentimento de localização:</strong> {consentimentoActual ? 'Concedido' : 'Não concedido'}</p>
-          {dataConsentimentoEstado && <p className="mt-1 text-neutral-500">Actualizado em {new Date(dataConsentimentoEstado).toLocaleDateString('pt-PT')}</p>}
-          <p className="mt-2 text-neutral-600 dark:text-cream-text">O GPS nunca é solicitado automaticamente. Só é consultado depois de carregar no botão abaixo. A localização é arredondada no servidor antes de ser guardada; as coordenadas não são apresentadas nem partilhadas publicamente.</p>
-          <div className="mt-3 flex flex-wrap gap-3">
-            <Button type="button" disabled={pendenteLocal || gpsPendente} loading={gpsPendente || pendenteLocal} onClick={usarLocalizacaoGps}>Usar a minha localização aproximada</Button>
-          </div>
-        </div>
       </section>
       <section className="border-t border-card-border pt-6" aria-labelledby="preferencias-cliente-titulo">
         <h3 id="preferencias-cliente-titulo" className="font-semibold text-ink dark:text-cream">Preferências de categorias</h3>
